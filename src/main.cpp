@@ -6,6 +6,7 @@
 // or any other situations where system failure may affect
 // user or environmental safety.
 
+#include <Arduino.h>
 #include "config.h"
 #include <esp_wifi.h>
 #include <WiFi.h>
@@ -23,8 +24,8 @@ BluetoothSerial SerialBT;
 
 #endif // OTA_HANDLER
 
-HardwareSerial Serial1(1);
-HardwareSerial Serial2(2);
+//HardwareSerial Serial1(1); // already defined in HardwareSerial.h - Hardware serial library for Wiring
+//HardwareSerial Serial2(2); // already defined in HardwareSerial.h - Hardware serial library for Wiring
 HardwareSerial* COM[NUM_COM] = {&Serial, &Serial1 , &Serial2};
 
 #define MAX_NMEA_CLIENTS 4
