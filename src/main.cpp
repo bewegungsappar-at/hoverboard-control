@@ -63,7 +63,7 @@ void setup() {
   COM[1]->begin(UART_BAUD1, SERIAL_PARAM1, SERIAL1_RXPIN, SERIAL1_TXPIN);
   COM[2]->begin(UART_BAUD2, SERIAL_PARAM2, SERIAL2_RXPIN, SERIAL2_TXPIN);
   
-  if(debug) COM[DEBUG_COM]->println("\n\nLK8000 WiFi serial bridge V1.00");
+  if(debug) COM[DEBUG_COM]->println("\n\nWiFi serial bridge");
   #ifdef MODE_AP 
    if(debug) COM[DEBUG_COM]->println("Open ESP Access Point mode");
   //AP mode (phone connects directly to ESP) (no router)
@@ -82,9 +82,10 @@ void setup() {
   WiFi.begin(ssid, pw);
   if(debug) COM[DEBUG_COM]->print("try to Connect to Wireless network: ");
   if(debug) COM[DEBUG_COM]->println(ssid);
-  while (WiFi.status() != WL_CONNECTED) {   
-    delay(500);
-    if(debug) COM[DEBUG_COM]->print(".");
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    delay(5000);
+    if(debug) COM[DEBUG_COM]->println("Connection Failed! Rebooting...");
+    ESP.restart();
   }
   if(debug) COM[DEBUG_COM]->println("\nWiFi connected");
   
@@ -126,7 +127,6 @@ void setup() {
 #endif // OTA_HANDLER    
 
   #ifdef PROTOCOL_TCP
-  COM[0]->println("Starting TCP Server 1");  
   if(debug) COM[DEBUG_COM]->println("Starting TCP Server 1");  
   server[0]->begin(); // start TCP server 
   server[0]->setNoDelay(true);
@@ -160,7 +160,7 @@ void loop()
 #ifdef OTA_HANDLER  
   ArduinoOTA.handle();
 #endif // OTA_HANDLER
-  
+
 #ifdef BLUETOOTH
   // receive from Bluetooth:
   if(SerialBT.hasClient()) 
