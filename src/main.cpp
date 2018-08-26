@@ -54,6 +54,22 @@ uint16_t i2[NUM_COM]={0,0,0};
 uint8_t BTbuf[bufferSize];
 uint16_t iBT =0;
 
+struct Gametrak {   // spherical coordinates
+  uint16_t r;
+  uint16_t r_last;
+  uint16_t theta;
+  uint16_t phi;
+};
+
+Gametrak gametrak1 = {0,0,0,0};
+Gametrak gametrak2 = {0,0,0,0};
+
+struct motorControl {
+  uint8_t steer;
+  uint8_t speed;
+};
+
+motorControl motor = {0,0};
 
 void setup() {
 
@@ -63,18 +79,6 @@ void setup() {
   COM[1]->begin(UART_BAUD1, SERIAL_PARAM1, SERIAL1_RXPIN, SERIAL1_TXPIN);
   COM[2]->begin(UART_BAUD2, SERIAL_PARAM2, SERIAL2_RXPIN, SERIAL2_TXPIN);
   
-  if(debug) COM[DEBUG_COM]->println("\n\nWiFi serial bridge");
-  #ifdef MODE_AP 
-   if(debug) COM[DEBUG_COM]->println("Open ESP Access Point mode");
-  //AP mode (phone connects directly to ESP) (no router)
-  WiFi.mode(WIFI_AP);
-  WiFi.softAPConfig(ip, ip, netmask); // configure ip address for softAP 
-  WiFi.softAP(ssid, pw); // configure ssid and password for softAP
-  #endif
-
-
-  #ifdef MODE_STA
-   if(debug) COM[DEBUG_COM]->println("Open ESP Station mode");
   // STATION mode (ESP connects to router and gets an IP)
   // Assuming phone is also connected to that router
   // from RoboRemo you must connect to the IP of the ESP
@@ -84,12 +88,19 @@ void setup() {
   if(debug) COM[DEBUG_COM]->println(ssid);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     delay(5000);
-    if(debug) COM[DEBUG_COM]->println("Connection Failed! Rebooting...");
-    ESP.restart();
+    if(debug) COM[DEBUG_COM]->println("Connection Failed! Fallback to AP Mode");
+    //AP mode (phone connects directly to ESP) (no router)
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(ip, ip, netmask); // configure ip address for softAP 
+    WiFi.softAP(ssid_AP, pw_AP); // configure ssid and password for softAP
+    if(debug) COM[DEBUG_COM]->print("SSID ");
+    if(debug) COM[DEBUG_COM]->print(ssid_AP);
+    if(debug) COM[DEBUG_COM]->print(" pw ");
+    if(debug) COM[DEBUG_COM]->println(pw_AP);
+    break;
   }
-  if(debug) COM[DEBUG_COM]->println("\nWiFi connected");
+  if(debug) COM[DEBUG_COM]->println("WiFi ready");
   
-  #endif
 #ifdef BLUETOOTH
   if(debug) COM[DEBUG_COM]->println("Open Bluetooth Server");  
   SerialBT.begin(ssid); //Bluetooth device name
@@ -154,6 +165,26 @@ void setup() {
   esp_err_t esp_wifi_set_max_tx_power(50);  //lower WiFi Power
 }
 
+void readGametraks() {
+  gametrak1.r_last = gametrak1.r;
+  gametrak1.r      = analogRead(GAMETRAK1_RPIN);
+  gametrak1.phi    = analogRead(GAMETRAK1_PHIPIN);
+  gametrak1.theta  = analogRead(GAMETRAK1_THETAPIN);
+
+  gametrak2.r_last = gametrak2.r;
+  gametrak2.r      = analogRead(GAMETRAK2_RPIN);
+  gametrak2.phi    = analogRead(GAMETRAK2_PHIPIN);
+  gametrak2.theta  = analogRead(GAMETRAK2_THETAPIN);
+
+  if(debug) COM[DEBUG_COM]->print("Gametraks ");
+  if(debug) COM[DEBUG_COM]->printf("%4u %4u %4u | ", gametrak1.r, gametrak1.phi, gametrak1.theta);
+  if(debug) COM[DEBUG_COM]->printf("%4u %4u %4u\n",  gametrak2.r, gametrak2.phi, gametrak2.theta);
+
+  if(debug) TCPClient[0][0].print("Gametraks ");
+  if(debug) TCPClient[0][0].printf("%4u %4u %4u | ", gametrak1.r, gametrak1.phi, gametrak1.theta);
+  if(debug) TCPClient[0][0].printf("%4u %4u %4u\n",  gametrak2.r, gametrak2.phi, gametrak2.theta);
+
+}
 
 void loop() 
 {  
@@ -239,5 +270,27 @@ void loop()
       }
     }    
   }
+  readGametraks();
+
+
+
+  if(gametrak1.theta-gametrak2.theta < -200) {
+    // gametrak2 side of paddel is down
+    motor.speed = (gametrak1.r - gametrak1.r_last) * 10;
+    motor.steer = motor.speed * 0.5;
+  } else if(gametrak1.theta-gametrak2.theta > 200) {
+    // gametrak1 side of paddel is down
+    motor.speed = (gametrak2.r - gametrak2.r_last) * 10;
+    motor.steer = motor.speed * -0.5;
+  } else {
+    // paddel is not engaged
+    // decelerate slowly
+    motor.speed = motor.speed - 5; //TODO check for negative values, change serial protocol to allow negative (=backwards driving) values
+    motor.steer = 0;
+  }
+  COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
+  COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
+  delay(20); 
+
 }
 

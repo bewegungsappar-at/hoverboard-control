@@ -2,17 +2,14 @@
 // 
 //#define BLUETOOTH
 #define OTA_HANDLER 
-//#define MODE_AP // phone connects directly to ESP
-#define MODE_STA // ESP connects to WiFi router
 
 #define PROTOCOL_TCP
 //#define PROTOCOL_UDP
 bool debug = true;
 
-#ifdef MODE_AP
 // For AP mode:
-const char *ssid = "LK8000";  // You will connect your phone to this Access Point
-const char *pw = "Flightcomputer"; // and this is the password
+const char *ssid_AP = "paddelec";  // You will connect your phone to this Access Point
+const char *pw_AP = "paddelec"; // and this is the password
 IPAddress ip(192, 168, 4, 1); // From RoboRemo app, connect to this IP
 IPAddress netmask(255, 255, 255, 0);
 
@@ -20,10 +17,7 @@ IPAddress netmask(255, 255, 255, 0);
 // menu -> connect -> Internet(TCP) -> 192.168.4.1:8880  for UART0
 //                                  -> 192.168.4.1:8881  for UART1
 //                                  -> 192.168.4.1:8882  for UART2
-#endif
 
-
-#ifdef MODE_STA
 // For STATION mode:
 const char *ssid = "yourSSID";  
 const char *pw = "yourWifiPassword"; 
@@ -32,7 +26,6 @@ const char *pw = "yourWifiPassword";
 // menu -> connect -> Internet(TCP) -> [ESP_IP]:8880  for UART0
 //                                  -> [ESP_IP]:8881  for UART1
 //                                  -> [ESP_IP]:8882  for UART2
-#endif
 
   
 #define NUM_COM   3                 // total number of COM Ports
@@ -46,8 +39,8 @@ const char *pw = "yourWifiPassword";
 /*************************  COM Port 1 *******************************/
 #define UART_BAUD1 19200            // Baudrate UART1
 #define SERIAL_PARAM1 SERIAL_8N1    // Data/Parity/Stop UART1
-#define SERIAL1_RXPIN 9             // receive Pin UART1
-#define SERIAL1_TXPIN 4             // transmit Pin UART1
+#define SERIAL1_RXPIN 15            // receive Pin UART1
+#define SERIAL1_TXPIN  4            // transmit Pin UART1
 #define SERIAL1_TCP_PORT 8881       // Wifi Port UART1
 /*************************  COM Port 2 *******************************/
 #define UART_BAUD2 19200            // Baudrate UART2
@@ -60,3 +53,15 @@ const char *pw = "yourWifiPassword";
 
 //////////////////////////////////////////////////////////////////////////
 
+// Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
+/*************************  Gametrak 1 *******************************/
+#define GAMETRAK1_RPIN     39       // wire length Pin Gametrak 1
+#define GAMETRAK1_PHIPIN   34       // horizontal angle Pin Gametrak 1
+#define GAMETRAK1_THETAPIN 36       // vertical angle Pin Gametrak 1
+/*************************  Gametrak 2 *******************************/
+#define GAMETRAK2_RPIN     32       // wire length Pin Gametrak 2
+#define GAMETRAK2_PHIPIN   33       // horizontal angle Pin Gametrak 2
+#define GAMETRAK2_THETAPIN 35       // vertical angle Pin Gametrak 2
+
+
+#define motor_COM 2                 // motor control output to COM2
