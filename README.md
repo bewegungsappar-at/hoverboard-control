@@ -13,46 +13,15 @@ Used Ports:
 
 ===============================================================
 
-Used Libraries: (must be installed in the arduino IDE):
-
-https://github.com/espressif/arduino-esp32
-
-===============================================================
-
 In some cases the memorylayout is to small for this scetch.
-If you face this problem you can either disable Bluetooth by removing
-#define BLUETOOTH
-in config.h 
-or change the partition size as described here:
-https://desire.giesecke.tk/index.php/2018/04/20/change-partition-size-arduino-ide/
+If you face this problem you can either disable Bluetooth by removing #define BLUETOOTH in config.h or change the partition size as described here: https://desire.giesecke.tk/index.php/2018/04/20/change-partition-size-arduino-ide/
 
-===============================================================
-
-example usecases:
-
-https://www.youtube.com/watch?v=K2Hia06IMtk
-
-https://www.youtube.com/watch?v=GoSxlQvuAhg
 
 # Hardware
-here is the wiring diagram recomendation:
-https://raw.githubusercontent.com/AlphaLima/ESP32-Serial-Bridge/master/ESP32-SerialBridge.jpg             
 Pinning                                                                                     
-COM0 Rx <-> GPIO21                                                                               
-COM0 Tx <-> GPIO01                                                                                 
-COM1 Rx <-> GPIO16                                                                               
-COM1 Tx <-> GPIO17                                                                              
-COM2 Rx <-> GPIO15                                                                               
-COM2 Tx <-> GPIO04                                                                              
-
-NOTE: The PIN assignment has changed and may not look straigt forward (other PINs are marke as Rx/Tx), but this assignment allows to flash via USB also with hooked MAX3232 serial drivers.
-
-I recomend to start your project with a Node32s or compatible evaluation board. For a TTL to RS232 level conversion search google for "TTL RS3232 Converter"
-
-
-
-https://tech.scargill.net/wp-content/uploads/2017/05/ESP326.jpg
-
-A discussion incl. the similar ESP8266 projekt can be found here:
-
-http://www.postfrontal.com/forum/topic.asp?TOPIC_ID=8467
+COM0 Rx <-> GPIO3                                                                               
+COM0 Tx <-> GPIO1                                                                                 
+COM1 Rx <-> GPIO15                                                                               
+COM1 Tx <-> GPIO4                                                                              
+COM2 Rx <-> GPIO16                                                                               
+COM2 Tx <-> GPIO17                                                                              

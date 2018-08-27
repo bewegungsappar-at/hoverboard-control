@@ -12,7 +12,9 @@
 #include <WiFi.h>
 
 
+#include <WebServer.h>
 
+WebServer wupserver(80);
 
 #ifdef BLUETOOTH
 #include <BluetoothSerial.h>
@@ -65,8 +67,8 @@ Gametrak gametrak1 = {0,0,0,0};
 Gametrak gametrak2 = {0,0,0,0};
 
 struct motorControl {
-  uint8_t steer;
-  uint8_t speed;
+  int16_t steer;
+  int16_t speed;
 };
 
 motorControl motor = {0,0};
@@ -87,7 +89,7 @@ void setup() {
   if(debug) COM[DEBUG_COM]->print("try to Connect to Wireless network: ");
   if(debug) COM[DEBUG_COM]->println(ssid);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    delay(5000);
+    delay(500);
     if(debug) COM[DEBUG_COM]->println("Connection Failed! Fallback to AP Mode");
     //AP mode (phone connects directly to ESP) (no router)
     WiFi.mode(WIFI_AP);
@@ -173,8 +175,8 @@ void readGametraks() {
 
   gametrak2.r_last = gametrak2.r;
   gametrak2.r      = analogRead(GAMETRAK2_RPIN);
-  gametrak2.phi    = analogRead(GAMETRAK2_PHIPIN);
-  gametrak2.theta  = analogRead(GAMETRAK2_THETAPIN);
+  gametrak2.phi    = 4096 - analogRead(GAMETRAK2_PHIPIN);
+  gametrak2.theta  = 4096 - analogRead(GAMETRAK2_THETAPIN);
 
   if(debug) COM[DEBUG_COM]->print("Gametraks ");
   if(debug) COM[DEBUG_COM]->printf("%4u %4u %4u | ", gametrak1.r, gametrak1.phi, gametrak1.theta);
@@ -198,7 +200,7 @@ void loop()
   {
     while(SerialBT.available())
     {
-      BTbuf[iBT] = SerialBT.read(); // read char from client (LK8000 app)
+      BTbuf[iBT] = SerialBT.read(); // read char from client 
       if(iBT <bufferSize-1) iBT++;
     }          
     for(int num= 0; num < NUM_COM ; num++)
@@ -239,7 +241,7 @@ void loop()
         {
           while(TCPClient[num][cln].available())
           {
-            buf1[num][i1[num]] = TCPClient[num][cln].read(); // read char from client (LK8000 app)
+            buf1[num][i1[num]] = TCPClient[num][cln].read(); // read char from client 
             if(i1[num]<bufferSize-1) i1[num]++;
           } 
 
@@ -274,22 +276,51 @@ void loop()
 
 
 
-  if(gametrak1.theta-gametrak2.theta < -200) {
+  if(gametrak1.phi-gametrak2.phi < -1000) {
     // gametrak2 side of paddel is down
     motor.speed = (gametrak1.r - gametrak1.r_last) * 10;
     motor.steer = motor.speed * 0.5;
-  } else if(gametrak1.theta-gametrak2.theta > 200) {
+  } else if(gametrak1.phi-gametrak2.phi > 1000) {
     // gametrak1 side of paddel is down
     motor.speed = (gametrak2.r - gametrak2.r_last) * 10;
     motor.steer = motor.speed * -0.5;
   } else {
     // paddel is not engaged
     // decelerate slowly
-    motor.speed = motor.speed - 5; //TODO check for negative values, change serial protocol to allow negative (=backwards driving) values
+    if(motor.speed < -1) {
+      motor.speed = motor.speed + 1;
+    } else if(motor.speed > 1) {
+      motor.speed = motor.speed - 1;
+    } else {
+      motor.speed = 0;
+    }
     motor.steer = 0;
   }
+  
+  /* limit motor speed */
+  if(motor.speed < -500) {
+    motor.speed = -500;
+  } else if(motor.speed > 500) {
+    motor.speed = 500;
+  } 
+  
+  /* limit steering */
+  if(motor.steer < -100) {
+    motor.steer = -100;
+  } else if(motor.steer > 100) {
+    motor.steer = 100;
+  } 
+    
   COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
   COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
+
+  for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
+  {   
+    if(TCPClient[1][cln]) {                    
+      if(debug) TCPClient[1][cln].print("UART: ");
+      if(debug) TCPClient[1][cln].printf("%8i %8i %8i %8i %8i\n", motor.speed, motor.steer, gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak1.phi-gametrak2.phi);
+    }
+  } 
   delay(20); 
 
 }

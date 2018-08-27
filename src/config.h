@@ -1,7 +1,7 @@
 // config: ////////////////////////////////////////////////////////////
 // 
-//#define BLUETOOTH
-#define OTA_HANDLER 
+#define BLUETOOTH
+//#define OTA_HANDLER 
 
 #define PROTOCOL_TCP
 //#define PROTOCOL_UDP
@@ -31,7 +31,7 @@ const char *pw = "yourWifiPassword";
 #define NUM_COM   3                 // total number of COM Ports
 #define DEBUG_COM 0                 // debug output to COM0
 /*************************  COM Port 0 *******************************/
-#define UART_BAUD0 19200            // Baudrate UART0
+#define UART_BAUD0 115000           // Baudrate UART0
 #define SERIAL_PARAM0 SERIAL_8N1    // Data/Parity/Stop UART0
 #define SERIAL0_RXPIN 3             // receive Pin UART0
 #define SERIAL0_TXPIN 1             // transmit Pin UART0
@@ -64,4 +64,4 @@ const char *pw = "yourWifiPassword";
 #define GAMETRAK2_THETAPIN 35       // vertical angle Pin Gametrak 2
 
 
-#define motor_COM 2                 // motor control output to COM2
+#define MOTOR_COM 2                 // motor control output to COM2
