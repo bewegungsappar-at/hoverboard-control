@@ -30,6 +30,7 @@ const char *pw = "yourWifiPassword";
   
 #define NUM_COM   3                 // total number of COM Ports
 #define DEBUG_COM 0                 // debug output to COM0
+#define MOTOR_COM 2                 // motor control output to COM2
 /*************************  COM Port 0 *******************************/
 #define UART_BAUD0 115000           // Baudrate UART0
 #define SERIAL_PARAM0 SERIAL_8N1    // Data/Parity/Stop UART0
@@ -52,16 +53,17 @@ const char *pw = "yourWifiPassword";
 #define bufferSize 1024
 
 //////////////////////////////////////////////////////////////////////////
-
+#define GAMETRAK
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
 /*************************  Gametrak 1 *******************************/
 #define GAMETRAK1_RPIN     39       // wire length Pin Gametrak 1
-#define GAMETRAK1_PHIPIN   34       // horizontal angle Pin Gametrak 1
-#define GAMETRAK1_THETAPIN 36       // vertical angle Pin Gametrak 1
+#define GAMETRAK1_PHIPIN   36       // horizontal angle Pin Gametrak 1
+#define GAMETRAK1_THETAPIN 34       // vertical angle Pin Gametrak 1
+//#define GAMETRAK1_PHI_REV           // Phi is inverted
+//#define GAMETRAK1_THETA_REV         // Theta is inverted
 /*************************  Gametrak 2 *******************************/
 #define GAMETRAK2_RPIN     32       // wire length Pin Gametrak 2
-#define GAMETRAK2_PHIPIN   33       // horizontal angle Pin Gametrak 2
-#define GAMETRAK2_THETAPIN 35       // vertical angle Pin Gametrak 2
-
-
-#define MOTOR_COM 2                 // motor control output to COM2
+#define GAMETRAK2_PHIPIN   35       // horizontal angle Pin Gametrak 2
+#define GAMETRAK2_THETAPIN 33       // vertical angle Pin Gametrak 2
+#define GAMETRAK2_PHI_REV           // Phi is inverted
+#define GAMETRAK2_THETA_REV         // Theta is inverted

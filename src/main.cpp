@@ -1,50 +1,34 @@
-// ESP32 WiFi <-> 3x UART Bridge
-// by AlphaLima
-// www.LK8000.com
-
-// Disclaimer: Don't use  for life support systems
-// or any other situations where system failure may affect
-// user or environmental safety.
-
 #include <Arduino.h>
 #include "config.h"
 #include <esp_wifi.h>
 #include <WiFi.h>
 
-
-#include <WebServer.h>
-
-WebServer wupserver(80);
-
 #ifdef BLUETOOTH
-#include <BluetoothSerial.h>
-BluetoothSerial SerialBT; 
-#endif
+  #include <BluetoothSerial.h>
+  BluetoothSerial SerialBT; 
+#endif // BLUETOOTH
 
 #ifdef OTA_HANDLER  
-#include <ArduinoOTA.h> 
-
+  #include <ArduinoOTA.h> 
 #endif // OTA_HANDLER
 
-//HardwareSerial Serial1(1); // already defined in HardwareSerial.h - Hardware serial library for Wiring
-//HardwareSerial Serial2(2); // already defined in HardwareSerial.h - Hardware serial library for Wiring
 HardwareSerial* COM[NUM_COM] = {&Serial, &Serial1 , &Serial2};
 
 #define MAX_NMEA_CLIENTS 4
 #ifdef PROTOCOL_TCP
-#include <WiFiClient.h>
-WiFiServer server_0(SERIAL0_TCP_PORT);
-WiFiServer server_1(SERIAL1_TCP_PORT);
-WiFiServer server_2(SERIAL2_TCP_PORT);
-WiFiServer *server[NUM_COM]={&server_0,&server_1,&server_2};
-WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
-#endif
+  #include <WiFiClient.h>
+  WiFiServer server_0(SERIAL0_TCP_PORT);
+  WiFiServer server_1(SERIAL1_TCP_PORT);
+  WiFiServer server_2(SERIAL2_TCP_PORT);
+  WiFiServer *server[NUM_COM]={&server_0,&server_1,&server_2};
+  WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
+#endif // PROTOCOL_UDP
 
 #ifdef PROTOCOL_UDP
-#include <WiFiUdp.h>
-WiFiUDP udp;
-IPAddress remoteIp;
-#endif
+  #include <WiFiUdp.h>
+  WiFiUDP udp;
+  IPAddress remoteIp;
+#endif // PROTOCOL_UDP
 
 
 uint8_t buf1[NUM_COM][bufferSize];
@@ -56,15 +40,6 @@ uint16_t i2[NUM_COM]={0,0,0};
 uint8_t BTbuf[bufferSize];
 uint16_t iBT =0;
 
-struct Gametrak {   // spherical coordinates
-  uint16_t r;
-  uint16_t r_last;
-  uint16_t theta;
-  uint16_t phi;
-};
-
-Gametrak gametrak1 = {0,0,0,0};
-Gametrak gametrak2 = {0,0,0,0};
 
 struct motorControl {
   int16_t steer;
@@ -73,7 +48,38 @@ struct motorControl {
 
 motorControl motor = {0,0};
 
+#ifdef GAMETRAK
+  struct Gametrak {   // spherical coordinates
+    uint16_t r;
+    uint16_t r_last;
+    uint16_t theta;
+    uint16_t phi;
+  };
+
+  Gametrak gametrak1 = {0,0,0,0};
+  Gametrak gametrak2 = {0,0,0,0};
+
+  struct PaddelecConfig {
+    int16_t thetaDiffThreshold;
+    float speedMultiplier;
+    float steerMultiplier;
+    int16_t drag;
+    uint16_t speedLimit;
+    uint16_t steerLimit;
+  };
+  PaddelecConfig cfgPaddle;
+#endif // GAMETRAK
+
+
 void setup() {
+#ifdef GAMETRAK
+  cfgPaddle.thetaDiffThreshold  = 1000; // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+  cfgPaddle.speedMultiplier     = 10.0; // multiplier for speed
+  cfgPaddle.steerMultiplier     = 0.5;  // multiplier for steering
+  cfgPaddle.drag                = 1;    // drag/water resistance
+  cfgPaddle.speedLimit          = 500;  // speed limit
+  cfgPaddle.steerLimit          = 100;  // steering limit
+#endif // GAMETRAK
 
   delay(500);
   
@@ -106,7 +112,8 @@ void setup() {
 #ifdef BLUETOOTH
   if(debug) COM[DEBUG_COM]->println("Open Bluetooth Server");  
   SerialBT.begin(ssid); //Bluetooth device name
- #endif
+#endif // BLUETOOTH
+
 #ifdef OTA_HANDLER  
   ArduinoOTA
     .onStart([]() {
@@ -139,7 +146,7 @@ void setup() {
   ArduinoOTA.begin();
 #endif // OTA_HANDLER    
 
-  #ifdef PROTOCOL_TCP
+#ifdef PROTOCOL_TCP
   if(debug) COM[DEBUG_COM]->println("Starting TCP Server 1");  
   server[0]->begin(); // start TCP server 
   server[0]->setNoDelay(true);
@@ -151,9 +158,9 @@ void setup() {
   if(debug) COM[DEBUG_COM]->println("Starting TCP Server 3");  
   server[2]->begin(); // start TCP server   
   server[2]->setNoDelay(true);
-  #endif
+#endif // PROTOCOL_TCP
 
-  #ifdef PROTOCOL_UDP
+#ifdef PROTOCOL_UDP
   if(debug) COM[DEBUG_COM]->println("Starting UDP Server 1");
   udp.begin(SERIAL0_TCP_PORT); // start UDP server 
 
@@ -162,31 +169,45 @@ void setup() {
 
   if(debug) COM[DEBUG_COM]->println("Starting UDP Server 3");
   udp.begin(SERIAL2_TCP_PORT); // start UDP server      
-  #endif
-
-  esp_err_t esp_wifi_set_max_tx_power(50);  //lower WiFi Power
+#endif // PROTOCOL_UDP
 }
 
+#ifdef GAMETRAK
 void readGametraks() {
   gametrak1.r_last = gametrak1.r;
   gametrak1.r      = analogRead(GAMETRAK1_RPIN);
   gametrak1.phi    = analogRead(GAMETRAK1_PHIPIN);
   gametrak1.theta  = analogRead(GAMETRAK1_THETAPIN);
 
+  #ifdef GAMETRAK1_PHI_REV
+    gametrak1.phi    = 4096 - gametrak1.phi;
+  #endif
+  #ifdef GAMETRAK1_THETA_REV
+    gametrak1.theta  = 4096 - gametrak1.theta;
+  #endif
+  
+
   gametrak2.r_last = gametrak2.r;
   gametrak2.r      = analogRead(GAMETRAK2_RPIN);
-  gametrak2.phi    = 4096 - analogRead(GAMETRAK2_PHIPIN);
-  gametrak2.theta  = 4096 - analogRead(GAMETRAK2_THETAPIN);
+  gametrak2.phi    = analogRead(GAMETRAK2_PHIPIN);
+  gametrak2.theta  = analogRead(GAMETRAK2_THETAPIN);
+
+  #ifdef GAMETRAK2_PHI_REV
+    gametrak2.phi    = 4096 - gametrak2.phi;
+  #endif
+  #ifdef GAMETRAK2_THETA_REV
+    gametrak2.theta  = 4096 - gametrak2.theta;
+  #endif
 
   if(debug) COM[DEBUG_COM]->print("Gametraks ");
-  if(debug) COM[DEBUG_COM]->printf("%4u %4u %4u | ", gametrak1.r, gametrak1.phi, gametrak1.theta);
-  if(debug) COM[DEBUG_COM]->printf("%4u %4u %4u\n",  gametrak2.r, gametrak2.phi, gametrak2.theta);
+  if(debug) COM[DEBUG_COM]->printf("%5i %5i %5i | ", gametrak1.r-44, gametrak1.phi-2048, gametrak1.theta-2048);
+  if(debug) COM[DEBUG_COM]->printf("%5i %5i %5i  ",  gametrak2.r-204, gametrak2.phi-2048, gametrak2.theta-2048);
 
   if(debug) TCPClient[0][0].print("Gametraks ");
-  if(debug) TCPClient[0][0].printf("%4u %4u %4u | ", gametrak1.r, gametrak1.phi, gametrak1.theta);
-  if(debug) TCPClient[0][0].printf("%4u %4u %4u\n",  gametrak2.r, gametrak2.phi, gametrak2.theta);
-
+  if(debug) TCPClient[0][0].printf("%4i %4i %4i | ", gametrak1.r, gametrak1.phi, gametrak1.theta);
+  if(debug) TCPClient[0][0].printf("%4i %4i %4i \n",  gametrak2.r, gametrak2.phi, gametrak2.theta);
 }
+#endif // GAMETRAK
 
 void loop() 
 {  
@@ -207,7 +228,8 @@ void loop()
       COM[num]->write(BTbuf,iBT); // now send to UART(num):          
     iBT = 0;
   }  
-#endif  
+#endif // BLUETOOTH
+
 #ifdef PROTOCOL_TCP
   for(int num= 0; num < NUM_COM ; num++)
   {
@@ -229,7 +251,7 @@ void loop()
       TmpserverClient.stop();
     }
   }
-#endif
+#endif // PROTOCOL_TCP
  
   for(int num= 0; num < NUM_COM ; num++)
   {
@@ -268,29 +290,29 @@ void loop()
         if(SerialBT.hasClient())      
           SerialBT.write(buf2[num], i2[num]);        
         i2[num] = 0;
-#endif        
+#endif // BLUETOOTH 
       }
     }    
   }
+
+#ifdef GAMETRAK
   readGametraks();
 
-
-
-  if(gametrak1.phi-gametrak2.phi < -1000) {
+  if(gametrak1.theta-gametrak2.theta < -cfgPaddle.thetaDiffThreshold) {
     // gametrak2 side of paddel is down
-    motor.speed = (gametrak1.r - gametrak1.r_last) * 10;
-    motor.steer = motor.speed * 0.5;
-  } else if(gametrak1.phi-gametrak2.phi > 1000) {
+    motor.speed = (gametrak1.r - gametrak1.r_last) * cfgPaddle.speedMultiplier;
+    motor.steer = motor.speed * cfgPaddle.steerMultiplier;
+  } else if(gametrak1.theta-gametrak2.theta > cfgPaddle.thetaDiffThreshold) {
     // gametrak1 side of paddel is down
-    motor.speed = (gametrak2.r - gametrak2.r_last) * 10;
-    motor.steer = motor.speed * -0.5;
+    motor.speed = (gametrak2.r - gametrak2.r_last) * cfgPaddle.speedMultiplier;
+    motor.steer = motor.speed * -cfgPaddle.steerMultiplier;
   } else {
     // paddel is not engaged
     // decelerate slowly
-    if(motor.speed < -1) {
-      motor.speed = motor.speed + 1;
-    } else if(motor.speed > 1) {
-      motor.speed = motor.speed - 1;
+    if(motor.speed < -cfgPaddle.drag) {
+      motor.speed = motor.speed + cfgPaddle.drag;
+    } else if(motor.speed > cfgPaddle.drag) {
+      motor.speed = motor.speed - cfgPaddle.drag;
     } else {
       motor.speed = 0;
     }
@@ -298,30 +320,52 @@ void loop()
   }
   
   /* limit motor speed */
-  if(motor.speed < -500) {
-    motor.speed = -500;
-  } else if(motor.speed > 500) {
-    motor.speed = 500;
+  if(motor.speed < -cfgPaddle.speedLimit) {
+    motor.speed = -cfgPaddle.speedLimit;
+  } else if(motor.speed > cfgPaddle.speedLimit) {
+    motor.speed = cfgPaddle.speedLimit;
   } 
   
   /* limit steering */
-  if(motor.steer < -100) {
-    motor.steer = -100;
-  } else if(motor.steer > 100) {
-    motor.steer = 100;
+  if(motor.steer < -cfgPaddle.steerLimit) {
+    motor.steer = -cfgPaddle.steerLimit;
+  } else if(motor.steer > cfgPaddle.steerLimit) {
+    motor.steer = cfgPaddle.steerLimit;
   } 
-    
+
+ for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
+  {   
+    if(TCPClient[1][cln]) {                    
+      if(debug) TCPClient[1][cln].print("Gametrak: ");
+      if(debug) TCPClient[1][cln].printf("%8i %8i %8i ", gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak1.theta-gametrak2.theta);
+    }
+  } 
+
+#endif // GAMETRAK
+  if(debug) COM[DEBUG_COM]->println();
   COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
   COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
-
+  
   for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
   {   
     if(TCPClient[1][cln]) {                    
       if(debug) TCPClient[1][cln].print("UART: ");
-      if(debug) TCPClient[1][cln].printf("%8i %8i %8i %8i %8i\n", motor.speed, motor.steer, gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak1.phi-gametrak2.phi);
+      if(debug) TCPClient[1][cln].printf("%8i %8i %8i\n", motor.speed, motor.steer);
     }
   } 
+ 
   delay(20); 
+
+/* TODO
+*  calculate paddle angle. if only gametrak angles are subtracted, the activation threshold depends on the distance (r)
+*  independet variables for left and right wheel, recover MIXER
+*  CRC checksum, maybe message counter?
+*  perfect freewheeling, paddle strenght effect based on paddle angle
+*  define minimum r to function
+*  check phi vor valid values
+*  use timer to get constant deltas
+*  put everything inti functions
+*/
 
 }
 
