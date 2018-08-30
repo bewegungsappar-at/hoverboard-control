@@ -48,39 +48,13 @@ struct motorControl {
 
 motorControl motor = {0,0};
 
-#ifdef GAMETRAK
-  struct Gametrak {   // spherical coordinates
-    uint16_t r;
-    uint16_t r_last;
-    uint16_t theta;
-    uint16_t phi;
-  };
-
-  Gametrak gametrak1 = {0,0,0,0};
-  Gametrak gametrak2 = {0,0,0,0};
-
-  struct PaddelecConfig {
-    int16_t thetaDiffThreshold;
-    float speedMultiplier;
-    float steerMultiplier;
-    int16_t drag;
-    uint16_t speedLimit;
-    uint16_t steerLimit;
-  };
-  PaddelecConfig cfgPaddle;
-#endif // GAMETRAK
+#ifdef PADDELEC
+  #include <Paddelec.h>
+  Paddelec paddelec = Paddelec(*COM[DEBUG_COM]);
+#endif // PADDELEC
 
 
 void setup() {
-#ifdef GAMETRAK
-  cfgPaddle.thetaDiffThreshold  = 1000; // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-  cfgPaddle.speedMultiplier     = 10.0; // multiplier for speed
-  cfgPaddle.steerMultiplier     = 0.5;  // multiplier for steering
-  cfgPaddle.drag                = 1;    // drag/water resistance
-  cfgPaddle.speedLimit          = 500;  // speed limit
-  cfgPaddle.steerLimit          = 100;  // steering limit
-#endif // GAMETRAK
-
   delay(500);
   
   COM[0]->begin(UART_BAUD0, SERIAL_PARAM0, SERIAL0_RXPIN, SERIAL0_TXPIN);
@@ -95,7 +69,7 @@ void setup() {
   if(debug) COM[DEBUG_COM]->print("try to Connect to Wireless network: ");
   if(debug) COM[DEBUG_COM]->println(ssid);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    delay(500);
+    delay(200);
     if(debug) COM[DEBUG_COM]->println("Connection Failed! Fallback to AP Mode");
     //AP mode (phone connects directly to ESP) (no router)
     WiFi.mode(WIFI_AP);
@@ -172,51 +146,10 @@ void setup() {
 #endif // PROTOCOL_UDP
 }
 
-#ifdef GAMETRAK
-void readGametraks() {
-  gametrak1.r_last = gametrak1.r;
-  gametrak1.r      = analogRead(GAMETRAK1_RPIN);
-  gametrak1.phi    = analogRead(GAMETRAK1_PHIPIN);
-  gametrak1.theta  = analogRead(GAMETRAK1_THETAPIN);
-
-  #ifdef GAMETRAK1_PHI_REV
-    gametrak1.phi    = 4096 - gametrak1.phi;
-  #endif
-  #ifdef GAMETRAK1_THETA_REV
-    gametrak1.theta  = 4096 - gametrak1.theta;
-  #endif
-  
-
-  gametrak2.r_last = gametrak2.r;
-  gametrak2.r      = analogRead(GAMETRAK2_RPIN);
-  gametrak2.phi    = analogRead(GAMETRAK2_PHIPIN);
-  gametrak2.theta  = analogRead(GAMETRAK2_THETAPIN);
-
-  #ifdef GAMETRAK2_PHI_REV
-    gametrak2.phi    = 4096 - gametrak2.phi;
-  #endif
-  #ifdef GAMETRAK2_THETA_REV
-    gametrak2.theta  = 4096 - gametrak2.theta;
-  #endif
-
-  if(debug) COM[DEBUG_COM]->print("Gametraks ");
-  if(debug) COM[DEBUG_COM]->printf("%5i %5i %5i | ", gametrak1.r-44, gametrak1.phi-2048, gametrak1.theta-2048);
-  if(debug) COM[DEBUG_COM]->printf("%5i %5i %5i  ",  gametrak2.r-204, gametrak2.phi-2048, gametrak2.theta-2048);
-
-  if(debug) TCPClient[0][0].print("Gametraks ");
-  if(debug) TCPClient[0][0].printf("%4i %4i %4i | ", gametrak1.r, gametrak1.phi, gametrak1.theta);
-  if(debug) TCPClient[0][0].printf("%4i %4i %4i \n",  gametrak2.r, gametrak2.phi, gametrak2.theta);
-}
-#endif // GAMETRAK
-
-void loop() 
-{  
-#ifdef OTA_HANDLER  
-  ArduinoOTA.handle();
-#endif // OTA_HANDLER
-
 #ifdef BLUETOOTH
-  // receive from Bluetooth:
+void bridgeBT() 
+{
+    // receive from Bluetooth:
   if(SerialBT.hasClient()) 
   {
     while(SerialBT.available())
@@ -228,9 +161,12 @@ void loop()
       COM[num]->write(BTbuf,iBT); // now send to UART(num):          
     iBT = 0;
   }  
+}
 #endif // BLUETOOTH
 
 #ifdef PROTOCOL_TCP
+void bridgeTCP()
+{
   for(int num= 0; num < NUM_COM ; num++)
   {
     if (server[num]->hasClient())
@@ -251,8 +187,11 @@ void loop()
       TmpserverClient.stop();
     }
   }
+}
 #endif // PROTOCOL_TCP
- 
+
+void bridge()
+{
   for(int num= 0; num < NUM_COM ; num++)
   {
     if(COM[num] != NULL)          
@@ -294,54 +233,38 @@ void loop()
       }
     }    
   }
+}
 
-#ifdef GAMETRAK
-  readGametraks();
+void loop() 
+{  
+#ifdef OTA_HANDLER  
+  ArduinoOTA.handle();
+#endif // OTA_HANDLER
 
-  if(gametrak1.theta-gametrak2.theta < -cfgPaddle.thetaDiffThreshold) {
-    // gametrak2 side of paddel is down
-    motor.speed = (gametrak1.r - gametrak1.r_last) * cfgPaddle.speedMultiplier;
-    motor.steer = motor.speed * cfgPaddle.steerMultiplier;
-  } else if(gametrak1.theta-gametrak2.theta > cfgPaddle.thetaDiffThreshold) {
-    // gametrak1 side of paddel is down
-    motor.speed = (gametrak2.r - gametrak2.r_last) * cfgPaddle.speedMultiplier;
-    motor.steer = motor.speed * -cfgPaddle.steerMultiplier;
-  } else {
-    // paddel is not engaged
-    // decelerate slowly
-    if(motor.speed < -cfgPaddle.drag) {
-      motor.speed = motor.speed + cfgPaddle.drag;
-    } else if(motor.speed > cfgPaddle.drag) {
-      motor.speed = motor.speed - cfgPaddle.drag;
-    } else {
-      motor.speed = 0;
-    }
-    motor.steer = 0;
+#ifdef BLUETOOTH
+  bridgeBT();
+#endif // BLUETOOTH
+
+#ifdef PROTOCOL_TCP
+  bridgeTCP();
+#endif // PROTOCOL_TCP
+
+bridge();
+
+#ifdef PADDELEC
+  paddelec.update(motor.speed, motor.steer);
+  if(debug)
+  {
+    paddelec.debug(*COM[DEBUG_COM]);
+    for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
+    {   
+      if(TCPClient[1][cln]) {               
+        paddelec.debug(TCPClient[1][cln]);  
+      }
+    } 
   }
-  
-  /* limit motor speed */
-  if(motor.speed < -cfgPaddle.speedLimit) {
-    motor.speed = -cfgPaddle.speedLimit;
-  } else if(motor.speed > cfgPaddle.speedLimit) {
-    motor.speed = cfgPaddle.speedLimit;
-  } 
-  
-  /* limit steering */
-  if(motor.steer < -cfgPaddle.steerLimit) {
-    motor.steer = -cfgPaddle.steerLimit;
-  } else if(motor.steer > cfgPaddle.steerLimit) {
-    motor.steer = cfgPaddle.steerLimit;
-  } 
+#endif // PADDELEC
 
- for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
-  {   
-    if(TCPClient[1][cln]) {                    
-      if(debug) TCPClient[1][cln].print("Gametrak: ");
-      if(debug) TCPClient[1][cln].printf("%8i %8i %8i ", gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak1.theta-gametrak2.theta);
-    }
-  } 
-
-#endif // GAMETRAK
   if(debug) COM[DEBUG_COM]->println();
   COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
   COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
@@ -350,7 +273,7 @@ void loop()
   {   
     if(TCPClient[1][cln]) {                    
       if(debug) TCPClient[1][cln].print("UART: ");
-      if(debug) TCPClient[1][cln].printf("%8i %8i %8i\n", motor.speed, motor.steer);
+      if(debug) TCPClient[1][cln].printf("%8i %8i\n", motor.speed, motor.steer);
     }
   } 
  

@@ -1,6 +1,6 @@
 // config: ////////////////////////////////////////////////////////////
 // 
-#define BLUETOOTH
+//#define BLUETOOTH
 //#define OTA_HANDLER 
 
 #define PROTOCOL_TCP
@@ -53,17 +53,4 @@ const char *pw = "yourWifiPassword";
 #define bufferSize 1024
 
 //////////////////////////////////////////////////////////////////////////
-#define GAMETRAK
-// Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
-/*************************  Gametrak 1 *******************************/
-#define GAMETRAK1_RPIN     39       // wire length Pin Gametrak 1
-#define GAMETRAK1_PHIPIN   36       // horizontal angle Pin Gametrak 1
-#define GAMETRAK1_THETAPIN 34       // vertical angle Pin Gametrak 1
-//#define GAMETRAK1_PHI_REV           // Phi is inverted
-//#define GAMETRAK1_THETA_REV         // Theta is inverted
-/*************************  Gametrak 2 *******************************/
-#define GAMETRAK2_RPIN     32       // wire length Pin Gametrak 2
-#define GAMETRAK2_PHIPIN   35       // horizontal angle Pin Gametrak 2
-#define GAMETRAK2_THETAPIN 33       // vertical angle Pin Gametrak 2
-#define GAMETRAK2_PHI_REV           // Phi is inverted
-#define GAMETRAK2_THETA_REV         // Theta is inverted
+#define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
