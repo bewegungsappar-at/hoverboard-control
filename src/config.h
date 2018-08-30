@@ -1,8 +1,5 @@
-// config: ////////////////////////////////////////////////////////////
-// 
 //#define BLUETOOTH
 //#define OTA_HANDLER 
-
 #define PROTOCOL_TCP
 //#define PROTOCOL_UDP
 bool debug = true;
@@ -54,4 +51,5 @@ const char *pw = "yourWifiPassword";
 
 //////////////////////////////////////////////////////////////////////////
 #define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
+#define NUNCHUCK
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds

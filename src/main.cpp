@@ -54,6 +54,11 @@ motorControl motor = {0,0};
   Paddelec paddelec = Paddelec(*COM[DEBUG_COM]);
 #endif // PADDELEC
 
+#ifdef NUNCHUCK
+  #include <ArduinoNunchuk.h>
+  ArduinoNunchuk nunchuk = ArduinoNunchuk();
+#endif // NUNCHUCK
+
 unsigned long nextMillisMotorInput = 0;
 
 void setup() {
@@ -146,6 +151,10 @@ void setup() {
   if(debug) COM[DEBUG_COM]->println("Starting UDP Server 3");
   udp.begin(SERIAL2_TCP_PORT); // start UDP server      
 #endif // PROTOCOL_UDP
+
+#ifdef NUNCHUCK
+  nunchuk.init();
+#endif // NUNCHUCK
   /* Keep this at the end of setup */
   nextMillisMotorInput = millis();
 }
@@ -255,6 +264,8 @@ void loop()
 
   bridge();
 
+
+
   long deltaMillis = millis() - nextMillisMotorInput;
   if(deltaMillis >= 0)
   {
@@ -267,7 +278,22 @@ void loop()
       for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
         if(TCPClient[1][cln]) paddelec.debug(TCPClient[1][cln]); 
     }
+
+  #if defined(NUNCHUCK)
+    if(paddelec.gametrak1.r < 400 || paddelec.gametrak2.r < 400) // switch to nunchuck control when paddle is not used
+    {
+      nunchuk.update(motor.speed, motor.steer);
+      if(debug) nunchuk.debug(*COM[DEBUG_COM]);
+    }
+  #endif // NUNCHUCK
 #endif // PADDELEC
+
+#if defined(NUNCHUCK) && !defined(PADDELEC) 
+      nunchuk.update(motor.speed, motor.steer);
+      nunchuk.debug(*COM[DEBUG_COM]);
+#endif // NUNCHUCK
+
+    /* Send motor speed values to motor control unit */
     CRC32 crc;
     crc.update(&motor.steer, sizeof(motor.steer));
     COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
@@ -275,17 +301,19 @@ void loop()
     COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
     uint32_t checksum = crc.finalize();
     COM[MOTOR_COM]->write((uint8_t *) &checksum, sizeof(checksum));
-    
+    // debug output
     for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
     {   
       if(TCPClient[1][cln]) {                    
-        if(debug) TCPClient[1][cln].print("UART: ");
+        if(debug) TCPClient[1][cln].print(" U: ");
         if(debug) TCPClient[1][cln].printf("%8i %8i\n", motor.speed, motor.steer);
-      }
-    } 
+      } 
+    }
+    if(debug) COM[DEBUG_COM]->print(" U: ");
+    if(debug) COM[DEBUG_COM]->printf("%8i %8i", motor.speed, motor.steer);
     if(debug) COM[DEBUG_COM]->println();
   }
-  if(deltaMillis >= MOTORINPUT_PERIOD) 
+  if(deltaMillis >= MOTORINPUT_PERIOD)  // check if system is too slow
   {
     if(debug) COM[DEBUG_COM]->print(" Missed Period: ");
     if(debug) COM[DEBUG_COM]->print(deltaMillis); 
