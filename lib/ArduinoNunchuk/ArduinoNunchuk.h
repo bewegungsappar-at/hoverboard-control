@@ -14,8 +14,11 @@
 
 #ifndef ArduinoNunchuk_H
 #define ArduinoNunchuk_H
-
 #include <Arduino.h>
+
+/************************* Nunchuk *******************************/
+#define NUNCHUCK_VCCPIN    18      // Pin used to supply Power
+#define NUNCHUCK_GNDPIN    19      // Pin used as GND
 
 class ArduinoNunchuk
 {

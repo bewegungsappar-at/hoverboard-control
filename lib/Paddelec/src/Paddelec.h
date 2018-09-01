@@ -5,17 +5,21 @@
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
 /*************************  Gametrak 1 *******************************/
+//#define GAMETRAK1_VCCPIN    3V3      // Pin used to supply Power
+#define GAMETRAK1_GNDPIN    27      // Pin used as GND
 #define GAMETRAK1_RPIN      39      // wire length Pin Gametrak 1
 #define GAMETRAK1_PHIPIN    36      // horizontal angle Pin Gametrak 1
 #define GAMETRAK1_THETAPIN  34      // vertical angle Pin Gametrak 1
-#define GAMETRAK1_PHI_REV    0      // Phi is inverted
-#define GAMETRAK1_THETA_REV  0      // Theta is inverted
+#define GAMETRAK1_PHI_REV      0    // Phi is inverted
+#define GAMETRAK1_THETA_REV    0    // Theta is inverted
 /*************************  Gametrak 2 *******************************/
+#define GAMETRAK2_VCCPIN    25      // Pin used to supply Power
+#define GAMETRAK2_GNDPIN    26      // Pin used as GND
 #define GAMETRAK2_RPIN      32      // wire length Pin Gametrak 2
 #define GAMETRAK2_PHIPIN    35      // horizontal angle Pin Gametrak 2
 #define GAMETRAK2_THETAPIN  33      // vertical angle Pin Gametrak 2
-#define GAMETRAK2_PHI_REV    1      // Phi is inverted
-#define GAMETRAK2_THETA_REV  1      // Theta is inverted
+#define GAMETRAK2_PHI_REV      1    // Phi is inverted
+#define GAMETRAK2_THETA_REV    1    // Theta is inverted
 
 class Gametrak
 {
@@ -60,9 +64,25 @@ class Paddelec
       uint16_t steerLimit;
     };
     PaddelecConfig cfgPaddle;
-    Paddelec(HardwareSerial& serial) :
-      _serial_debug(serial)
+    Paddelec()
     {
+      #ifdef GAMETRAK1_GNDPIN
+        pinMode(GAMETRAK1_GNDPIN,OUTPUT);
+        digitalWrite(GAMETRAK1_GNDPIN,LOW);
+      #endif
+      #ifdef GAMETRAK1_VCCPIN
+        pinMode(GAMETRAK1_VCCPIN,OUTPUT);
+        digitalWrite(GAMETRAK1_VCCPIN,HIGH);
+      #endif
+      #ifdef GAMETRAK2_GNDPIN
+        pinMode(GAMETRAK2_GNDPIN,OUTPUT);
+        digitalWrite(GAMETRAK2_GNDPIN,LOW);
+      #endif
+      #ifdef GAMETRAK2_GNDPIN
+        pinMode(GAMETRAK2_VCCPIN,OUTPUT);
+        digitalWrite(GAMETRAK2_VCCPIN,HIGH);
+      #endif
+
       cfgPaddle.thetaDiffThreshold  = 1000; // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
       cfgPaddle.speedMultiplier     = 10.0; // multiplier for speed
       cfgPaddle.steerMultiplier     = 0.5;  // multiplier for steering
@@ -73,9 +93,6 @@ class Paddelec
     void update(int16_t &speed, int16_t &steer);
     void debug(Stream &port);
     
-
-  private:
-    HardwareSerial& _serial_debug;
 };
 
 #endif

@@ -51,7 +51,7 @@ motorControl motor = {0,0};
 
 #ifdef PADDELEC
   #include <Paddelec.h>
-  Paddelec paddelec = Paddelec(*COM[DEBUG_COM]);
+  Paddelec paddelec = Paddelec();
 #endif // PADDELEC
 
 #ifdef NUNCHUCK
@@ -248,7 +248,13 @@ void bridge()
   }
 }
 
+int limit(int min, int value, int max) 
+{
+  if(value<min) value = min;
   if(value>max) value = max;
+  return value;
+}
+
 void loop() 
 {  
 #ifdef OTA_HANDLER  
@@ -293,7 +299,9 @@ void loop()
       nunchuk.update(motor.speed, motor.steer);
       nunchuk.debug(*COM[DEBUG_COM]);
 #endif // NUNCHUCK
+    /* limit values to a valid range */
     motor.speed = limit(-1000, motor.speed, 1000);
+    motor.steer = limit(-1000, motor.steer, 1000);
 
     /* Send motor speed values to motor control unit */
     CRC32 crc;

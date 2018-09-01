@@ -20,7 +20,22 @@
 
 void ArduinoNunchuk::init()
 {
+
+
+  #ifdef NUNCHUCK_GNDPIN
+    pinMode(NUNCHUCK_GNDPIN,OUTPUT);
+    digitalWrite(NUNCHUCK_GNDPIN,LOW);
+  #endif
+  #ifdef NUNCHUCK_VCCPIN
+    pinMode(NUNCHUCK_VCCPIN,OUTPUT);
+    digitalWrite(NUNCHUCK_VCCPIN,HIGH);
+  #endif
+
+  delay(100);
+
+
   Wire.begin();
+
 
   ArduinoNunchuk::_sendByte(0x55, 0xF0);
   ArduinoNunchuk::_sendByte(0x00, 0xFB);
