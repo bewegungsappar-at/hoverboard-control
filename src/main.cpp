@@ -53,6 +53,7 @@ motorControl motor = {0,0};
   Paddelec paddelec = Paddelec(*COM[DEBUG_COM]);
 #endif // PADDELEC
 
+unsigned long nextMillisMotorInput = 0;
 
 void setup() {
   delay(500);
@@ -144,6 +145,8 @@ void setup() {
   if(debug) COM[DEBUG_COM]->println("Starting UDP Server 3");
   udp.begin(SERIAL2_TCP_PORT); // start UDP server      
 #endif // PROTOCOL_UDP
+  /* Keep this at the end of setup */
+  nextMillisMotorInput = millis();
 }
 
 #ifdef BLUETOOTH
@@ -249,36 +252,41 @@ void loop()
   bridgeTCP();
 #endif // PROTOCOL_TCP
 
-bridge();
+  bridge();
 
-#ifdef PADDELEC
-  paddelec.update(motor.speed, motor.steer);
-  if(debug)
+  long deltaMillis = millis() - nextMillisMotorInput;
+  if(deltaMillis >= 0)
   {
-    paddelec.debug(*COM[DEBUG_COM]);
-    for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
-    {   
-      if(TCPClient[1][cln]) {               
-        paddelec.debug(TCPClient[1][cln]);  
-      }
-    } 
-  }
+    nextMillisMotorInput += MOTORINPUT_PERIOD;
+#ifdef PADDELEC
+    paddelec.update(motor.speed, motor.steer);
+    if(debug)
+    {
+      paddelec.debug(*COM[DEBUG_COM]);
+      for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
+        if(TCPClient[1][cln]) paddelec.debug(TCPClient[1][cln]); 
+    }
 #endif // PADDELEC
 
-  if(debug) COM[DEBUG_COM]->println();
-  COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
-  COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
-  
-  for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
-  {   
-    if(TCPClient[1][cln]) {                    
-      if(debug) TCPClient[1][cln].print("UART: ");
-      if(debug) TCPClient[1][cln].printf("%8i %8i\n", motor.speed, motor.steer);
-    }
-  } 
- 
-  delay(20); 
-
+    COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
+    COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
+    
+    for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
+    {   
+      if(TCPClient[1][cln]) {                    
+        if(debug) TCPClient[1][cln].print("UART: ");
+        if(debug) TCPClient[1][cln].printf("%8i %8i\n", motor.speed, motor.steer);
+      }
+    } 
+    if(debug) COM[DEBUG_COM]->println();
+  }
+  if(deltaMillis >= MOTORINPUT_PERIOD) 
+  {
+    if(debug) COM[DEBUG_COM]->print(" Missed Period: ");
+    if(debug) COM[DEBUG_COM]->print(deltaMillis); 
+    if(debug) COM[DEBUG_COM]->print("ms ");
+    nextMillisMotorInput = millis() + MOTORINPUT_PERIOD;
+  }
 /* TODO
 *  calculate paddle angle. if only gametrak angles are subtracted, the activation threshold depends on the distance (r)
 *  independet variables for left and right wheel, recover MIXER
@@ -289,6 +297,5 @@ bridge();
 *  use timer to get constant deltas
 *  put everything inti functions
 */
-
 }
 
