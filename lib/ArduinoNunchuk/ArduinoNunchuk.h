@@ -20,20 +20,20 @@
 class ArduinoNunchuk
 {
   public:
-    int analogX;
-    int analogY;
-    int accelX;
-    int accelY;
-    int accelZ;
-    int zButton;
-    int cButton;
+    int analogX, analogX_min=127, analogX_zero=0, analogX_max=127;
+    int analogY, analogY_min=127, analogY_zero=0, analogY_max=127;
+    int accelX, accelX_start;
+    int accelY, accelY_start;
+    int accelZ, accelZ_start;
+    int zButton, zButton_last;
+    int cButton, cButton_last;
 
     void init();
     void update();
     void debug(Stream &port);
     ArduinoNunchuk ()
     {
-      init();
+     // init(); // TODO: Check re-init. doing two inits seem to bring shitty behaviour 
     }
     void update(int16_t &speed, int16_t &steer);
 

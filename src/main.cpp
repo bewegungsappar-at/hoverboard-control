@@ -248,6 +248,7 @@ void bridge()
   }
 }
 
+  if(value>max) value = max;
 void loop() 
 {  
 #ifdef OTA_HANDLER  
@@ -292,6 +293,7 @@ void loop()
       nunchuk.update(motor.speed, motor.steer);
       nunchuk.debug(*COM[DEBUG_COM]);
 #endif // NUNCHUCK
+    motor.speed = limit(-1000, motor.speed, 1000);
 
     /* Send motor speed values to motor control unit */
     CRC32 crc;
