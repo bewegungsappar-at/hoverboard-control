@@ -2,6 +2,7 @@
 #include "config.h"
 #include <esp_wifi.h>
 #include <WiFi.h>
+#include <CRC32.h>
 
 #ifdef BLUETOOTH
   #include <BluetoothSerial.h>
@@ -267,9 +268,13 @@ void loop()
         if(TCPClient[1][cln]) paddelec.debug(TCPClient[1][cln]); 
     }
 #endif // PADDELEC
-
+    CRC32 crc;
+    crc.update(&motor.steer, sizeof(motor.steer));
     COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
+    crc.update(&motor.speed, sizeof(motor.speed));
     COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
+    uint32_t checksum = crc.finalize();
+    COM[MOTOR_COM]->write((uint8_t *) &checksum, sizeof(checksum));
     
     for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
     {   
