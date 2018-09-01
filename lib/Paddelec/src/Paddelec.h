@@ -66,6 +66,20 @@ class Paddelec
     PaddelecConfig cfgPaddle;
     Paddelec()
     {
+      switchOn();
+      cfgPaddle.thetaDiffThreshold  = 1000; // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.speedMultiplier     = 10.0; // multiplier for speed
+      cfgPaddle.steerMultiplier     = 0.5;  // multiplier for steering
+      cfgPaddle.drag                = 1;    // drag/water resistance
+      cfgPaddle.speedLimit          = 500;  // speed limit
+      cfgPaddle.steerLimit          = 100;  // steering limit
+    }
+    void update(int16_t &speed, int16_t &steer);
+    void debug(Stream &port);
+    
+  private: 
+    void switchOn()  // TODO Integrate into Gametrak class
+    {
       #ifdef GAMETRAK1_GNDPIN
         pinMode(GAMETRAK1_GNDPIN,OUTPUT);
         digitalWrite(GAMETRAK1_GNDPIN,LOW);
@@ -82,17 +96,23 @@ class Paddelec
         pinMode(GAMETRAK2_VCCPIN,OUTPUT);
         digitalWrite(GAMETRAK2_VCCPIN,HIGH);
       #endif
-
-      cfgPaddle.thetaDiffThreshold  = 1000; // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.speedMultiplier     = 10.0; // multiplier for speed
-      cfgPaddle.steerMultiplier     = 0.5;  // multiplier for steering
-      cfgPaddle.drag                = 1;    // drag/water resistance
-      cfgPaddle.speedLimit          = 500;  // speed limit
-      cfgPaddle.steerLimit          = 100;  // steering limit
     }
-    void update(int16_t &speed, int16_t &steer);
-    void debug(Stream &port);
     
+    void switchOff() // TODO Integrate into Gametrak class
+    {
+      #ifdef GAMETRAK1_GNDPIN
+        pinMode(GAMETRAK1_GNDPIN,INPUT); // High Z
+      #endif
+      #ifdef GAMETRAK1_VCCPIN
+        pinMode(GAMETRAK1_VCCPIN,INPUT); // High Z
+      #endif
+      #ifdef GAMETRAK2_GNDPIN
+        pinMode(GAMETRAK2_GNDPIN,INPUT); // High Z
+      #endif
+      #ifdef GAMETRAK2_GNDPIN
+        pinMode(GAMETRAK2_VCCPIN,INPUT); // High Z
+      #endif
+    }
 };
 
 #endif
