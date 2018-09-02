@@ -2,7 +2,7 @@
 #include "config.h"
 #include <esp_wifi.h>
 #include <WiFi.h>
-#include <CRC32.h>
+#include <crc.h>
 
 #ifdef BLUETOOTH
   #include <BluetoothSerial.h>
@@ -277,6 +277,7 @@ void loop()
   if(deltaMillis >= 0)
   {
     nextMillisMotorInput += MOTORINPUT_PERIOD;
+
 #ifdef PADDELEC
     paddelec.update(motor.speed, motor.steer);
     if(debug)
@@ -285,32 +286,40 @@ void loop()
       for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
         if(TCPClient[1][cln]) paddelec.debug(TCPClient[1][cln]); 
     }
-
-  #if defined(NUNCHUCK)
+#endif
+#if defined(NUNCHUCK) && defined(PADDELEC)
     if(paddelec.gametrak1.r < 400 || paddelec.gametrak2.r < 400) // switch to nunchuck control when paddle is not used
     {
-      nunchuk.update(motor.speed, motor.steer);
-      if(debug) nunchuk.debug(*COM[DEBUG_COM]);
+#endif
+#if defined(NUNCHUCK)
+      int nunchuckError = nunchuk.update(motor.speed, motor.steer);
+      nunchuk.debug(*COM[DEBUG_COM]);
+      if(nunchuckError >= 1000) 
+      {
+        nunchuk.reInit();
+        if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
+      } else if(nunchuckError > 0)
+        if(debug) COM[DEBUG_COM]->printf("Nunchuck Comm Problems %4i ", nunchuckError);
+#endif
+#if defined(NUNCHUCK) && defined(PADDELEC)
     }
-  #endif // NUNCHUCK
-#endif // PADDELEC
+#endif
 
 #if defined(NUNCHUCK) && !defined(PADDELEC) 
-      nunchuk.update(motor.speed, motor.steer);
-      nunchuk.debug(*COM[DEBUG_COM]);
+
 #endif // NUNCHUCK
+
     /* limit values to a valid range */
     motor.speed = limit(-1000, motor.speed, 1000);
     motor.steer = limit(-1000, motor.steer, 1000);
-
+    /* calc checksum */
+    uint32_t crc;
+    crc = 0;
+    crc32((const void *)&motor, 4, &crc); // 4 2x uint16_t = 4 bytes
     /* Send motor speed values to motor control unit */
-    CRC32 crc;
-    crc.update(&motor.steer, sizeof(motor.steer));
     COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
-    crc.update(&motor.speed, sizeof(motor.speed));
     COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
-    uint32_t checksum = crc.finalize();
-    COM[MOTOR_COM]->write((uint8_t *) &checksum, sizeof(checksum));
+    COM[MOTOR_COM]->write((uint8_t *) &crc, sizeof(crc));
     // debug output
     for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
     {   
@@ -320,7 +329,7 @@ void loop()
       } 
     }
     if(debug) COM[DEBUG_COM]->print(" U: ");
-    if(debug) COM[DEBUG_COM]->printf("%8i %8i", motor.speed, motor.steer);
+    if(debug) COM[DEBUG_COM]->printf("%8i %8i %8i", motor.speed, motor.steer, crc);
     if(debug) COM[DEBUG_COM]->println();
   }
   if(deltaMillis >= MOTORINPUT_PERIOD)  // check if system is too slow

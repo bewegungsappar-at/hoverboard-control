@@ -29,13 +29,13 @@ const char *pw = "yourWifiPassword";
 #define DEBUG_COM 0                 // debug output to COM0
 #define MOTOR_COM 2                 // motor control output to COM2
 /*************************  COM Port 0 *******************************/
-#define UART_BAUD0 115000           // Baudrate UART0
+#define UART_BAUD0 115200           // Baudrate UART0
 #define SERIAL_PARAM0 SERIAL_8N1    // Data/Parity/Stop UART0
 #define SERIAL0_RXPIN 3             // receive Pin UART0
 #define SERIAL0_TXPIN 1             // transmit Pin UART0
 #define SERIAL0_TCP_PORT 8880       // Wifi Port UART0
 /*************************  COM Port 1 *******************************/
-#define UART_BAUD1 19200            // Baudrate UART1
+#define UART_BAUD1 115200            // Baudrate UART1
 #define SERIAL_PARAM1 SERIAL_8N1    // Data/Parity/Stop UART1
 #define SERIAL1_RXPIN 15            // receive Pin UART1
 #define SERIAL1_TXPIN  4            // transmit Pin UART1

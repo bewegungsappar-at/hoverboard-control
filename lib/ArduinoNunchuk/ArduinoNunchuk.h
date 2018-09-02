@@ -32,17 +32,20 @@ class ArduinoNunchuk
     int cButton, cButton_last;
 
     void init();
-    void update();
+    int update();
     void debug(Stream &port);
     ArduinoNunchuk ()
     {
      // init(); // TODO: Check re-init. doing two inits seem to bring shitty behaviour 
     }
-    void update(int16_t &speed, int16_t &steer);
+    int update(int16_t &speed, int16_t &steer);
+    bool checkID(); 
+    bool reInit();
 
 
   private:
-    void _sendByte(byte data, byte location);
+    bool _sendByte(byte data, byte location);
+    void slowReset(int &variable, int goal, int step);
 };
 
 #endif

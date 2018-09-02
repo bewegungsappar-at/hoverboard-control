@@ -20,8 +20,16 @@
 
 void ArduinoNunchuk::init()
 {
+  /* Power Cycle Nunchuck */
+  #ifdef NUNCHUCK_GNDPIN
+    pinMode(NUNCHUCK_GNDPIN,INPUT);
+  #endif
+  #ifdef NUNCHUCK_VCCPIN
+    pinMode(NUNCHUCK_VCCPIN,INPUT);
+  #endif
 
-
+  delay(100);
+  
   #ifdef NUNCHUCK_GNDPIN
     pinMode(NUNCHUCK_GNDPIN,OUTPUT);
     digitalWrite(NUNCHUCK_GNDPIN,LOW);
@@ -37,42 +45,77 @@ void ArduinoNunchuk::init()
   Wire.begin();
 
 
+
   ArduinoNunchuk::_sendByte(0x55, 0xF0);
   ArduinoNunchuk::_sendByte(0x00, 0xFB);
 
   ArduinoNunchuk::update();
 }
 
-void ArduinoNunchuk::update()
+bool ArduinoNunchuk::reInit()
 {
+    if(!ArduinoNunchuk::_sendByte(0x55, 0xF0)) return false;
+    return ArduinoNunchuk::_sendByte(0x00, 0xFB);
+}
+
+int ArduinoNunchuk::update()
+{
+  int error = 0;
+
+  if(!ArduinoNunchuk::_sendByte(0x00, 0x00)) error++;
+  delay(1);
+
   int count = 0;
   unsigned char values[6];
-
-  Wire.requestFrom(ADDRESS, 6);
+  int countFF = 0;
+  if(Wire.requestFrom(ADDRESS, 6) != 6) error++;
 
   while(Wire.available())
   {
     values[count] = Wire.read();
+    if(values[count] == 0xFF) countFF++;
     count++;
   }
+  if(count!=6) error++;
 
-  cButton_last = cButton;
-  zButton_last = zButton;
+  if(countFF<6 && error == 0)  // if all Bytes are FF, the Nunchuck needs to be initialised probably. Errors indicate communication problems.
+  {
+    /* valid set received */
+    cButton_last = cButton;
+    zButton_last = zButton;
 
-  ArduinoNunchuk::analogX = values[0];
-  ArduinoNunchuk::analogY = values[1];
-  ArduinoNunchuk::accelX = (values[2] << 2) | ((values[5] >> 2) & 3);
-  ArduinoNunchuk::accelY = (values[3] << 2) | ((values[5] >> 4) & 3);
-  ArduinoNunchuk::accelZ = (values[4] << 2) | ((values[5] >> 6) & 3);
-  ArduinoNunchuk::zButton = !((values[5] >> 0) & 1);
-  ArduinoNunchuk::cButton = !((values[5] >> 1) & 1);
-
-  ArduinoNunchuk::_sendByte(0x00, 0x00);
+    ArduinoNunchuk::analogX = values[0];
+    ArduinoNunchuk::analogY = values[1];
+    ArduinoNunchuk::accelX = (values[2] << 2) | ((values[5] >> 2) & 3);
+    ArduinoNunchuk::accelY = (values[3] << 2) | ((values[5] >> 4) & 3);
+    ArduinoNunchuk::accelZ = (values[4] << 2) | ((values[5] >> 6) & 3);
+    ArduinoNunchuk::zButton = !((values[5] >> 0) & 1);
+    ArduinoNunchuk::cButton = !((values[5] >> 1) & 1);
+  } else 
+  {
+    /* something went wrong - slowly reset everything to save values */
+    slowReset(analogX, analogX_zero, 1);
+    slowReset(analogY, analogY_zero, 1);
+    slowReset(accelX, accelX_start, 5);
+    slowReset(accelY, accelY_start, 5);
+    slowReset(accelZ, accelZ_start, 5);
+    zButton = 0;
+//    cButton = 0; // cButton is used to switch between acceleration mode and joystick mode
+  }
+  if(countFF == 6) return error + 1000;
+  else return error;
 }
 
-void ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
+void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
+  if      ((variable - goal) > step) variable -= step;
+  else if ((goal - variable) > step) variable += step;
+  else                               variable  = goal;
+}
+
+int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
 {
-  update();
+  int error = 0;
+  error = update();
 
   // TODO convert to degrees for nunchuck, this is just a hack
   if(cButton && !zButton) 
@@ -121,18 +164,20 @@ void ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
       speed = 0;
     }
   }
+  return error;
 }
 
-void ArduinoNunchuk::_sendByte(byte data, byte location)
+bool ArduinoNunchuk::_sendByte(byte data, byte location)
 {
   Wire.beginTransmission(ADDRESS);
 
-  Wire.write(location);
-  Wire.write(data);
+  if(Wire.write(location) != 1) return false;
+  if(Wire.write(data) != 1) return false;
 
-  Wire.endTransmission();
+  if(Wire.endTransmission() == 0) return true;
+  else return false;
 
-  delay(10);
+//  delay(10); //TODO was: 10ms, is it necessary?
 }
 
 void ArduinoNunchuk::debug(Stream &port)
@@ -141,4 +186,27 @@ void ArduinoNunchuk::debug(Stream &port)
   port.printf("%4i %4i | ", analogX, analogY);
   port.printf("%4i %4i %4i | ", accelX, accelY, accelZ);
   port.printf("%2i %2i  ", zButton, cButton);
+}
+
+bool ArduinoNunchuk::checkID() 
+{
+  int count = 0;
+  unsigned char values[4];
+  unsigned char id[4] = {255,0,164,32};
+  bool compare = true;
+  Wire.beginTransmission(ADDRESS); // device address
+  Wire.write((uint8_t)0xFA);
+  Wire.endTransmission();
+  delay(1);
+  Wire.requestFrom(ADDRESS, 4);
+  while(Wire.available())
+  {
+    values[count] = Wire.read();
+  //  port.printf("%3i ", values[count]);
+  //  port.printf("%3i ", id[count]);
+    if(values[count]!=id[count]) compare = false;
+    count++;
+  }
+  if(compare) return true;
+  else return false;
 }
