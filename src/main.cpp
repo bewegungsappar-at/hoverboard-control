@@ -298,6 +298,10 @@ void loop()
       {
         nunchuk.reInit();
         if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
+      } else if(nunchuckError >= 100) 
+      {
+        nunchuk.reInit();
+        if(debug) COM[DEBUG_COM]->printf("I2C Problems %4i ", nunchuckError);
       } else if(nunchuckError > 0)
         if(debug) COM[DEBUG_COM]->printf("Nunchuck Comm Problems %4i ", nunchuckError);
 #endif

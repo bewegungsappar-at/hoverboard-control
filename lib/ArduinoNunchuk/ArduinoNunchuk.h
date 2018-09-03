@@ -44,7 +44,7 @@ class ArduinoNunchuk
 
 
   private:
-    bool _sendByte(byte data, byte location);
+    uint8_t _sendByte(byte data, byte location);
     void slowReset(int &variable, int goal, int step);
 };
 

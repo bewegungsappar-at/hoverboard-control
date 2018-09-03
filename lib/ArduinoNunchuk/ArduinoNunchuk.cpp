@@ -52,17 +52,40 @@ void ArduinoNunchuk::init()
   ArduinoNunchuk::update();
 }
 
+
 bool ArduinoNunchuk::reInit()
 {
-    if(!ArduinoNunchuk::_sendByte(0x55, 0xF0)) return false;
-    return ArduinoNunchuk::_sendByte(0x00, 0xFB);
+
+    /* Power Cycle Nunchuck */
+  #ifdef NUNCHUCK_GNDPIN
+    pinMode(NUNCHUCK_GNDPIN,INPUT);
+  #endif
+  #ifdef NUNCHUCK_VCCPIN
+    pinMode(NUNCHUCK_VCCPIN,INPUT);
+  #endif
+
+  delay(100);
+  
+  #ifdef NUNCHUCK_GNDPIN
+    pinMode(NUNCHUCK_GNDPIN,OUTPUT);
+    digitalWrite(NUNCHUCK_GNDPIN,LOW);
+  #endif
+  #ifdef NUNCHUCK_VCCPIN
+    pinMode(NUNCHUCK_VCCPIN,OUTPUT);
+    digitalWrite(NUNCHUCK_VCCPIN,HIGH);
+  #endif
+
+  delay(100);
+
+  if(!ArduinoNunchuk::_sendByte(0x55, 0xF0)) return false;
+  return ArduinoNunchuk::_sendByte(0x00, 0xFB);
 }
 
 int ArduinoNunchuk::update()
 {
   int error = 0;
 
-  if(!ArduinoNunchuk::_sendByte(0x00, 0x00)) error++;
+  error = ArduinoNunchuk::_sendByte(0x00, 0x00)*100;
   delay(1);
 
   int count = 0;
@@ -167,16 +190,14 @@ int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
   return error;
 }
 
-bool ArduinoNunchuk::_sendByte(byte data, byte location)
+uint8_t ArduinoNunchuk::_sendByte(byte data, byte location)
 {
   Wire.beginTransmission(ADDRESS);
 
-  if(Wire.write(location) != 1) return false;
-  if(Wire.write(data) != 1) return false;
+  if(Wire.write(location) != 1) return 9;
+  if(Wire.write(data) != 1) return 9;
 
-  if(Wire.endTransmission() == 0) return true;
-  else return false;
-
+  return Wire.endTransmission();
 //  delay(10); //TODO was: 10ms, is it necessary?
 }
 
