@@ -109,14 +109,14 @@ int ArduinoNunchuk::update()
 
     ArduinoNunchuk::analogX = values[0];
     ArduinoNunchuk::analogY = values[1];
-    ArduinoNunchuk::accelX = (values[2] << 2) | ((values[5] >> 2) & 3);
-    ArduinoNunchuk::accelY = (values[3] << 2) | ((values[5] >> 4) & 3);
-    ArduinoNunchuk::accelZ = (values[4] << 2) | ((values[5] >> 6) & 3);
+    ArduinoNunchuk::accelX = ((values[2] << 2) | ((values[5] >> 2) & 3))-511;
+    ArduinoNunchuk::accelY = ((values[3] << 2) | ((values[5] >> 4) & 3))-511;
+    ArduinoNunchuk::accelZ = ((values[4] << 2) | ((values[5] >> 6) & 3))-511;
     ArduinoNunchuk::zButton = !((values[5] >> 0) & 1);
     ArduinoNunchuk::cButton = !((values[5] >> 1) & 1);
   } else 
   {
-    /* something went wrong - slowly reset everything to save values */
+    /* something went wrong - slowly reset everything to safe values */
     slowReset(analogX, analogX_zero, 1);
     slowReset(analogY, analogY_zero, 1);
     slowReset(accelX, accelX_start, 5);
@@ -140,8 +140,8 @@ int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
   int error = 0;
   error = update();
 
-  // TODO convert to degrees for nunchuck, this is just a hack
   if(cButton && !zButton) 
+  /* acceleration control mode when cButton is pressed */
   {
     if(cButton_last != cButton)
     {
@@ -149,10 +149,14 @@ int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
       accelX_start = accelX;
       accelY_start = accelY;
       accelZ_start = accelZ;
+      pitch_zero   = pitchangle();
+      yaw_zero     = yawangle();
+      roll_zero    = rollangle();
     }
-    steer = (accelX - accelX_start) * 4;
-    speed = (accelY - accelY_start) * 4;
+    steer = scaleAngle(rollangle()  - roll_zero , 1000/90);
+    speed = scaleAngle(pitchangle() - pitch_zero, 1000/60);
   } else if (cButton && zButton)
+  /* Joystick calibration mode when both buttons are pressed */
   {
     if((zButton_last != zButton) || (cButton_last != cButton))  // do calibration
     {
@@ -173,6 +177,7 @@ int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
     steer = 0;
     speed = 0;
   } else
+  /* use Joystick as Input */
   {
     if(analogX_min<77 && analogY_min<77 && analogX_max>177 && analogY_max>177 && analogX_zero>77 && analogX_zero<177 && analogY_zero>77 && analogY_zero<177) // check if calib is plausible
     {

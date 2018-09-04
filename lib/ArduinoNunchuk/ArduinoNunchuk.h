@@ -30,6 +30,7 @@ class ArduinoNunchuk
     int accelZ, accelZ_start;
     int zButton, zButton_last;
     int cButton, cButton_last;
+    int yaw_zero=0, pitch_zero=0, roll_zero=0;
 
     void init();
     int update();
@@ -42,10 +43,29 @@ class ArduinoNunchuk
     bool checkID(); 
     bool reInit();
 
+    int rollangle()
+      {
+      return (atan2(accelX, accelZ) * 180 / M_PI);
+      }
+    int pitchangle()
+      {
+      return (atan2(accelY, accelZ) * 180 / M_PI);
+      }
+    int yawangle()
+      {
+      return (atan2(accelZ, accelX) * 180 / M_PI); // TODO: Check if it is working..
+      }
 
   private:
     uint8_t _sendByte(byte data, byte location);
     void slowReset(int &variable, int goal, int step);
+
+    int scaleAngle(int angle, double factor)
+    {
+      if(angle<-180) angle+=360;
+      else if (angle>180) angle-=360;
+      return angle*factor;
+    }
 };
 
 #endif
