@@ -19,6 +19,7 @@
     void setupSerialbridge();
     void setupOTA();
     void bridge();
+    void ota();
     extern uint8_t buf1[NUM_COM][bufferSize];
     extern uint16_t i1[NUM_COM];
 
