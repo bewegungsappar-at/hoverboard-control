@@ -57,9 +57,11 @@ class Paddelec
 
     struct PaddelecConfig {
       int16_t thetaDiffThreshold;
-      float speedMultiplier;
-      float steerMultiplier;
-      int16_t drag;
+      double speedMultiplier;
+      double crosstalkLR;
+      double realign;
+      double deltaRtoSpeed;
+      double drag;
       uint16_t speedLimit;
       uint16_t steerLimit;
     };
@@ -67,12 +69,12 @@ class Paddelec
     Paddelec()
     {
       switchOn();
-      cfgPaddle.thetaDiffThreshold  = 1000; // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.speedMultiplier     = 10.0; // multiplier for speed
-      cfgPaddle.steerMultiplier     = 0.5;  // multiplier for steering
-      cfgPaddle.drag                = 1;    // drag/water resistance
-      cfgPaddle.speedLimit          = 500;  // speed limit
-      cfgPaddle.steerLimit          = 100;  // steering limit
+      cfgPaddle.thetaDiffThreshold  = 1000;                   // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.deltaRtoSpeed       = 10.0;                   // conversion factor between Gametrak radius change and speed      
+      cfgPaddle.speedMultiplier     = 0.3;                    // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR         = 0.2;                    // multiplier for steering
+      cfgPaddle.realign             = cfgPaddle.crosstalkLR;  // paddelc tries to go straight forward
+      cfgPaddle.drag                = 0.1;                    // drag/water resistance
     }
     void update(int16_t &speed, int16_t &steer);
     void debug(Stream &port);
@@ -113,6 +115,8 @@ class Paddelec
         pinMode(GAMETRAK2_VCCPIN,INPUT); // High Z
       #endif
     }
+    void speedsToSteer(int16_t &steer, int16_t &speed, int16_t &speedR, int16_t &speedL);
+    void steerToSpeeds(int16_t &steer, int16_t &speed, int16_t &speedR, int16_t &speedL);
 };
 
 #endif

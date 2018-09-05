@@ -280,6 +280,9 @@ void loop()
 
 #ifdef PADDELEC
     paddelec.update(motor.speed, motor.steer);
+    limit(-200, motor.speed, 400);
+    limit(-200, motor.steer, 200);
+
     if(debug)
     {
       paddelec.debug(*COM[DEBUG_COM]);
@@ -312,6 +315,19 @@ void loop()
 #if defined(NUNCHUCK) && !defined(PADDELEC) 
 
 #endif // NUNCHUCK
+
+/*
+
+    // ####### LOW-PASS FILTER #######
+    steer = steer * (1.0 - FILTER) + cmd1 * FILTER;
+    speed = speed * (1.0 - FILTER) + cmd2 * FILTER;
+
+
+    // ####### MIXER #######
+    speedR = CLAMP(speed * SPEED_COEFFICIENT -  steer * STEER_COEFFICIENT, -1000, 1000);
+    speedL = CLAMP(speed * SPEED_COEFFICIENT +  steer * STEER_COEFFICIENT, -1000, 1000);
+
+*/
 
     /* limit values to a valid range */
     motor.speed = limit(-1000, motor.speed, 1000);
