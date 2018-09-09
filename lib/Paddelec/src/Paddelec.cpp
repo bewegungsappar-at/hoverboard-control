@@ -40,24 +40,25 @@ void Paddelec::update(int16_t &speed, int16_t &steer) {
   speedR += (speedL - speedR) * cfgPaddle.realign;
 
   /* process paddle strokes */
-  if(gametrak1.theta-gametrak2.theta < -cfgPaddle.thetaDiffThreshold) {
+  if((gametrak2.getZ_mm() - gametrak1.getZ_mm()) < -cfgPaddle.zDiffThreshold) {
     // gametrak2 side of paddel is down
 
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-    double speedDelta = ((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed) - speedL;
+    double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed) - speedL;
+speedL += speedDelta * 4;
+//    speedL += (int16_t) ( ( speedDelta * speedDelta ) * cfgPaddle.speedMultiplier );
+//    speedR += (int16_t) ( ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) * ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) );
 
-    speedL += (int16_t) ( speedDelta * cfgPaddle.speedMultiplier );
-    speedR += (int16_t) ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR );
 
-  } else if(gametrak1.theta-gametrak2.theta > cfgPaddle.thetaDiffThreshold) {
+  } else if((gametrak2.getZ_mm() - gametrak1.getZ_mm()) > cfgPaddle.zDiffThreshold) {
     // gametrak1 side of paddel is down
     
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-    double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed) - speedR;
+    double speedDelta = ((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed) - speedR;
 
-    speedR += (int16_t) ( speedDelta * cfgPaddle.speedMultiplier );
-    speedL += (int16_t) ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR );
-
+speedR += speedDelta * 3;
+//    speedR += (int16_t) ( ( speedDelta * speedDelta ) * ( speedDelta * cfgPaddle.speedMultiplier ) );
+//    speedL += (int16_t) ( ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) * ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) );
   } 
       
   // TODO: calculate paddle engagement by angle, not only difference of adc values
@@ -69,13 +70,14 @@ void Paddelec::update(int16_t &speed, int16_t &steer) {
 
 void Gametrak::debug(Stream &port) 
 {
-  port.printf("G %5i %5i %5i ", r, phi, theta);
+//  port.printf("G %5i %5i %5i ", r, phi, theta);
+  port.printf("G %5i %4.2f %4.2f ", getR_mm(), getPhi_deg(), getTheta_deg());
 }
 void Paddelec::debug(Stream &port) 
 {
   gametrak1.debug(port);
   gametrak2.debug(port);
-  port.printf("P %5i %5i %5i ", gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak1.theta-gametrak2.theta);
+  port.printf("P %5i %5i %5i ", gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak2.getZ_mm() - gametrak1.getZ_mm());
 }
 
 void Paddelec::speedsToSteer(int16_t &steer, int16_t &speed, int16_t &speedR, int16_t &speedL)

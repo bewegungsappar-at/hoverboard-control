@@ -46,6 +46,8 @@ const char *pw = "yourWifiPassword";
 #define SERIAL2_RXPIN 16            // receive Pin UART2
 #define SERIAL2_TXPIN 17            // transmit Pin UART2
 #define SERIAL2_TCP_PORT 8882       // Wifi Port UART2
+#define SERIAL2_VCCPIN 5            // Pin used as VCC
+#define SERIAL2_GNDPIN 0            // Pin used as VCC
 
 #define bufferSize 1024
 

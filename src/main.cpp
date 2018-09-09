@@ -62,6 +62,15 @@ motorControl motor = {0,0};
 unsigned long nextMillisMotorInput = 0;
 
 void setup() {
+
+  #ifdef SERIAL2_GNDPIN
+    pinMode(SERIAL2_GNDPIN,OUTPUT);
+    digitalWrite(SERIAL2_GNDPIN,LOW);
+  #endif
+  #ifdef SERIAL2_VCCPIN
+    pinMode(SERIAL2_VCCPIN,OUTPUT);
+    digitalWrite(SERIAL2_VCCPIN,HIGH);
+  #endif
   delay(500);
   
   COM[0]->begin(UART_BAUD0, SERIAL_PARAM0, SERIAL0_RXPIN, SERIAL0_TXPIN);
@@ -279,10 +288,6 @@ void loop()
     nextMillisMotorInput += MOTORINPUT_PERIOD;
 
 #ifdef PADDELEC
-    paddelec.update(motor.speed, motor.steer);
-    limit(-200, motor.speed, 400);
-    limit(-200, motor.steer, 200);
-
     if(debug)
     {
       paddelec.debug(*COM[DEBUG_COM]);
@@ -330,8 +335,12 @@ void loop()
 */
 
     /* limit values to a valid range */
-    motor.speed = limit(-1000, motor.speed, 1000);
-    motor.steer = limit(-1000, motor.steer, 1000);
+    motor.speed = limit(-1000, motor.speed, 1000);  // Joystick speed 0.5 viel zu langsam, steer 0.8 zu viel 
+    motor.steer = limit(-1000, motor.steer, 1000);  // Acceleration speed viel zu langsam, steer ist ok. vielleicht etwas mehr
+
+    motor.steer = motor.steer * 0.8;
+    motor.speed = motor.speed * 0.5;
+
     /* calc checksum */
     uint32_t crc;
     crc = 0;
