@@ -49,6 +49,9 @@ struct motorControl {
 };
 
 motorControl motor = {0,0};
+int16_t actualSpeed_mh = 0;  // motor speed in m/h
+int16_t actualSteer_mh    = 0;  // motor steer
+
 
 #ifdef PADDELEC
   #include <Paddelec.h>
@@ -265,6 +268,20 @@ int limit(int min, int value, int max)
   return value;
 }
 
+
+/* 
+* Dummy function since no speed feedback from Motor control is implemented right now.
+* For now, we just use pwm, some conversion factor and low pass filter as a model.
+* Values are in m/h 
+*/ 
+#define SPEED_PWM_CONVERSION_FACTOR 20.0   // Assume 100% PWM = 1000 = Full Speed = 20km/h = 20000 m/h. Therefore 20000 / 1000 = 20
+#define SPEED_FILTER                 0.1   // Low pass Filter Value. 1 means no filter at all, 0 no value update.
+void updateSpeed()
+{
+  actualSpeed_mh = (int16_t) (actualSpeed_mh * (1.0 - SPEED_FILTER) + motor.pwm   * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR);
+  actualSteer_mh = (int16_t) (actualSteer_mh * (1.0 - SPEED_FILTER) + motor.steer * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR);
+}
+
 void loop() 
 {  
 #ifdef OTA_HANDLER  
@@ -289,13 +306,15 @@ void loop()
     nextMillisMotorInput += MOTORINPUT_PERIOD;
 
 #ifdef PADDELEC
+    paddelec.update(motor.pwm, motor.steer, actualSpeed_mh, actualSteer_mh);
     if(debug)
     {
       paddelec.debug(*COM[DEBUG_COM]);
       for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
         if(TCPClient[1][cln]) paddelec.debug(TCPClient[1][cln]); 
     }
-#endif
+#endif // PADDELEC
+
 #if defined(NUNCHUCK) && defined(PADDELEC)
     if(paddelec.gametrak1.r < 400 || paddelec.gametrak2.r < 400) // switch to nunchuck control when paddle is not used
     {
@@ -335,6 +354,7 @@ void loop()
     COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
     COM[MOTOR_COM]->write((uint8_t *) &motor.pwm, sizeof(motor.pwm));
     COM[MOTOR_COM]->write((uint8_t *) &crc, sizeof(crc));
+    updateSpeed();
 
     // debug output
     for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)

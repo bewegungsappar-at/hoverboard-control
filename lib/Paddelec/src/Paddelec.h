@@ -71,11 +71,11 @@ class Paddelec
     Gametrak gametrak2 = Gametrak(GAMETRAK2_RPIN, GAMETRAK2_PHIPIN, GAMETRAK2_THETAPIN, GAMETRAK2_PHI_REV, GAMETRAK2_THETA_REV);
 
     struct PaddelecConfig {
-      int16_t zDiffThreshold;
+      float paddleAngleThreshold;
       double pwmMultiplier;
       double crosstalkLR;
       double realign;
-      double deltaRtoPWM;
+      double deltaRtoSpeed;
       double drag;
       uint16_t pwmLimit;
       uint16_t steerLimit;
@@ -84,14 +84,14 @@ class Paddelec
     Paddelec()
     {
       switchOn();
-      cfgPaddle.zDiffThreshold      = 300;                   // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoPWM         = 1.0;                   // conversion factor between Gametrak radius change and speed      
-      cfgPaddle.pwmMultiplier       = 1.0;                   // effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR         = 0;                     // multiplier for steering
-      cfgPaddle.realign             = cfgPaddle.crosstalkLR; // paddelc tries to go straight forward
-      cfgPaddle.drag                = 0.0;                   // drag/water resistance
+      cfgPaddle.paddleAngleThreshold = 20.0;                  // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.deltaRtoSpeed        =  1.0;                  // conversion factor between Gametrak movement to speed 
+      cfgPaddle.pwmMultiplier        =  1.0;                  // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR          =  0;                    // multiplier for steering
+      cfgPaddle.realign              = cfgPaddle.crosstalkLR; // paddelc tries to go straight forward
+      cfgPaddle.drag                 =  0.0;                  // drag/water resistance
     }
-    void update(int16_t &pwm, int16_t &steer);
+    void update(int16_t &pwm, int16_t &steer, int16_t &actualSpeed_mh, int16_t &actualSteer);
     void debug(Stream &port);
     
   private: 
@@ -131,7 +131,7 @@ class Paddelec
       #endif
     }
     void RLpwmToSteer(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
-    void steerToRLpwm(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
+    void steerToRL(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
 };
 
 #endif
