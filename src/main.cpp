@@ -321,34 +321,20 @@ void loop()
 
 #endif // NUNCHUCK
 
-/*
-
-    // ####### LOW-PASS FILTER #######
-    steer = steer * (1.0 - FILTER) + cmd1 * FILTER;
-    speed = speed * (1.0 - FILTER) + cmd2 * FILTER;
-
-
-    // ####### MIXER #######
-    speedR = CLAMP(speed * SPEED_COEFFICIENT -  steer * STEER_COEFFICIENT, -1000, 1000);
-    speedL = CLAMP(speed * SPEED_COEFFICIENT +  steer * STEER_COEFFICIENT, -1000, 1000);
-
-*/
-
     /* limit values to a valid range */
-    motor.speed = limit(-1000, motor.speed, 1000);  // Joystick speed 0.5 viel zu langsam, steer 0.8 zu viel 
-    motor.steer = limit(-1000, motor.steer, 1000);  // Acceleration speed viel zu langsam, steer ist ok. vielleicht etwas mehr
-
-    motor.steer = motor.steer * 0.8;
-    motor.speed = motor.speed * 0.5;
+    motor.speed = limit(-1000, motor.speed, 1000);  
+    motor.steer = limit(-1000, motor.steer, 1000);  
 
     /* calc checksum */
     uint32_t crc;
     crc = 0;
     crc32((const void *)&motor, 4, &crc); // 4 2x uint16_t = 4 bytes
+
     /* Send motor speed values to motor control unit */
     COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
     COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
     COM[MOTOR_COM]->write((uint8_t *) &crc, sizeof(crc));
+
     // debug output
     for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
     {   
@@ -360,12 +346,14 @@ void loop()
     if(debug) COM[DEBUG_COM]->print(" U: ");
     if(debug) COM[DEBUG_COM]->printf("%8i %8i %8i", motor.speed, motor.steer, crc);
     if(debug) COM[DEBUG_COM]->println();
+
   }
   if(deltaMillis >= MOTORINPUT_PERIOD)  // check if system is too slow
   {
     if(debug) COM[DEBUG_COM]->print(" Missed Period: ");
     if(debug) COM[DEBUG_COM]->print(deltaMillis); 
     if(debug) COM[DEBUG_COM]->print("ms ");
+    
     nextMillisMotorInput = millis() + MOTORINPUT_PERIOD;
   }
 /* TODO

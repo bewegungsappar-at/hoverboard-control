@@ -20,6 +20,13 @@
 #define NUNCHUCK_VCCPIN    18      // Pin used to supply Power
 #define NUNCHUCK_GNDPIN    19      // Pin used as GND
 
+#define NUNCHUCK_JOYSTICK_THRESHOLD_LOW   77 // calibration values above this are considered invalid
+#define NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 177 // calibration values below this are considered invalid
+#define NUNCHUCK_JOYSTICK_STEER_MULT     0.5 // 0.8 too much
+#define NUNCHUCK_JOYSTICK_SPEED_MULT     1.0 // 0.5 way too slow
+#define NUNCHUCK_ACCEL_SPEED_ANGLE        60 // Pitch angle needed to reach full speed (60° with factor 0.5 was too slow)
+#define NUNCHUCK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
+
 class ArduinoNunchuk
 {
   public:
@@ -35,26 +42,13 @@ class ArduinoNunchuk
     void init();
     int update();
     void debug(Stream &port);
-    ArduinoNunchuk ()
-    {
-     // init(); // TODO: Check re-init. doing two inits seem to bring shitty behaviour 
-    }
     int update(int16_t &speed, int16_t &steer);
     bool checkID(); 
     bool reInit();
 
-    int rollangle()
-      {
-      return (atan2(accelX, accelZ) * 180 / M_PI);
-      }
-    int pitchangle()
-      {
-      return (atan2(accelY, accelZ) * 180 / M_PI);
-      }
-    int yawangle()
-      {
-      return (atan2(accelZ, accelX) * 180 / M_PI); // TODO: Check if it is working..
-      }
+    int rollangle()  { return (atan2(accelX, accelZ) * 180 / M_PI); }
+    int pitchangle() { return (atan2(accelY, accelZ) * 180 / M_PI); }
+    int yawangle()   { return (atan2(accelZ, accelX) * 180 / M_PI); } // TODO: Check if it is working..
 
   private:
     uint8_t _sendByte(byte data, byte location);

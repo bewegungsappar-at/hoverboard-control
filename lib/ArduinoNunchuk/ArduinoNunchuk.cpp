@@ -153,8 +153,8 @@ int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
       yaw_zero     = yawangle();
       roll_zero    = rollangle();
     }
-    steer = scaleAngle(rollangle()  - roll_zero , 1000/90);
-    speed = scaleAngle(pitchangle() - pitch_zero, 1000/60);
+    steer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUCK_ACCEL_STEER_ANGLE);
+    speed = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUCK_ACCEL_SPEED_ANGLE);
   } else if (cButton && zButton)
   /* Joystick calibration mode when both buttons are pressed */
   {
@@ -179,13 +179,17 @@ int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
   } else
   /* use Joystick as Input */
   {
-    if(analogX_min<77 && analogY_min<77 && analogX_max>177 && analogY_max>177 && analogX_zero>77 && analogX_zero<177 && analogY_zero>77 && analogY_zero<177) // check if calib is plausible
+    // check if calib is plausible 
+    if(analogX_min  < NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogX_max  > NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
+    && analogY_min  < NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogY_max  > NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
+    && analogX_zero > NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogX_zero < NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
+    && analogY_zero > NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogY_zero < NUNCHUCK_JOYSTICK_THRESHOLD_HIGH) 
     {
-      if((analogX - analogX_zero)>0) steer = (analogX - analogX_zero) * 1000/(analogX_max - analogX_zero);
-      else                           steer = (analogX - analogX_zero) * 1000/(analogX_zero - analogX_min);
+      if((analogX - analogX_zero)>0) steer = (analogX - analogX_zero) * 1000.0/(analogX_max - analogX_zero) * NUNCHUCK_JOYSTICK_STEER_MULT;
+      else                           steer = (analogX - analogX_zero) * 1000.0/(analogX_zero - analogX_min) * NUNCHUCK_JOYSTICK_STEER_MULT;
 
-      if((analogY - analogY_zero)>0) speed = (analogY - analogY_zero) * 1000/(analogY_max - analogY_zero);
-      else                           speed = (analogY - analogY_zero) * 1000/(analogY_zero - analogY_min);
+      if((analogY - analogY_zero)>0) speed = (analogY - analogY_zero) * 1000.0/(analogY_max - analogY_zero) * NUNCHUCK_JOYSTICK_SPEED_MULT;
+      else                           speed = (analogY - analogY_zero) * 1000.0/(analogY_zero - analogY_min) * NUNCHUCK_JOYSTICK_SPEED_MULT;
 
     } else {
       steer = 0;
