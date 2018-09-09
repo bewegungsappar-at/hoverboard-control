@@ -44,7 +44,8 @@ uint16_t iBT =0;
 
 struct motorControl {
   int16_t steer;
-  int16_t speed;
+  int16_t pwm;      // called "speed" in hoverboard firmware, but is only pwm duty cycle in promille
+                    // Values from -1000 to 1000. Negative values represent driving backwards.
 };
 
 motorControl motor = {0,0};
@@ -300,7 +301,7 @@ void loop()
     {
 #endif
 #if defined(NUNCHUCK)
-      int nunchuckError = nunchuk.update(motor.speed, motor.steer);
+      int nunchuckError = nunchuk.update(motor.pwm, motor.steer);
       nunchuk.debug(*COM[DEBUG_COM]);
       if(nunchuckError >= 1000) 
       {
@@ -322,7 +323,7 @@ void loop()
 #endif // NUNCHUCK
 
     /* limit values to a valid range */
-    motor.speed = limit(-1000, motor.speed, 1000);  
+    motor.pwm = limit(-1000, motor.pwm, 1000);  
     motor.steer = limit(-1000, motor.steer, 1000);  
 
     /* calc checksum */
@@ -330,9 +331,9 @@ void loop()
     crc = 0;
     crc32((const void *)&motor, 4, &crc); // 4 2x uint16_t = 4 bytes
 
-    /* Send motor speed values to motor control unit */
+    /* Send motor pwm values to motor control unit */
     COM[MOTOR_COM]->write((uint8_t *) &motor.steer, sizeof(motor.steer)); 
-    COM[MOTOR_COM]->write((uint8_t *) &motor.speed, sizeof(motor.speed));
+    COM[MOTOR_COM]->write((uint8_t *) &motor.pwm, sizeof(motor.pwm));
     COM[MOTOR_COM]->write((uint8_t *) &crc, sizeof(crc));
 
     // debug output
@@ -340,11 +341,11 @@ void loop()
     {   
       if(TCPClient[1][cln]) {                    
         if(debug) TCPClient[1][cln].print(" U: ");
-        if(debug) TCPClient[1][cln].printf("%8i %8i\n", motor.speed, motor.steer);
+        if(debug) TCPClient[1][cln].printf("%8i %8i\n", motor.pwm, motor.steer);
       } 
     }
     if(debug) COM[DEBUG_COM]->print(" U: ");
-    if(debug) COM[DEBUG_COM]->printf("%8i %8i %8i", motor.speed, motor.steer, crc);
+    if(debug) COM[DEBUG_COM]->printf("%8i %8i %8i", motor.pwm, motor.steer, crc);
     if(debug) COM[DEBUG_COM]->println();
 
   }

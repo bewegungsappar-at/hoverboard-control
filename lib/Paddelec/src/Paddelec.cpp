@@ -14,58 +14,58 @@ void Gametrak::update()
   if(inv_theta) theta  = 4096 - theta;
 }
 
-void Paddelec::update(int16_t &speed, int16_t &steer) {
-  int16_t speedR=0, speedL=0;
+void Paddelec::update(int16_t &pwm, int16_t &steer) {
+  int16_t pwmR=0, pwmL=0;
   gametrak1.update();
   gametrak2.update();
 
   /* convert from speed and steering to left and right wheel speed */
-  steerToSpeeds(steer, speed, speedR, speedL);
+  steerToRLpwm(steer, pwm, pwmR, pwmL);
 
   /* simulate drag */
-  speedL = speedL * (1.0 - cfgPaddle.drag);
-  speedR = speedR * (1.0 - cfgPaddle.drag);
+  pwmL = pwmL * (1.0 - cfgPaddle.drag);
+  pwmR = pwmR * (1.0 - cfgPaddle.drag);
   /* old method 
-  if     (speedL < -cfgPaddle.drag) speedL = speedL + cfgPaddle.drag;
-  else if(speedL >  cfgPaddle.drag) speedL = speedL - cfgPaddle.drag;
-  else                              speedL = 0;
+  if     (pwmL < -cfgPaddle.drag) pwmL = pwmL + cfgPaddle.drag;
+  else if(pwmL >  cfgPaddle.drag) pwmL = pwmL - cfgPaddle.drag;
+  else                              pwmL = 0;
   
-  if     (speedR < -cfgPaddle.drag) speedR = speedR + cfgPaddle.drag;
-  else if(speedR >  cfgPaddle.drag) speedR = speedR - cfgPaddle.drag;
-  else                              speedR = 0;
+  if     (pwmR < -cfgPaddle.drag) pwmR = pwmR + cfgPaddle.drag;
+  else if(pwmR >  cfgPaddle.drag) pwmR = pwmR - cfgPaddle.drag;
+  else                              pwmR = 0;
   */
 
   /* Kajak tries to align itself straight */
-  speedL += (speedR - speedL) * cfgPaddle.realign;
-  speedR += (speedL - speedR) * cfgPaddle.realign;
+  pwmL += (pwmR - pwmL) * cfgPaddle.realign;
+  pwmR += (pwmL - pwmR) * cfgPaddle.realign;
 
   /* process paddle strokes */
   if((gametrak2.getZ_mm() - gametrak1.getZ_mm()) < -cfgPaddle.zDiffThreshold) {
     // gametrak2 side of paddel is down
 
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-    double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed) - speedL;
-speedL += speedDelta * 4;
-//    speedL += (int16_t) ( ( speedDelta * speedDelta ) * cfgPaddle.speedMultiplier );
-//    speedR += (int16_t) ( ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) * ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) );
+    double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoPWM) - pwmL;
+pwmL += speedDelta * 4;
+//    pwmL += (int16_t) ( ( speedDelta * speedDelta ) * cfgPaddle.speedMultiplier );
+//    pwmR += (int16_t) ( ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) * ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) );
 
 
   } else if((gametrak2.getZ_mm() - gametrak1.getZ_mm()) > cfgPaddle.zDiffThreshold) {
     // gametrak1 side of paddel is down
     
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-    double speedDelta = ((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed) - speedR;
+    double speedDelta = ((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoPWM) - pwmR;
 
-speedR += speedDelta * 3;
-//    speedR += (int16_t) ( ( speedDelta * speedDelta ) * ( speedDelta * cfgPaddle.speedMultiplier ) );
-//    speedL += (int16_t) ( ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) * ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) );
+pwmR += speedDelta * 3;
+//    pwmR += (int16_t) ( ( speedDelta * speedDelta ) * ( speedDelta * cfgPaddle.speedMultiplier ) );
+//    pwmL += (int16_t) ( ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) * ( speedDelta * cfgPaddle.speedMultiplier * cfgPaddle.crosstalkLR ) );
   } 
       
   // TODO: calculate paddle engagement by angle, not only difference of adc values
   // TODO: use paddle angle as strength multiplier
 
   /* convert from left and right wheel speed to speed and steering */
-  speedsToSteer(steer, speed, speedR, speedL);
+  RLpwmToSteer(steer, pwm, pwmR, pwmL);
 }
 
 void Gametrak::debug(Stream &port) 
@@ -80,14 +80,14 @@ void Paddelec::debug(Stream &port)
   port.printf("P %5i %5i %5i ", gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak2.getZ_mm() - gametrak1.getZ_mm());
 }
 
-void Paddelec::speedsToSteer(int16_t &steer, int16_t &speed, int16_t &speedR, int16_t &speedL)
+void Paddelec::RLpwmToSteer(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL)
 {
-  speed = (speedR + speedL) / 2;
-  steer = speedL - speed;
+  pwm = (pwmR + pwmL) / 2;
+  steer = pwmL - pwm;
 }
 
-void Paddelec::steerToSpeeds(int16_t &steer, int16_t &speed, int16_t &speedR, int16_t &speedL)
+void Paddelec::steerToRLpwm(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL)
 {
-  speedR = speed - steer;
-  speedL = speed + steer;
+  pwmR = pwm - steer;
+  pwmL = pwm + steer;
 }

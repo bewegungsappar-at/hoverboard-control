@@ -72,26 +72,26 @@ class Paddelec
 
     struct PaddelecConfig {
       int16_t zDiffThreshold;
-      double speedMultiplier;
+      double pwmMultiplier;
       double crosstalkLR;
       double realign;
-      double deltaRtoSpeed;
+      double deltaRtoPWM;
       double drag;
-      uint16_t speedLimit;
+      uint16_t pwmLimit;
       uint16_t steerLimit;
     };
     PaddelecConfig cfgPaddle;
     Paddelec()
     {
       switchOn();
-      cfgPaddle.zDiffThreshold  = 300;                        // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed       = 1.0;                   // conversion factor between Gametrak radius change and speed      
-      cfgPaddle.speedMultiplier     = 1.0;                    // effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR         = 0;                    // multiplier for steering
-      cfgPaddle.realign             = cfgPaddle.crosstalkLR;  // paddelc tries to go straight forward
+      cfgPaddle.zDiffThreshold      = 300;                   // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.deltaRtoPWM         = 1.0;                   // conversion factor between Gametrak radius change and speed      
+      cfgPaddle.pwmMultiplier       = 1.0;                   // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR         = 0;                     // multiplier for steering
+      cfgPaddle.realign             = cfgPaddle.crosstalkLR; // paddelc tries to go straight forward
       cfgPaddle.drag                = 0.0;                   // drag/water resistance
     }
-    void update(int16_t &speed, int16_t &steer);
+    void update(int16_t &pwm, int16_t &steer);
     void debug(Stream &port);
     
   private: 
@@ -130,8 +130,8 @@ class Paddelec
         pinMode(GAMETRAK2_VCCPIN,INPUT); // High Z
       #endif
     }
-    void speedsToSteer(int16_t &steer, int16_t &speed, int16_t &speedR, int16_t &speedL);
-    void steerToSpeeds(int16_t &steer, int16_t &speed, int16_t &speedR, int16_t &speedL);
+    void RLpwmToSteer(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
+    void steerToRLpwm(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
 };
 
 #endif
