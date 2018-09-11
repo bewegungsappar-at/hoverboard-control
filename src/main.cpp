@@ -43,8 +43,8 @@ struct motorControl {
 };
 
 motorControl motor = {0,0};
-int16_t actualSpeed_mh = 0;  // motor speed in m/h
-int16_t actualSteer_mh    = 0;  // motor steer
+double actualSpeed_kmh = 0.0;  // motor speed in m/h
+double actualSteer_kmh = 0.0;  // motor steer
 
 
 #ifdef PADDELEC
@@ -257,12 +257,12 @@ int limit(int min, int value, int max)
 * For now, we just use pwm, some conversion factor and low pass filter as a model.
 * Values are in m/h 
 */ 
-#define SPEED_PWM_CONVERSION_FACTOR 20.0   // Assume 100% PWM = 1000 = Full Speed = 20km/h = 20000 m/h. Therefore 20000 / 1000 = 20
-#define SPEED_FILTER                 0.1   // Low pass Filter Value. 1 means no filter at all, 0 no value update.
+#define SPEED_PWM_CONVERSION_FACTOR  0.2   // Assume 100% PWM = 1000 = Full Speed = 20km/h = 20000 m/h. Therefore 20000 / 1000 = 20
+#define SPEED_FILTER                 0.08  // Low pass Filter Value. 1 means no filter at all, 0 no value update.
 void updateSpeed()
 {
-  actualSpeed_mh = (int16_t) (actualSpeed_mh * (1.0 - SPEED_FILTER) + motor.pwm   * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR);
-  actualSteer_mh = (int16_t) (actualSteer_mh * (1.0 - SPEED_FILTER) + motor.steer * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR);
+  actualSpeed_kmh = actualSpeed_kmh * (1.0 - SPEED_FILTER) + motor.pwm   * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR;
+  actualSteer_kmh = actualSteer_kmh * (1.0 - SPEED_FILTER) + motor.steer * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR;
 }
 
 void loop() 
@@ -289,7 +289,7 @@ void loop()
     nextMillisMotorInput += MOTORINPUT_PERIOD;
 
 #ifdef PADDELEC
-    paddelec.update(motor.pwm, motor.steer, actualSpeed_mh, actualSteer_mh);
+    paddelec.update(motor.pwm, motor.steer, actualSpeed_kmh, actualSteer_kmh);
     if(debug)
     {
       paddelec.debug(*COM[DEBUG_COM]);
@@ -299,7 +299,7 @@ void loop()
 #endif // PADDELEC
 
 #if defined(NUNCHUCK) && defined(PADDELEC)
-    if(paddelec.gametrak1.r < 400 || paddelec.gametrak2.r < 400) // switch to nunchuck control when paddle is not used
+    if(paddelec.gametrak1.r < 500 || paddelec.gametrak2.r < 500) // switch to nunchuck control when paddle is not used
     {
 #endif
 #if defined(NUNCHUCK)
@@ -348,7 +348,8 @@ void loop()
       } 
     }
     if(debug) COM[DEBUG_COM]->print(" U: ");
-    if(debug) COM[DEBUG_COM]->printf("%8i %8i %8i", motor.pwm, motor.steer, crc);
+    if(debug) COM[DEBUG_COM]->printf("%6i %6i %11u ", motor.pwm, motor.steer, crc);
+    if(debug) COM[DEBUG_COM]->printf("%5.2f %5.2f ", actualSpeed_kmh, actualSteer_kmh);
     if(debug) COM[DEBUG_COM]->println();
 
   }

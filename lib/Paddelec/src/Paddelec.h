@@ -84,14 +84,14 @@ class Paddelec
     Paddelec()
     {
       switchOn();
-      cfgPaddle.paddleAngleThreshold = 20.0;                  // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed        =  1.0;                  // conversion factor between Gametrak movement to speed 
-      cfgPaddle.pwmMultiplier        =  1.0;                  // effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR          =  0;                    // multiplier for steering
-      cfgPaddle.realign              = cfgPaddle.crosstalkLR; // paddelc tries to go straight forward
+      cfgPaddle.paddleAngleThreshold = 25.0;                  // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.deltaRtoSpeed        =  0.3;                  // conversion factor between Gametrak movement to speed 
+      cfgPaddle.pwmMultiplier        =  0.5;                  // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR          =  0.001;                    // multiplier for steering
+      cfgPaddle.realign              =  0;                    // paddelc tries to go straight forward
       cfgPaddle.drag                 =  0.0;                  // drag/water resistance
     }
-    void update(int16_t &pwm, int16_t &steer, int16_t &actualSpeed_mh, int16_t &actualSteer);
+    void update(int16_t &pwm, int16_t &steer, double &actualSpeed_kmh, double &actualSteer);
     void debug(Stream &port);
     
   private: 
@@ -132,6 +132,7 @@ class Paddelec
     }
     void RLpwmToSteer(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
     void steerToRL(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
+    void steerToRL(double  &steer, double  &pwm, double  &pwmR, double  &pwmL);
 };
 
 #endif
