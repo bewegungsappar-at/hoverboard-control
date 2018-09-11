@@ -254,8 +254,8 @@ void bridge()
         // now send to Bluetooth:
         if(SerialBT.hasClient())      
           SerialBT.write(buf2[num], i2[num]);        
-        i2[num] = 0;
 #endif // BLUETOOTH 
+        i2[num] = 0;
       }
     }    
   }
