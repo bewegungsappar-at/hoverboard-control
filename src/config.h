@@ -1,7 +1,7 @@
 //#define BLUETOOTH
 //#define OTA_HANDLER 
 #define PROTOCOL_TCP
-//#define PROTOCOL_UDP
+
 bool debug = true;
 
 // For AP mode:

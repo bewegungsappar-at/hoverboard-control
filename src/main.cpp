@@ -23,13 +23,7 @@ HardwareSerial* COM[NUM_COM] = {&Serial, &Serial1 , &Serial2};
   WiFiServer server_2(SERIAL2_TCP_PORT);
   WiFiServer *server[NUM_COM]={&server_0,&server_1,&server_2};
   WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
-#endif // PROTOCOL_UDP
-
-#ifdef PROTOCOL_UDP
-  #include <WiFiUdp.h>
-  WiFiUDP udp;
-  IPAddress remoteIp;
-#endif // PROTOCOL_UDP
+#endif // PROTOCOL_TDP
 
 
 uint8_t buf1[NUM_COM][bufferSize];
@@ -153,17 +147,6 @@ void setup() {
   server[2]->begin(); // start TCP server   
   server[2]->setNoDelay(true);
 #endif // PROTOCOL_TCP
-
-#ifdef PROTOCOL_UDP
-  if(debug) COM[DEBUG_COM]->println("Starting UDP Server 1");
-  udp.begin(SERIAL0_TCP_PORT); // start UDP server 
-
-  if(debug) COM[DEBUG_COM]->println("Starting UDP Server 2");
-  udp.begin(SERIAL1_TCP_PORT); // start UDP server 
-
-  if(debug) COM[DEBUG_COM]->println("Starting UDP Server 3");
-  udp.begin(SERIAL2_TCP_PORT); // start UDP server      
-#endif // PROTOCOL_UDP
 
 #ifdef NUNCHUCK
   nunchuk.init();
