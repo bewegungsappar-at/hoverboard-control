@@ -13,14 +13,19 @@ uint32_t crc32_for_byte(uint32_t r) {
   return r ^ (uint32_t)0xFF000000L;
 }
 
-void crc32(const void *data, size_t n_bytes, uint32_t* crc) {
-  static uint32_t table[0x100];
-  if(!*table)
+static uint32_t crc32_table[0x100];
+
+void crc32_populate_table() {
     for(size_t i = 0; i < 0x100; ++i)
-      table[i] = crc32_for_byte(i);
-  for(size_t i = 0; i < n_bytes; ++i)
-    *crc = table[(uint8_t)*crc ^ ((uint8_t*)data)[i]] ^ *crc >> 8;
+      crc32_table[i] = crc32_for_byte(i);
 }
+
+void crc32(const void *data, size_t n_bytes, uint32_t* crc) {
+  if(!*crc32_table) crc32_populate_table();
+  for(size_t i = 0; i < n_bytes; ++i)
+    *crc = crc32_table[(uint8_t)*crc ^ ((uint8_t*)data)[i]] ^ *crc >> 8;
+}
+
 /*
 
 Taken from http://home.thep.lu.se/~bjorn/crc/

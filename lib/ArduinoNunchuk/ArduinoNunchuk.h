@@ -40,24 +40,24 @@ class ArduinoNunchuk
     int yaw_zero=0, pitch_zero=0, roll_zero=0;
 
     void init();
-    int update();
+    int  update();
     void debug(Stream &port);
-    int update(int16_t &speed, int16_t &steer);
+    int  update(double &speed, double &steer);
     bool checkID(); 
     bool reInit();
 
-    int rollangle()  { return (atan2(accelX, accelZ) * 180 / M_PI); }
-    int pitchangle() { return (atan2(accelY, accelZ) * 180 / M_PI); }
-    int yawangle()   { return (atan2(accelZ, accelX) * 180 / M_PI); } // TODO: Check if it is working..
+    double rollangle()  { return (atan2(accelX, accelZ) * 180.0 / M_PI); }
+    double pitchangle() { return (atan2(accelY, accelZ) * 180.0 / M_PI); }
+    double yawangle()   { return (atan2(accelZ, accelX) * 180.0 / M_PI); } // TODO: Check if it is working..
 
   private:
     uint8_t _sendByte(byte data, byte location);
     void slowReset(int &variable, int goal, int step);
 
-    int scaleAngle(int angle, double factor)
+    double scaleAngle(double angle, double factor)
     {
-      if(angle<-180) angle+=360;
-      else if (angle>180) angle-=360;
+      if(angle<-180.0) angle+=360.0;
+      else if (angle>180.0) angle-=360.0;
       return angle*factor;
     }
 };

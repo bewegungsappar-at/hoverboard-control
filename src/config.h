@@ -1,30 +1,19 @@
-//#define BLUETOOTH
-//#define OTA_HANDLER 
-#define PROTOCOL_TCP
 
 bool debug = true;
 
-// For AP mode:
-const char *ssid_AP = "paddelec";  // You will connect your phone to this Access Point
-const char *pw_AP = "paddelec"; // and this is the password
-IPAddress ip(192, 168, 4, 1); // From RoboRemo app, connect to this IP
+/*********************************************************************/
+/****************************** Wifi *********************************/
+/*********************************************************************/
+//#define OTA_HANDLER 
+const char *ssid = "paddelec";      
+const char *pw = "paddelec";        
+IPAddress ip(192, 168, 4, 1);       
 IPAddress netmask(255, 255, 255, 0);
 
-// You must connect the phone to this AP, then:
-// menu -> connect -> Internet(TCP) -> 192.168.4.1:8880  for UART0
-//                                  -> 192.168.4.1:8881  for UART1
-//                                  -> 192.168.4.1:8882  for UART2
 
-// For STATION mode:
-const char *ssid = "yourSSID";  
-const char *pw = "yourWifiPassword"; 
-// You must connect the phone to the same router,
-// Then somehow find the IP that the ESP got from router, then:
-// menu -> connect -> Internet(TCP) -> [ESP_IP]:8880  for UART0
-//                                  -> [ESP_IP]:8881  for UART1
-//                                  -> [ESP_IP]:8882  for UART2
-
-  
+/*********************************************************************/
+/***************************** Serial ********************************/
+/*********************************************************************/
 #define NUM_COM   3                 // total number of COM Ports
 #define DEBUG_COM 0                 // debug output to COM0
 #define MOTOR_COM 2                 // motor control output to COM2
@@ -35,7 +24,7 @@ const char *pw = "yourWifiPassword";
 #define SERIAL0_TXPIN 1             // transmit Pin UART0
 #define SERIAL0_TCP_PORT 8880       // Wifi Port UART0
 /*************************  COM Port 1 *******************************/
-#define UART_BAUD1 115200            // Baudrate UART1
+#define UART_BAUD1 115200           // Baudrate UART1
 #define SERIAL_PARAM1 SERIAL_8N1    // Data/Parity/Stop UART1
 #define SERIAL1_RXPIN 15            // receive Pin UART1
 #define SERIAL1_TXPIN  4            // transmit Pin UART1
@@ -50,8 +39,11 @@ const char *pw = "yourWifiPassword";
 #define SERIAL2_GNDPIN 0            // Pin used as VCC
 
 #define bufferSize 1024
+#define MAX_NMEA_CLIENTS 4
 
-//////////////////////////////////////////////////////////////////////////
+/*********************************************************************/
+/***************************** Control *******************************/
+/*********************************************************************/
 #define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
 #define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds

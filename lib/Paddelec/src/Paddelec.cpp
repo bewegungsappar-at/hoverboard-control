@@ -14,9 +14,9 @@ void Gametrak::update()
   if(inv_theta) theta  = 4096 - theta;
 }
 
-void Paddelec::update(int16_t &pwm, int16_t &steer, double &actualSpeed_kmh, double &actualSteer_kmh) {
-  int16_t pwmR     =0, pwmL     =0;
-  double  speedR_kmh=0, speedL_kmh=0;
+void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer_kmh) {
+  double pwmR      =0, pwmL      =0;
+  double speedR_kmh=0, speedL_kmh=0;
   gametrak1.update();
   gametrak2.update();
 
@@ -34,7 +34,7 @@ void Paddelec::update(int16_t &pwm, int16_t &steer, double &actualSpeed_kmh, dou
   pwmR += (pwmL - pwmR) * cfgPaddle.realign;
 
 
-  float paddleAngle = gametrak1.getTheta_deg() - gametrak2.getTheta_deg();
+  double paddleAngle = gametrak1.getTheta_deg() - gametrak2.getTheta_deg();
 
   /* process paddle strokes */
   if       (paddleAngle > cfgPaddle.paddleAngleThreshold) {    // gametrak2 side of paddle is down
@@ -43,8 +43,8 @@ void Paddelec::update(int16_t &pwm, int16_t &steer, double &actualSpeed_kmh, dou
     double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed) - speedL_kmh;
 
     /* update speed and apply crosstalk */
-    pwmL += (int16_t) ( speedDelta * cfgPaddle.pwmMultiplier );
-    pwmR += (int16_t) ( speedDelta * cfgPaddle.pwmMultiplier * cfgPaddle.crosstalkLR );
+    pwmL += ( speedDelta * cfgPaddle.pwmMultiplier );
+    pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * cfgPaddle.crosstalkLR );
     Serial.print("g2L ");
     Serial.printf("%6i %6i %6i ",(int)((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
 
@@ -55,8 +55,8 @@ void Paddelec::update(int16_t &pwm, int16_t &steer, double &actualSpeed_kmh, dou
     double speedDelta = ((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed) - speedR_kmh;
 
     /* update speed and apply crosstalk */
-    pwmR += (int16_t) ( speedDelta * cfgPaddle.pwmMultiplier );
-    pwmL += (int16_t) ( speedDelta * cfgPaddle.pwmMultiplier * cfgPaddle.crosstalkLR );
+    pwmR += ( speedDelta * cfgPaddle.pwmMultiplier );
+    pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * cfgPaddle.crosstalkLR );
     Serial.print("g1R ");
     Serial.printf("%6i %6i %6i ",(int)((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
   } else 
@@ -79,21 +79,15 @@ void Gametrak::debug(Stream &port)
 }
 void Paddelec::debug(Stream &port) 
 {
-  gametrak1.debug(port);
-  gametrak2.debug(port);
+//  gametrak1.debug(port);
+//  gametrak2.debug(port);
   port.printf("P %5i %5i %6.2f ", gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak1.getTheta_deg() - gametrak2.getTheta_deg());
 }
 
-void Paddelec::RLpwmToSteer(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL)
+void Paddelec::RLpwmToSteer(double &steer, double &pwm, double &pwmR, double &pwmL)
 {
   pwm = (pwmR + pwmL) / 2;
   steer = pwmL - pwm;
-}
-
-void Paddelec::steerToRL(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL)
-{
-  pwmR = pwm - steer;
-  pwmL = pwm + steer;
 }
 
 void Paddelec::steerToRL(double &steer, double &pwm, double &pwmR, double &pwmL)

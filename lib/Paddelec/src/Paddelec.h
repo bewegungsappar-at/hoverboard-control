@@ -71,7 +71,7 @@ class Paddelec
     Gametrak gametrak2 = Gametrak(GAMETRAK2_RPIN, GAMETRAK2_PHIPIN, GAMETRAK2_THETAPIN, GAMETRAK2_PHI_REV, GAMETRAK2_THETA_REV);
 
     struct PaddelecConfig {
-      float paddleAngleThreshold;
+      double paddleAngleThreshold;
       double pwmMultiplier;
       double crosstalkLR;
       double realign;
@@ -84,14 +84,14 @@ class Paddelec
     Paddelec()
     {
       switchOn();
-      cfgPaddle.paddleAngleThreshold = 25.0;                  // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed        =  0.3;                  // conversion factor between Gametrak movement to speed 
-      cfgPaddle.pwmMultiplier        =  0.5;                  // effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR          =  0.001;                    // multiplier for steering
-      cfgPaddle.realign              =  0;                    // paddelc tries to go straight forward
-      cfgPaddle.drag                 =  0.0;                  // drag/water resistance
+      cfgPaddle.paddleAngleThreshold = 20.0;                  // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.deltaRtoSpeed        =  2.7;          // conversion factor between Gametrak movement to speed. This defines also the maximum speed.
+      cfgPaddle.pwmMultiplier        =  0.7;                  // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR          =  0.002;                // multiplier for steering
+      cfgPaddle.realign              =  0.001;                    // paddelc tries to go straight forward
+      cfgPaddle.drag                 =  0.008;                  // drag/water resistance
     }
-    void update(int16_t &pwm, int16_t &steer, double &actualSpeed_kmh, double &actualSteer);
+    void update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer);
     void debug(Stream &port);
     
   private: 
@@ -130,8 +130,7 @@ class Paddelec
         pinMode(GAMETRAK2_VCCPIN,INPUT); // High Z
       #endif
     }
-    void RLpwmToSteer(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
-    void steerToRL(int16_t &steer, int16_t &pwm, int16_t &pwmR, int16_t &pwmL);
+    void RLpwmToSteer(double &steer, double &pwm, double &pwmR, double &pwmL);
     void steerToRL(double  &steer, double  &pwm, double  &pwmR, double  &pwmL);
 };
 

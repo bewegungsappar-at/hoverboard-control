@@ -135,7 +135,7 @@ void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
   else                               variable  = goal;
 }
 
-int ArduinoNunchuk::update(int16_t &speed, int16_t &steer)
+int ArduinoNunchuk::update(double &speed, double &steer)
 {
   int error = 0;
   error = update();
