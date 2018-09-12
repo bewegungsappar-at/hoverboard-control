@@ -1,15 +1,22 @@
+#ifndef CONFIG_H
+#define CONFIG_H
 
-bool debug = true;
+
+#include <WiFi.h>
+#include <esp_wifi.h>
+
+#define DEBUG
+extern bool debug;
 
 /*********************************************************************/
 /****************************** Wifi *********************************/
 /*********************************************************************/
 //#define OTA_HANDLER 
-const char *ssid = "paddelec";      
-const char *pw = "paddelec";        
-IPAddress ip(192, 168, 4, 1);       
-IPAddress netmask(255, 255, 255, 0);
 
+#define WIFI_SSID       paddelec
+#define WIFI_PWD        bewegungsappar.at
+#define WIFI_IP         192, 168, 4, 1
+#define WIFI_NETMASK    255, 255, 255, 0
 
 /*********************************************************************/
 /***************************** Serial ********************************/
@@ -47,3 +54,6 @@ IPAddress netmask(255, 255, 255, 0);
 #define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
 #define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
+
+
+#endif
