@@ -84,14 +84,14 @@ class Paddelec
     Paddelec()
     {
       switchOn();
-      cfgPaddle.paddleAngleThreshold = 20.0;                  // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed        =  2.7;          // conversion factor between Gametrak movement to speed. This defines also the maximum speed.
-      cfgPaddle.pwmMultiplier        =  0.7;                  // effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR          =  0.002;                // multiplier for steering
-      cfgPaddle.realign              =  0.001;                    // paddelc tries to go straight forward
-      cfgPaddle.drag                 =  0.008;                  // drag/water resistance
+      cfgPaddle.paddleAngleThreshold = 20.0;     // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.deltaRtoSpeed        =  2.7;     // conversion factor between Gametrak movement to speed. This defines also the maximum speed.
+      cfgPaddle.pwmMultiplier        =  0.035;   // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR          =  0.002;   // multiplier for steering
+      cfgPaddle.realign              =  0.0005;  // paddelc tries to go straight forward
+      cfgPaddle.drag                 =  0.0004;  // drag/water resistance
     }
-    void update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer);
+    void update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer, uint32_t &deltaMillis);
     void debug(Stream &port);
     
   private: 

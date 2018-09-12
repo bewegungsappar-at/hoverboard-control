@@ -25,8 +25,8 @@ struct motorControl
 };
 
 motorControl motor = {0.0, 0.0, 0.0, 0.0};
-unsigned long nextMillisMotorInput = 0;      // virtual timer for motor update
-
+uint32_t nextMillisMotorInput = 0;      // virtual timer for motor update
+uint32_t deltaMillis;
 
 void setup() {
 
@@ -65,11 +65,11 @@ double limit(double min, double value, double max)
 * Values are in m/h 
 */ 
 #define SPEED_PWM_CONVERSION_FACTOR  0.2   // Assume 100% PWM = 1000 = Full Speed = 20km/h = 20000 m/h. Therefore 20000 / 1000 = 20
-#define SPEED_FILTER                 0.3  // Low pass Filter Value. 1 means no filter at all, 0 no value update.
+#define SPEED_FILTER                 0.015  // Low pass Filter Value. 1 means no filter at all, 0 no value update.
 void updateSpeed()
 {
-  motor.actualSpeed_kmh = motor.actualSpeed_kmh * (1.0 - SPEED_FILTER) + motor.pwm   * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR;
-  motor.actualSteer_kmh = motor.actualSteer_kmh * (1.0 - SPEED_FILTER) + motor.steer * SPEED_FILTER * SPEED_PWM_CONVERSION_FACTOR;
+  motor.actualSpeed_kmh = motor.actualSpeed_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.pwm   * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
+  motor.actualSteer_kmh = motor.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
 }
 
 void loop() 
@@ -80,13 +80,13 @@ void loop()
 
   bridge();
 
-  long deltaMillis = millis() - nextMillisMotorInput;
+  deltaMillis = millis() - nextMillisMotorInput;
   if(deltaMillis >= 0)
   {
     nextMillisMotorInput += MOTORINPUT_PERIOD;
 
 #ifdef PADDELEC
-    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh);
+    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, deltaMillis);
     if(debug)
     {
       paddelec.debug(*COM[DEBUG_COM]);
