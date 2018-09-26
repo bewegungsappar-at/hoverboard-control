@@ -176,6 +176,8 @@ int ArduinoNunchuk::update(double &speed, double &steer)
     }
     steer = 0;
     speed = 0;
+  } else if(!cButton && zButton && !zButton_last && (rollangle() > 90.0 || rollangle() < -90.0) ) {
+    Serial2.write(0x00,1); // Insert padding byte into serial stream to realign serial buffer
   } else
   /* use Joystick as Input */
   {

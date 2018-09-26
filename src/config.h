@@ -43,7 +43,7 @@ extern bool debug;
 #define SERIAL2_TXPIN 17            // transmit Pin UART2
 #define SERIAL2_TCP_PORT 8882       // Wifi Port UART2
 #define SERIAL2_VCCPIN 5            // Pin used as VCC
-#define SERIAL2_GNDPIN 0            // Pin used as VCC
+#define SERIAL2_GNDPIN 0            // Pin used as GND
 
 #define bufferSize 1024
 #define MAX_NMEA_CLIENTS 4
@@ -51,7 +51,7 @@ extern bool debug;
 /*********************************************************************/
 /***************************** Control *******************************/
 /*********************************************************************/
-#define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
+//#define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
 #define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
 

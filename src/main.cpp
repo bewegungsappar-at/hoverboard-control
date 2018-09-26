@@ -27,6 +27,7 @@ struct motorControl
 motorControl motor = {0.0, 0.0, 0.0, 0.0};
 uint32_t nextMillisMotorInput = 0;      // virtual timer for motor update
 uint32_t deltaMillis;
+int errorCount=0;
 
 void setup() {
 
@@ -101,17 +102,22 @@ void loop()
 #endif
 #if defined(NUNCHUCK)
       int nunchuckError = nunchuk.update(motor.pwm, motor.steer);
+      ++errorCount;
       nunchuk.debug(*COM[DEBUG_COM]);
-      if(nunchuckError >= 1000) 
-      {
-        nunchuk.reInit();
+      if(nunchuckError >= 1000) {
         if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
-      } else if(nunchuckError >= 100) 
-      {
-        nunchuk.reInit();
+      } else if(nunchuckError >= 100) {
         if(debug) COM[DEBUG_COM]->printf("I2C Problems %4i ", nunchuckError);
-      } else if(nunchuckError > 0)
+      } else if(nunchuckError > 0) {
         if(debug) COM[DEBUG_COM]->printf("Nunchuck Comm Problems %4i ", nunchuckError);
+      } else  {
+        errorCount = 0;
+      }
+
+      if(errorCount>=5) {
+        nunchuk.reInit();
+        errorCount = 0;
+      }
 #endif
 #if defined(NUNCHUCK) && defined(PADDELEC)
     }
