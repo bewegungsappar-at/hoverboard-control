@@ -3,17 +3,6 @@
 
 
 
-void Gametrak::update()
-{
-  r_last = r;
-  r      = analogRead(pin_r);
-  phi    = analogRead(pin_phi);
-  theta  = analogRead(pin_theta);
-
-  if(inv_phi) phi      = 4096 - phi;
-  if(inv_theta) theta  = 4096 - theta;
-}
-
 void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer_kmh, uint32_t &deltaMillis) {
   double pwmR      =0, pwmL      =0;
   double speedR_kmh=0, speedL_kmh=0;
@@ -72,11 +61,6 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
   RLpwmToSteer(steer, pwm, pwmR, pwmL);
 }
 
-void Gametrak::debug(Stream &port) 
-{
-//  port.printf("G %5i %5i %5i ", r, phi, theta);
-  port.printf("G %5i %6.2f %6.2f ", getR_mm(), getPhi_deg(), getTheta_deg());
-}
 void Paddelec::debug(Stream &port) 
 {
 //  gametrak1.debug(port);
