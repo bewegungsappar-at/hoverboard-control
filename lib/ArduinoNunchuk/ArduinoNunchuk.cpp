@@ -153,8 +153,14 @@ int ArduinoNunchuk::update(double &speed, double &steer)
       yaw_zero     = yawangle();
       roll_zero    = rollangle();
     }
-    steer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUCK_ACCEL_STEER_ANGLE);
-    speed = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUCK_ACCEL_SPEED_ANGLE);
+    double newSteer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUCK_ACCEL_STEER_ANGLE);
+    double newSpeed = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUCK_ACCEL_SPEED_ANGLE);
+
+    newSteer = steer + limit(-70.0, newSteer - steer, 70.0);
+    newSpeed = speed + limit(-70.0, newSpeed - speed, 70.0);
+
+    steer = (steer * 0.5) + (0.5 * newSteer);
+    speed = (speed * 0.5) + (0.5 * newSpeed);
   } else if (cButton && zButton)
   /* Joystick calibration mode when both buttons are pressed */
   {
@@ -177,7 +183,7 @@ int ArduinoNunchuk::update(double &speed, double &steer)
     steer = 0;
     speed = 0;
   } else if(!cButton && zButton && !zButton_last && (rollangle() > 90.0 || rollangle() < -90.0) ) {
-    Serial2.write(0x00,1); // Insert padding byte into serial stream to realign serial buffer
+    Serial2.print("1234567"); // Insert padding byte into serial stream to realign serial buffer
   } else
   /* use Joystick as Input */
   {

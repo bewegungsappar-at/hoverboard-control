@@ -30,7 +30,7 @@ struct motorControl {
 
 motorControl motor = {0.0, 0.0, 0.0, 0.0};
 uint32_t nextMillisMotorInput = 0;      // virtual timer for motor update
-uint32_t deltaMillis;
+int32_t deltaMillis;
 int errorCount=0;
 
 void setup() {

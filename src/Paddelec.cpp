@@ -1,3 +1,5 @@
+#ifdef PADDELEC
+
 #include <Arduino.h>
 #include "Paddelec.h"
 
@@ -79,3 +81,5 @@ void Paddelec::steerToRL(double &steer, double &pwm, double &pwmR, double &pwmL)
   pwmR = pwm - steer;
   pwmL = pwm + steer;
 }
+
+#endif

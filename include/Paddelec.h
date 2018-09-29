@@ -1,6 +1,8 @@
 #ifndef Paddelec_H
 #define Paddelec_H
 
+#ifdef PADDELEC
+
 #include <Arduino.h>
 #include "config.h"
 #include "Gametrak.h"
@@ -77,4 +79,5 @@ class Paddelec
     void steerToRL(double  &steer, double  &pwm, double  &pwmR, double  &pwmL);
 };
 
+#endif
 #endif

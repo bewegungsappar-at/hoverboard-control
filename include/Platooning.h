@@ -26,13 +26,13 @@ class Platooning
     Platooning()
     {
       switchOn();
-      cfgPlatooning.rActivationThreshold_mm = 1000.0;  // activation threshold of Gametrak. Do nothing when distance is shorter
+      cfgPlatooning.rActivationThreshold_mm = 700.0;  // activation threshold of Gametrak. Do nothing when distance is shorter
       cfgPlatooning.rForwardThreshold_mm    = 1000.0;  // Forward hreshold of Gametrak. below is backwards, above is forward
       cfgPlatooning.r_mm_forwardToPWM       = 1.0;     // Conversion of distance to PWM
-      cfgPlatooning.r_mm_backwardToPWM      = 1.0;     // Conversion of distance to PWM
-      cfgPlatooning.phi_deg_ToSteer         = 1.0;     // Conversion of steering angle to PWM
+      cfgPlatooning.r_mm_backwardToPWM      = 0.8;     // Conversion of distance to PWM
+      cfgPlatooning.phi_deg_ToSteer         = 4.5;     // Conversion of steering angle to PWM
       cfgPlatooning.PWMforwardLimit         = 500.0;   // Limit PWM
-      cfgPlatooning.PWMbackwardLimit        = 100.0;  // Limit PWM
+      cfgPlatooning.PWMbackwardLimit        = 150.0;  // Limit PWM
       cfgPlatooning.SteerLimit              = 500.0;   // Limit Steering
     }
     void update(double &pwm, double &steer);

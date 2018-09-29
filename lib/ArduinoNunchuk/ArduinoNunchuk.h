@@ -23,7 +23,7 @@
 #define NUNCHUCK_JOYSTICK_THRESHOLD_LOW   77 // calibration values above this are considered invalid
 #define NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 177 // calibration values below this are considered invalid
 #define NUNCHUCK_JOYSTICK_STEER_MULT     0.5 // 0.8 too much
-#define NUNCHUCK_JOYSTICK_SPEED_MULT     1.0 // 0.5 way too slow
+#define NUNCHUCK_JOYSTICK_SPEED_MULT     0.7 // 0.5 way too slow
 #define NUNCHUCK_ACCEL_SPEED_ANGLE        60 // Pitch angle needed to reach full speed (60° with factor 0.5 was too slow)
 #define NUNCHUCK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
 
@@ -59,6 +59,11 @@ class ArduinoNunchuk
       if(angle<-180.0) angle+=360.0;
       else if (angle>180.0) angle-=360.0;
       return angle*factor;
+    }
+    double limit(double min, double value, double max) {
+      if(value<min) value = min;
+      if(value>max) value = max;
+      return value;
     }
 };
 
