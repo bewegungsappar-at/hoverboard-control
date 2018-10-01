@@ -77,7 +77,7 @@ void updateSpeed() {
 
 void loop() {  
 #ifdef OTA_HANDLER  
-  ArduinoOTA.handle();
+  ota();
 #endif // OTA_HANDLER
 
   bridge();

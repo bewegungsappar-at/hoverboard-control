@@ -10,8 +10,8 @@
 #endif // OTA_HANDLER
 
 
-const char *ssid = "WIFI_SSID";      
-const char *pw = "WIFI_PWD";     
+const char *ssid = WIFI_SSID;      
+const char *pw = WIFI_PWD;     
 IPAddress ip(WIFI_IP);       
 IPAddress netmask(WIFI_NETMASK);
 
@@ -56,8 +56,8 @@ void setupWifi() {
   WiFi.begin(ssid, pw);
   if(debug) COM[DEBUG_COM]->print("try to Connect to Wireless network: ");
   if(debug) COM[DEBUG_COM]->println(ssid);
-//  while (WiFi.waitForConnectResult() != WL_CONNECTED) 
-  while (false) 
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) 
+//  while (false) 
   {
     if(debug) COM[DEBUG_COM]->println("Connection Failed! Fallback to AP Mode");
     //AP mode (phone connects directly to ESP) (no router)
@@ -120,7 +120,10 @@ void setupOTA() {
 
   ArduinoOTA.begin();
 }
-#endif
+void ota() {
+  ArduinoOTA.handle();
+}
+#endif // OTA_HANDLER
 
 void bridge()
 {

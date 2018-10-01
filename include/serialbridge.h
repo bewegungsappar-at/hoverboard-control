@@ -26,6 +26,7 @@ void setupSerial();
 void setupWifi();
 void setupSerialbridge();
 void setupOTA();
+void ota();
 void bridge();
 
 #endif

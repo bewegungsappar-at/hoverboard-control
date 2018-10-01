@@ -5,16 +5,16 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 
-//#define DEBUG
+#define DEBUG
 extern bool debug;
 
 /*********************************************************************/
 /****************************** Wifi *********************************/
 /*********************************************************************/
-//#define OTA_HANDLER 
+#define OTA_HANDLER 
 
-#define WIFI_SSID       paddelec
-#define WIFI_PWD        bewegungsappar.at
+#define WIFI_SSID       "paddelec"
+#define WIFI_PWD        "bewegungsappar.at"
 #define WIFI_IP         192, 168, 4, 1
 #define WIFI_NETMASK    255, 255, 255, 0
 
@@ -57,24 +57,6 @@ extern bool debug;
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
-/*************************  Gametrak 1 ******************************
-#define GAMETRAK1_VCCPIN    35      // Pin used to supply Power
-#define GAMETRAK1_GNDPIN    26      // Pin used as GND
-#define GAMETRAK1_RPIN      32      // wire length Pin Gametrak 1        
-#define GAMETRAK1_PHIPIN    33      // horizontal angle Pin Gametrak 1
-#define GAMETRAK1_THETAPIN  25      // vertical angle Pin Gametrak 1
-#define GAMETRAK1_PHI_REV      0    // Phi is inverted
-#define GAMETRAK1_THETA_REV    0    // Theta is inverted
-/*************************  Gametrak 2 ******************************
-#define GAMETRAK2_VCCPIN    27      // Pin used to supply Power
-#define GAMETRAK2_GNDPIN    26      // Pin used as GND
-#define GAMETRAK2_RPIN      32      // wire length Pin Gametrak 2
-#define GAMETRAK2_PHIPIN    35      // horizontal angle Pin Gametrak 2
-#define GAMETRAK2_THETAPIN  33      // vertical angle Pin Gametrak 2
-#define GAMETRAK2_PHI_REV      1    // Phi is inverted
-#define GAMETRAK2_THETA_REV    1    // Theta is inverted
-
-
 /*************************  Gametrak 1 ******************************/
 #define GAMETRAK1_VCCPIN    25      // Pin used to supply Power
 #define GAMETRAK1_GNDPIN    26      // Pin used as GND
