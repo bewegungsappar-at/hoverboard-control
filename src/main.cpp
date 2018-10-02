@@ -18,6 +18,14 @@
   Platooning platooning = Platooning();
 #endif
 
+#ifdef WIFI
+
+#endif
+
+#ifdef BLE
+  #include "BLE.h"
+#endif
+
 bool debug = false;
 
 struct motorControl {
@@ -40,8 +48,11 @@ void setup() {
 #endif
 
   setupSerial();
+
+#ifdef WIFI
   setupWifi();
   setupSerialbridge();
+#endif
     
 #ifdef OTA_HANDLER  
   setupOTA();
@@ -49,6 +60,10 @@ void setup() {
 
 #ifdef NUNCHUCK
   nunchuk.init();
+#endif
+
+#ifdef BLE
+  setupBLE();
 #endif
 
   /* Keep this at the end of setup */
@@ -80,7 +95,9 @@ void loop() {
   ota();
 #endif // OTA_HANDLER
 
+#ifdef WIFI
   bridge();
+#endif
 
   deltaMillis = millis() - nextMillisMotorInput;
   if(deltaMillis >= 0) {
@@ -94,6 +111,10 @@ void loop() {
         if(TCPClient[1][cln]) paddelec.debug(TCPClient[1][cln]); 
     }
 #endif // PADDELEC
+
+#ifdef BLE
+  loopBLE();
+#endif
 
 #if defined(NUNCHUCK) && defined(PADDELEC)
     if(paddelec.gametrak1.r < 500 || paddelec.gametrak2.r < 500) { // switch to nunchuck control when paddle is not used
@@ -125,8 +146,10 @@ void loop() {
     platooning.update(motor.pwm, motor.steer);
     if(debug) {
       platooning.debug(*COM[DEBUG_COM]);
+  #ifdef WIFI
       for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
         if(TCPClient[1][cln]) platooning.debug(TCPClient[1][cln]); 
+  #endif
     }
 #endif // PLATOONING
 
@@ -151,12 +174,14 @@ void loop() {
     updateSpeed();
 
     /* debug output */
+    #ifdef WIFI
     for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++) {   
       if(TCPClient[1][cln]) {                    
         if(debug) TCPClient[1][cln].print(" U: ");
         if(debug) TCPClient[1][cln].printf("%8i %8i\n", pwm, steer);
       } 
     }
+    #endif
     if(debug) COM[DEBUG_COM]->print(" U: ");
     if(debug) COM[DEBUG_COM]->printf("%6i %6i %11u ", pwm, steer, crc);
     if(debug) COM[DEBUG_COM]->printf("%5.2f %5.2f \n", motor.actualSpeed_kmh, motor.actualSteer_kmh);
