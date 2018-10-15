@@ -77,6 +77,11 @@ double limit(double min, double value, double max) {
   return value;
 }
 
+void slowReset(double &variable, double goal, double step) {
+  if      ((variable - goal) > step) variable -= step;
+  else if ((goal - variable) > step) variable += step;
+  else                               variable  = goal;
+}
 
 /* 
 * Dummy function since no speed feedback from Motor control is implemented right now.
@@ -113,7 +118,11 @@ void loop() {
 #endif // PADDELEC
 
 #ifdef BLE
-  loopBLE();
+//  loopBLE();
+motor.pwm = ble_pitch;
+motor.steer = ble_roll;
+slowReset(ble_pitch, 0.0, 0.1);
+slowReset(ble_roll, 0.0, 0.1);
 #endif
 
 #if defined(NUNCHUCK) && defined(PADDELEC)

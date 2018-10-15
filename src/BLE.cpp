@@ -25,6 +25,10 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+
+double ble_pitch=0.0; 
+double ble_roll=0.0;
+
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
 float txValue = 0;
@@ -55,6 +59,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
       std::string rxValue = pCharacteristic->getValue();
 
       if (rxValue.length() > 0) {
+/*
         Serial.println("*********");
         Serial.print("Received Value: ");
 
@@ -63,27 +68,31 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         }
 
         Serial.println();
-
+*/
         // Do stuff based on the command received from the app
-        if (rxValue.find("A") != -1) { 
-          Serial.println("Turning ON!");
-          digitalWrite(LED, HIGH);
+        if (rxValue.find("P") != -1) { 
+          ble_pitch = atof(rxValue.substr(1).c_str());
+          
+   //       Serial.println("Turning ON!");
+   //       digitalWrite(LED, HIGH);
         }
-        else if (rxValue.find("B") != -1) {
-          Serial.println("Turning OFF!");
-          digitalWrite(LED, LOW);
+        else if (rxValue.find("R") != -1) {
+    //      Serial.println("Turning OFF!");
+    //      digitalWrite(LED, LOW);
+
+          ble_roll = atof(rxValue.substr(1).c_str());
         }
 
-        Serial.println();
-        Serial.println("*********");
+       // Serial.println();
+       // Serial.println("*********");
       }
     }
 };
 
 void setupBLE() {
-  Serial.begin(115200);
+//  Serial.begin(115200);
 
-  pinMode(LED, OUTPUT);
+//  pinMode(LED, OUTPUT);
 
   // Create the BLE Device
   BLEDevice::init("ESP32 UART Test"); // Give it a name

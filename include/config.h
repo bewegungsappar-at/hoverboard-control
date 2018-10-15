@@ -57,8 +57,8 @@ extern bool debug;
 /***************************** Control *******************************/
 /*********************************************************************/
 //#define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
-#define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
-#define PLATOONING
+//#define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
+//#define PLATOONING
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
