@@ -10,12 +10,14 @@ extern bool debug;
 
 #define BLE
 
-#define WIFI
+//#define WIFI
 #ifdef WIFI
 /*********************************************************************/
 /****************************** Wifi *********************************/
 /*********************************************************************/
 #define OTA_HANDLER 
+
+//#define WIFI_TRYSTA   // Try to connect to network on boot
 
 #define WIFI_SSID       "paddelec"
 #define WIFI_PWD        "bewegungsappar.at"
@@ -60,6 +62,7 @@ extern bool debug;
 //#define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
 //#define PLATOONING
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
+//#define IMU
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
 /*************************  Gametrak 1 ******************************/

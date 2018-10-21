@@ -50,12 +50,10 @@ class ArduinoNunchuk
     double pitchangle() { return (atan2(accelY, accelZ) * 180.0 / M_PI); }
     double yawangle()   { return (atan2(accelZ, accelX) * 180.0 / M_PI); } // TODO: Check if it is working..
 
-  private:
-    uint8_t _sendByte(byte data, byte location);
+  protected:
     void slowReset(int &variable, int goal, int step);
 
-    double scaleAngle(double angle, double factor)
-    {
+    double scaleAngle(double angle, double factor)    {
       if(angle<-180.0) angle+=360.0;
       else if (angle>180.0) angle-=360.0;
       return angle*factor;
@@ -65,6 +63,9 @@ class ArduinoNunchuk
       if(value>max) value = max;
       return value;
     }
+
+  private:
+    uint8_t _sendByte(byte data, byte location);
 };
 
 #endif

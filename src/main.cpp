@@ -26,6 +26,11 @@
   #include "BLE.h"
 #endif
 
+#ifdef IMU
+  #include <IMU.h>
+  Imu imu = Imu();
+#endif
+
 bool debug = false;
 
 struct motorControl {
@@ -64,6 +69,10 @@ void setup() {
 
 #ifdef BLE
   setupBLE();
+#endif
+
+#ifdef IMU
+  imu.init();
 #endif
 
   /* Keep this at the end of setup */
@@ -123,6 +132,12 @@ motor.pwm = ble_pitch;
 motor.steer = ble_roll;
 slowReset(ble_pitch, 0.0, 0.1);
 slowReset(ble_roll, 0.0, 0.1);
+#endif
+
+#ifdef IMU
+//  imu.loopIMU();
+  imu.update(motor.pwm, motor.steer);
+  imu.debug(*COM[DEBUG_COM]);
 #endif
 
 #if defined(NUNCHUCK) && defined(PADDELEC)
@@ -191,9 +206,9 @@ slowReset(ble_roll, 0.0, 0.1);
       } 
     }
     #endif
-    if(debug) COM[DEBUG_COM]->print(" U: ");
-    if(debug) COM[DEBUG_COM]->printf("%6i %6i %11u ", pwm, steer, crc);
-    if(debug) COM[DEBUG_COM]->printf("%5.2f %5.2f \n", motor.actualSpeed_kmh, motor.actualSteer_kmh);
+//    if(debug) COM[DEBUG_COM]->print(" U: ");
+//    if(debug) COM[DEBUG_COM]->printf("%6i %6i %11u ", pwm, steer, crc);
+//    if(debug) COM[DEBUG_COM]->printf("%5.2f %5.2f \n", motor.actualSpeed_kmh, motor.actualSteer_kmh);
   }
   if(deltaMillis >= MOTORINPUT_PERIOD) { // check if system is too slow
     if(debug) COM[DEBUG_COM]->print(" Missed Period: ");

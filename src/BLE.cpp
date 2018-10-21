@@ -62,21 +62,21 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 /*
         Serial.println("*********");
         Serial.print("Received Value: ");
-
+*/
         for (int i = 0; i < rxValue.length(); i++) {
           Serial.print(rxValue[i]);
         }
 
         Serial.println();
-*/
+
         // Do stuff based on the command received from the app
-        if (rxValue.find("P") != -1) { 
+        if (rxValue.find("G") != -1) { 
           ble_pitch = atof(rxValue.substr(1).c_str());
           
    //       Serial.println("Turning ON!");
    //       digitalWrite(LED, HIGH);
         }
-        else if (rxValue.find("R") != -1) {
+        else if (rxValue.find("S") != -1) {
     //      Serial.println("Turning OFF!");
     //      digitalWrite(LED, LOW);
 
