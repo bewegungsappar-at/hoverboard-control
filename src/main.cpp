@@ -85,16 +85,16 @@ void setup() {
   xTaskCreatePinnedToCore(
     mainloop,                 /* Task function. */
     "Main_loop",              /* name of task. */
-    1000,                     /* Stack size of task */
+    4000,                     /* Stack size of task */
     (void *)1,                /* parameter of the task */
     1,                        /* priority of the task */
     &TaskMainloop,            /* Task handle to keep track of created task */
-    1);                       /* Core (0 is used by ESP32 connectivity) */
+    0);                       /* Core (0 is used by ESP32 connectivity) */
 
   xTaskCreatePinnedToCore(
-    mainloop,                 /* Task function. */
+    motorCommunication,       /* Task function. */
     "Motor_Comm",             /* name of task. */
-    1000,                     /* Stack size of task */
+    4000,                     /* Stack size of task */
     (void *)1,                /* parameter of the task */
     1,                        /* priority of the task */
     &TaskMotorcommunication,  /* Task handle to keep track of created task */
@@ -212,6 +212,7 @@ void mainloop( void *pvparameters ) {
       
       nextMillisMotorInput = millis() + MOTORINPUT_PERIOD;
     }
+    vTaskDelay(100);
   }
 }
 
