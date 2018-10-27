@@ -8,7 +8,10 @@
 #define DEBUG
 extern bool debug;
 
-#define BLE
+//#define BLE
+//#define ESPNOMW
+#define OLED
+
 
 //#define WIFI
 #ifdef WIFI
@@ -62,7 +65,7 @@ extern bool debug;
 //#define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
 //#define PLATOONING
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
-//#define IMU
+#define IMU
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
 /*************************  Gametrak 1 ******************************/

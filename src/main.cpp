@@ -22,8 +22,33 @@ void motorCommunication(void *pvParameters);
   Platooning platooning = Platooning();
 #endif
 
-#ifdef WIFI
+#ifdef OLED
+  #include <Wire.h>
+  #include <Adafruit_GFX.h>
+  #include <Adafruit_SSD1306.h>
+  #include <Adafruit_FeatherOLED.h>
 
+  float getBatteryVoltage();
+
+  Adafruit_FeatherOLED oled = Adafruit_FeatherOLED();
+
+  // integer variable to hold current counter value
+  int count = 0;
+
+  #define VBATPIN A13
+
+  float getBatteryVoltage() {
+
+    pinMode(VBATPIN, INPUT);
+
+    float measuredvbat = analogRead(VBATPIN);
+
+    measuredvbat *= 2;         // we divided by 2, so multiply back
+    measuredvbat *= 0.80566F;  // multiply by mV per LSB
+    measuredvbat /= 1000;      // convert to voltage
+
+    return measuredvbat;
+}
 #endif
 
 #ifdef BLE
@@ -61,6 +86,11 @@ void setup() {
 #ifdef WIFI
   setupWifi();
   setupSerialbridge();
+#endif
+
+#ifdef OLED
+  oled.init();
+  oled.setBatteryVisible(true);
 #endif
     
 #ifdef OTA_HANDLER  
@@ -128,7 +158,7 @@ void updateSpeed() {
 
 void loop() {  
   // nope, do nothing here
-  vTaskDelay(portMAX_DELAY); // wait as much as posible ...
+  vTaskDelay(1000); // wait as much as posible ...
 }
 
 void mainloop( void *pvparameters ) {
@@ -167,6 +197,30 @@ void mainloop( void *pvparameters ) {
   //  imu.loopIMU();
     imu.update(motor.pwm, motor.steer);
     imu.debug(*COM[DEBUG_COM]);
+  #endif
+
+  #ifdef OLED
+    // clear the current count
+    oled.clearDisplay();
+
+    // get the current voltage of the battery from
+    // one of the platform specific functions below
+
+    float battery = getBatteryVoltage();
+
+    // update the battery icon
+    oled.setBattery(battery);
+    oled.renderBattery();
+
+    // print the count value to the OLED
+    oled.print("count: ");
+    oled.println(count);
+
+    // update the display with the new count
+    oled.display();
+
+    // increment the counter by 1
+    count++;
   #endif
 
   #if defined(NUNCHUCK) && defined(PADDELEC)
@@ -212,7 +266,7 @@ void mainloop( void *pvparameters ) {
       
       nextMillisMotorInput = millis() + MOTORINPUT_PERIOD;
     }
-    vTaskDelay(100);
+    vTaskDelay(1);
   }
 }
 
