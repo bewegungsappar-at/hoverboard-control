@@ -23,32 +23,7 @@ void motorCommunication(void *pvParameters);
 #endif
 
 #ifdef OLED
-  #include <Wire.h>
-  #include <Adafruit_GFX.h>
-  #include <Adafruit_SSD1306.h>
-  #include <Adafruit_FeatherOLED.h>
-
-  float getBatteryVoltage();
-
-  Adafruit_FeatherOLED oled = Adafruit_FeatherOLED();
-
-  // integer variable to hold current counter value
-  int count = 0;
-
-  #define VBATPIN A13
-
-  float getBatteryVoltage() {
-
-    pinMode(VBATPIN, INPUT);
-
-    float measuredvbat = analogRead(VBATPIN);
-
-    measuredvbat *= 2;         // we divided by 2, so multiply back
-    measuredvbat *= 0.80566F;  // multiply by mV per LSB
-    measuredvbat /= 1000;      // convert to voltage
-
-    return measuredvbat;
-}
+  #include "oled.h"
 #endif
 
 #ifdef BLE
@@ -89,8 +64,7 @@ void setup() {
 #endif
 
 #ifdef OLED
-  oled.init();
-  oled.setBatteryVisible(true);
+  setupOLED();
 #endif
     
 #ifdef OTA_HANDLER  
@@ -119,7 +93,7 @@ void setup() {
     (void *)1,                /* parameter of the task */
     1,                        /* priority of the task */
     &TaskMainloop,            /* Task handle to keep track of created task */
-    0);                       /* Core (0 is used by ESP32 connectivity) */
+    1);                       /* Core (0 is used by ESP32 connectivity) */
 
   xTaskCreatePinnedToCore(
     motorCommunication,       /* Task function. */
@@ -198,30 +172,52 @@ void mainloop( void *pvparameters ) {
     imu.update(motor.pwm, motor.steer);
     imu.debug(*COM[DEBUG_COM]);
   #endif
+  
+#ifdef OLED
+  // picture loop  
+    uint mX = u8g2.getDisplayWidth()/2; 
+    uint mY = u8g2.getDisplayHeight()/2;
 
-  #ifdef OLED
-    // clear the current count
-    oled.clearDisplay();
+    double aX =  imu.ax / 32768.0 * u8g2.getDisplayHeight()/2.0;
+    double aY = -imu.ay / 32768.0 * u8g2.getDisplayWidth() /2.0;
+    double aZ =  imu.az / 32768.0 * u8g2.getDisplayHeight()/2.0;
 
-    // get the current voltage of the battery from
-    // one of the platform specific functions below
+    double gX =  imu.gx / 32768.0 * u8g2.getDisplayWidth() /2.0;
+    double gY =  imu.gy / 32768.0 * u8g2.getDisplayHeight()/2.0;
+    double gZ =  imu.gz / 32768.0 * u8g2.getDisplayHeight()/2.0;
 
-    float battery = getBatteryVoltage();
+  u8g2.firstPage();  
+  
+  do {
+//    draw();
+    u8g2_prepare();
 
-    // update the battery icon
-    oled.setBattery(battery);
-    oled.renderBattery();
+    if(aX>0) u8g2.drawFrame(0    ,mY   ,1, aX);
+    else     u8g2.drawFrame(0    ,mY+aX,1,-aX);
 
-    // print the count value to the OLED
-    oled.print("count: ");
-    oled.println(count);
+    if(aY>0) u8g2.drawFrame(   mX,0, aY,1);
+    else     u8g2.drawFrame(mX+aY,0,-aY,1);
+    
+    if(aZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, aZ);
+    else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+aZ,1,-aZ);
 
-    // update the display with the new count
-    oled.display();
 
-    // increment the counter by 1
-    count++;
-  #endif
+    if(gY>0) u8g2.drawFrame(2    ,mY   ,1, gY);
+    else     u8g2.drawFrame(2    ,mY+gY,1,-gY);
+
+    if(gX>0) u8g2.drawFrame(   mX,2, gX,1);
+    else     u8g2.drawFrame(mX+gX,2,-gX,1);
+    
+    if(gZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY   ,1, gZ);
+    else     u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY+gZ,1,-gZ);
+
+    u8g2.setCursor(5,5);
+    u8g2.printf("%4.0f %4.0f", motor.pwm, motor.steer);
+
+    
+
+  } while( u8g2.nextPage() );
+#endif
 
   #if defined(NUNCHUCK) && defined(PADDELEC)
       if(paddelec.gametrak1.r < 500 || paddelec.gametrak2.r < 500) { // switch to nunchuck control when paddle is not used
@@ -266,7 +262,7 @@ void mainloop( void *pvparameters ) {
       
       nextMillisMotorInput = millis() + MOTORINPUT_PERIOD;
     }
-    vTaskDelay(1);
+    vTaskDelay(20);
   }
 }
 

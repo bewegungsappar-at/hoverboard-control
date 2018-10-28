@@ -44,7 +44,7 @@ extern bool debug;
 #define UART_BAUD1 115200           // Baudrate UART1
 #define SERIAL_PARAM1 SERIAL_8N1    // Data/Parity/Stop UART1
 #define SERIAL1_RXPIN 15            // receive Pin UART1
-#define SERIAL1_TXPIN  4            // transmit Pin UART1
+#define SERIAL1_TXPIN  2            // transmit Pin UART1
 #define SERIAL1_TCP_PORT 8881       // Wifi Port UART1
 /*************************  COM Port 2 *******************************/
 #define UART_BAUD2 19200            // Baudrate UART2
@@ -52,8 +52,8 @@ extern bool debug;
 #define SERIAL2_RXPIN 16            // receive Pin UART2
 #define SERIAL2_TXPIN 17            // transmit Pin UART2
 #define SERIAL2_TCP_PORT 8882       // Wifi Port UART2
-#define SERIAL2_VCCPIN 5            // Pin used as VCC
-#define SERIAL2_GNDPIN 0            // Pin used as GND
+//#define SERIAL2_VCCPIN 5            // Pin used as VCC
+//#define SERIAL2_GNDPIN 0            // Pin used as GND
 
 #define bufferSize 1024
 #define MAX_NMEA_CLIENTS 4
@@ -69,8 +69,8 @@ extern bool debug;
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
 /*************************  Gametrak 1 ******************************/
-#define GAMETRAK1_VCCPIN    25      // Pin used to supply Power
-#define GAMETRAK1_GNDPIN    26      // Pin used as GND
+//#define GAMETRAK1_VCCPIN    25      // Pin used to supply Power
+//#define GAMETRAK1_GNDPIN    26      // Pin used as GND
 #define GAMETRAK1_RPIN      33      // wire length Pin Gametrak 1
 #define GAMETRAK1_PHIPIN    35     // horizontal angle Pin Gametrak 1
 #define GAMETRAK1_THETAPIN  32      // vertical angle Pin Gametrak 1
