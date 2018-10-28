@@ -6,16 +6,21 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
+#include "config.h"
 
-//#define IMU_GNDPIN 14
-//#define IMU_VCCPIN 32 
-
+#ifdef TTGO
+  #define IMU_CPIN 23
+  #define IMU_ZPIN 25
+#else
+  #define IMU_GNDPIN 14
+  #define IMU_VCCPIN 32 
+#endif
 
 
 class Imu : public ArduinoNunchuk
 {
   public:
-    void init() {
+    Imu() {
         #ifdef IMU_GNDPIN
             pinMode(IMU_GNDPIN,OUTPUT);
             digitalWrite(IMU_GNDPIN,LOW);
@@ -24,21 +29,23 @@ class Imu : public ArduinoNunchuk
             pinMode(IMU_VCCPIN,OUTPUT);
             digitalWrite(IMU_VCCPIN,HIGH);
         #endif
-
-
-//        pinMode(12,OUTPUT);
-//        digitalWrite(12,LOW);
-        pinMode(23,INPUT_PULLUP);
-
-        pinMode(25,INPUT_PULLUP);
-
-//        pinMode(13,OUTPUT);
-
-
+        #ifdef IMU_CPIN
+            pinMode(IMU_CPIN,INPUT_PULLUP);
+        #endif
+        #ifdef IMU_ZPIN
+            pinMode(IMU_ZPIN,INPUT_PULLUP);
+        #endif
         delay(100);
+    }
 
-
-//        Wire.begin(5,4);
+    void init() {
+#ifndef OLED
+    #ifdef TTGO
+        Wire.begin(5,4);
+    #else
+        Wire.begin();
+    #endif
+#endif
 
         // initialize serial communication
         // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
@@ -128,8 +135,16 @@ class Imu : public ArduinoNunchuk
         ArduinoNunchuk::accelX = -(ay >> 4); // -511;
         ArduinoNunchuk::accelY = -(ax >> 4);  // -511;
         ArduinoNunchuk::accelZ = -(az >> 4); // -511;
+    #ifdef IMU_ZPIN
         ArduinoNunchuk::zButton = 1 - digitalRead(25);
+    #else
+        ArduinoNunchuk::zButton = 0;
+    #endif
+    #ifdef IMU_CPIN
         ArduinoNunchuk::cButton = 1 - digitalRead(23);
+    #else
+        ArduinoNunchuk::cButton = 0;
+    #endif
 
         return error;
     }
@@ -158,8 +173,8 @@ class Imu : public ArduinoNunchuk
     double newSteer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUCK_ACCEL_STEER_ANGLE);
     double newSpeed = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUCK_ACCEL_SPEED_ANGLE);
 
-    newSteer = steer + limit(-70.0, newSteer - steer, 70.0);
-    newSpeed = speed + limit(-70.0, newSpeed - speed, 70.0);
+    //newSteer = steer + limit(-70.0, newSteer - steer, 70.0);
+    //newSpeed = speed + limit(-70.0, newSpeed - speed, 70.0);
 
     steer = (steer * 0.5) + (0.5 * newSteer);
     speed = (speed * 0.5) + (0.5 * newSpeed);

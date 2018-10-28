@@ -17,6 +17,14 @@ void motorCommunication(void *pvParameters);
   ArduinoNunchuk nunchuk = ArduinoNunchuk();
 #endif // NUNCHUCK
 
+#ifdef ESPnowMASTER
+  #include "ESPnowMaster.h"
+#endif
+
+#ifdef ESPnowSLAVE
+  #include "ESPnowSlave.h"
+#endif
+
 #ifdef PLATOONING
   #include "Platooning.h"
   Platooning platooning = Platooning();
@@ -37,14 +45,6 @@ void motorCommunication(void *pvParameters);
 
 bool debug = false;
 
-struct motorControl {
-  double steer;
-  double pwm;     // called "speed" in hoverboard firmware, but is only pwm duty cycle in promille
-                  // Values from -1000 to 1000. Negative values represent driving backwards.
-  double actualSpeed_kmh;  // motor speed in m/h
-  double actualSteer_kmh;  // motor steer
-};
-
 motorControl motor = {0.0, 0.0, 0.0, 0.0};
 uint32_t nextMillisMotorInput = 0;      // virtual timer for motor update
 int32_t deltaMillis;
@@ -63,10 +63,18 @@ void setup() {
   setupSerialbridge();
 #endif
 
+#ifdef ESPnowMASTER
+  setupESPnowMaster();
+#endif
+
+#ifdef ESPnowSLAVE
+  setupESPnowSlave();
+#endif
+
 #ifdef OLED
   setupOLED();
 #endif
-    
+
 #ifdef OTA_HANDLER  
   setupOTA();
 #endif 
@@ -81,7 +89,7 @@ void setup() {
 
 #ifdef IMU
   imu.init();
-#endif
+#endif 
 
   /* Keep this at the end of setup */
   nextMillisMotorInput = millis();
@@ -174,10 +182,14 @@ void mainloop( void *pvparameters ) {
   #endif
   
 #ifdef OLED
-  // picture loop  
+
     uint mX = u8g2.getDisplayWidth()/2; 
     uint mY = u8g2.getDisplayHeight()/2;
 
+    uint motorX = mX+(motor.steer/1000.0*(double)mY);
+    uint motorY = mY-(motor.pwm/1000.0*(double)mY);
+    
+  #ifdef IMU
     double aX =  imu.ax / 32768.0 * u8g2.getDisplayHeight()/2.0;
     double aY = -imu.ay / 32768.0 * u8g2.getDisplayWidth() /2.0;
     double aZ =  imu.az / 32768.0 * u8g2.getDisplayHeight()/2.0;
@@ -185,13 +197,14 @@ void mainloop( void *pvparameters ) {
     double gX =  imu.gx / 32768.0 * u8g2.getDisplayWidth() /2.0;
     double gY =  imu.gy / 32768.0 * u8g2.getDisplayHeight()/2.0;
     double gZ =  imu.gz / 32768.0 * u8g2.getDisplayHeight()/2.0;
+  #endif
 
   u8g2.firstPage();  
   
   do {
-//    draw();
     u8g2_prepare();
 
+  #ifdef IMU
     if(aX>0) u8g2.drawFrame(0    ,mY   ,1, aX);
     else     u8g2.drawFrame(0    ,mY+aX,1,-aX);
 
@@ -201,7 +214,6 @@ void mainloop( void *pvparameters ) {
     if(aZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, aZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+aZ,1,-aZ);
 
-
     if(gY>0) u8g2.drawFrame(2    ,mY   ,1, gY);
     else     u8g2.drawFrame(2    ,mY+gY,1,-gY);
 
@@ -210,9 +222,17 @@ void mainloop( void *pvparameters ) {
     
     if(gZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY   ,1, gZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY+gZ,1,-gZ);
+  #endif
 
     u8g2.setCursor(5,5);
     u8g2.printf("%4.0f %4.0f", motor.pwm, motor.steer);
+
+    u8g2.drawLine(mX,mY,motorX,motorY);
+
+  #ifdef ESPnowSLAVE
+    u8g2.setCursor(5,15);
+    u8g2.printf("%4i", ESPnowdata);
+  #endif
 
     
 
@@ -266,8 +286,31 @@ void mainloop( void *pvparameters ) {
   }
 }
 
+#ifdef ESPnowMASTER 
+  bool isPaired = false;
+#endif
+
 void motorCommunication( void * pvparameters) {
   int taskno = (int)pvparameters;
+#ifdef ESPnowMASTER
+  while(1) {
+    if(!isPaired) {
+      ScanForSlave();
+      // If Slave is found, it would be populate in `slave` variable
+      // We will check if `slave` is defined and then we proceed further
+      if (slave.channel == CHANNEL) { // check if slave channel is defined
+        // `slave` is defined
+        // Add slave as peer if it has not been added already
+        isPaired = manageSlave();
+      }
+    } else {
+      sendData((const void *) &motor, sizeof(motor));
+    }
+
+    // wait for 3seconds to run the logic again
+    delay(30);
+  }  
+#else
   while(1) {
     /* cast & limit values to a valid range */
     int16_t steer = (int16_t) limit(-1000.0, motor.steer, 1000.0);
@@ -301,6 +344,7 @@ void motorCommunication( void * pvparameters) {
 
     delay(MOTORINPUT_PERIOD);             
   }
+#endif
 }
   /* TODO
   *  calculate paddle angle. if only gametrak angles are subtracted, the activation threshold depends on the distance (r)

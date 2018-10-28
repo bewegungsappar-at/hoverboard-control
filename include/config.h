@@ -1,6 +1,16 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+struct motorControl {
+  double steer;
+  double pwm;     // called "speed" in hoverboard firmware, but is only pwm duty cycle in promille
+                  // Values from -1000 to 1000. Negative values represent driving backwards.
+  double actualSpeed_kmh;  // motor speed in m/h
+  double actualSteer_kmh;  // motor steer
+};
+
+extern motorControl motor;
+
 
 #include <WiFi.h>
 #include <esp_wifi.h>
@@ -9,8 +19,14 @@
 extern bool debug;
 
 //#define BLE
-//#define ESPNOMW
-#define OLED
+
+//#define ESPnowMASTER
+//#define ESPnowSLAVE
+
+//#define OLED
+
+//#define TTGO
+
 
 
 //#define WIFI
@@ -65,7 +81,7 @@ extern bool debug;
 //#define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
 //#define PLATOONING
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
-#define IMU
+// #define IMU
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
 /*************************  Gametrak 1 ******************************/
