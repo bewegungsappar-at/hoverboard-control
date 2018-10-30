@@ -16,21 +16,42 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "stm32f1xx_hal.h"
-#include "defines.h"
-#include "config.h"
-#include "sensorcoms.h"
+
+//#include "stm32f1xx_hal.h"
+//#include "defines.h"
+//#include "config.h"
+//#include "sensorcoms.h"
 #include "protocol.h"
-#include "hallinterrupts.h"
-#include "softwareserial.h"
-#include "bldc.h"
+//#include "hallinterrupts.h"
+//#include "softwareserial.h"
+//#include "bldc.h"
+#include <Arduino.h>
 
 #include "flashcontent.h"
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef INCLUDE_PROTOCOL
+
+//////////////////////////////////////////////////////////////
+// this is the Hall data we gather, and can be read elsewhere
+// one for each wheel
+typedef struct tag_HALL_DATA_STRUCT{
+    long HallPosn; // 90 per revolution
+    long HallSpeed; // speed part calibrated to speed demand value
+
+    float HallPosnMultiplier; // m per hall segment
+
+    long HallPosn_mm; // posn in mm
+    long HallPosn_mm_lastread; // posn offset set via protocol in mm
+    long HallSpeed_mm_per_s; // speed in m/s
+
+    unsigned long HallTimeDiff;
+    unsigned long HallSkipped;
+} HALL_DATA_STRUCT;
+volatile HALL_DATA_STRUCT HallData[2];
 
 //////////////////////////////////////////////////////////
 // two new protocols are created, and simultaneously active
@@ -215,16 +236,16 @@ void PostWrite_incrementposition(){
 
 void PostWrite_writeflash(){
     if (FlashContent.magic != CURRENT_MAGIC){
-        consoleLog("incorrect magic %d, should be %d\r\nFlash not written\r\n", FlashContent.magic, CURRENT_MAGIC);
+//        consoleLog("incorrect magic %d, should be %d\r\nFlash not written\r\n", FlashContent.magic, CURRENT_MAGIC);
         FlashContent.magic = CURRENT_MAGIC;
         return;
     }
-    writeFlash( &FlashContent, sizeof(FlashContent) );
-    consoleLog("wrote flash\r\n");
+//    writeFlash( &FlashContent, sizeof(FlashContent) );
+//    consoleLog("wrote flash\r\n");
 }
 
 void PostWrite_PID(){
-    change_PID_constants();
+//    change_PID_constants();
 }
 
 ///////////////////////////////////////////////////
@@ -289,11 +310,10 @@ PARAMSTAT params[] = {
 ///////////////////////////////////////////////////
 // local functions, not really for external usage
 void protocol_send_nack();
-void protocol_send(PROTOCOL_MSG *msg);
 void process_message(PROTOCOL_MSG *msg);
 int ascii_process_immediate(unsigned char byte);
 void ascii_process_msg(char *cmd, int len);
-void ascii_byte( unsigned char byte );
+// void ascii_byte( unsigned char byte );
 
 
 
@@ -334,7 +354,7 @@ void protocol_byte( unsigned char byte ){
                 //////////////////////////////////////////////////////
                 // if the byte was NOT SOM (02), then treat it as an 
                 // ascii protocol byte.  BOTH protocol can co-exist
-                ascii_byte( byte );
+//                ascii_byte( byte );
                 //////////////////////////////////////////////////////
             }
             break;
@@ -350,6 +370,7 @@ void protocol_byte( unsigned char byte ){
             if (s.count == s.curr_msg.len){
                 if (s.CS != 0){
                     protocol_send_nack();
+                    Serial.write((unsigned char *)&s.curr_msg,s.curr_msg.len);
                 } else {
                     process_message(&s.curr_msg);  // this should ack or return a message
                 }
@@ -361,553 +382,6 @@ void protocol_byte( unsigned char byte ){
 
 
 
-///////////////////////////////////////////////////
-// local variables for handling the 'human' protocol, 
-// not really for external usage
-//
-char ascii_cmd[20];
-char ascii_out[512];
-int ascii_posn = 0;
-int enable_immediate = 0;
-
-void ascii_byte( unsigned char byte ){
-    int skipchar = 0;
-    // only if no characters buffered, process single keystorkes
-    if (enable_immediate && (ascii_posn == 0)){
-        // returns 1 if char should not be kept in command buffer
-        skipchar = ascii_process_immediate(byte);
-    }
-
-    if (!skipchar){
-        // on CR or LF, process gathered messages
-        if ((byte == '\r') || (byte == '\n')){
-            send_serial_data((unsigned char *) &byte, 1);
-            ascii_cmd[ascii_posn] = 0;
-            ascii_process_msg(ascii_cmd, ascii_posn);
-            ascii_posn = 0;
-            // send prompt
-            byte = '>';
-        } else {
-            if (ascii_posn < 20){
-                ascii_cmd[ascii_posn++] = byte;
-            } else {
-                byte = '#';
-            }
-        }
-    } else {
-        // no echo for immediate.
-        // send prompt after immediate
-        byte = '>';
-    }
-    // echo or prompt after processing
-    send_serial_data((unsigned char *) &byte, 1);
-}
-
-
-/////////////////////////////////////////////
-// single byte commands at start of command 
-// - i.e. only after CR of LF and ascii buffer empty
-int ascii_process_immediate(unsigned char byte){
-    int processed = 0;
-    ascii_out[0] = 0;
-
-    int dir = 1;
-    switch(byte){
-        case 'S':
-        case 's':
-            dir = -1;
-        case 'W':
-        case 'w':
-            processed = 1;
-            if (!enable) { speedB = 0; steerB = 0; }
-            enable = 1;
-            timeout = 0;
-
-            switch (control_type){
-                case CONTROL_TYPE_POSITION:
-                    PosnData.wanted_posn_mm[0] += dir * 100;
-                    PosnData.wanted_posn_mm[1] += dir * 100;
-                    sprintf(ascii_out, "wanted_posn now %ldmm %ldmm\r\n", PosnData.wanted_posn_mm[0], PosnData.wanted_posn_mm[1]);
-                    break;
-                case CONTROL_TYPE_SPEED:
-                case CONTROL_TYPE_PWM:
-                    speedB += 10*dir;
-                    SpeedData.wanted_speed_mm_per_sec[1] = CLAMP(speedB * SPEED_COEFFICIENT -  steerB * STEER_COEFFICIENT, -1000, 1000);
-                    SpeedData.wanted_speed_mm_per_sec[0] = CLAMP(speedB * SPEED_COEFFICIENT +  steerB * STEER_COEFFICIENT, -1000, 1000);
-                    sprintf(ascii_out, "speed now %d, steer now %d, speedL %ld, speedR %ld\r\n", speedB, steerB, SpeedData.wanted_speed_mm_per_sec[0], SpeedData.wanted_speed_mm_per_sec[1]);
-                    break;
-            }
-            break;
-
-        case 'A':
-        case 'a':
-            dir = -1;
-        case 'D':
-        case 'd':
-            processed = 1;
-            if (!enable) { speedB = 0; steerB = 0; }
-            enable = 1;
-            timeout = 0;
-            switch (control_type){
-                case CONTROL_TYPE_POSITION:
-                    PosnData.wanted_posn_mm[0] += dir * 100;
-                    PosnData.wanted_posn_mm[1] -= dir * 100;
-                    sprintf(ascii_out, "wanted_posn now %ldmm %ldmm\r\n", PosnData.wanted_posn_mm[0], PosnData.wanted_posn_mm[1]);
-                    break;
-                case CONTROL_TYPE_SPEED:
-                case CONTROL_TYPE_PWM:
-                    steerB += 10*dir;
-                    SpeedData.wanted_speed_mm_per_sec[1] = CLAMP(speedB * SPEED_COEFFICIENT -  steerB * STEER_COEFFICIENT, -1000, 1000);
-                    SpeedData.wanted_speed_mm_per_sec[0] = CLAMP(speedB * SPEED_COEFFICIENT +  steerB * STEER_COEFFICIENT, -1000, 1000);
-                    sprintf(ascii_out, "speed now %d, steer now %d, speedL %ld, speedR %ld\r\n", speedB, steerB, SpeedData.wanted_speed_mm_per_sec[0], SpeedData.wanted_speed_mm_per_sec[1]);
-                    break;
-            }
-            break;
-
-        case 'X':
-        case 'x':
-            processed = 1;
-            speedB = 0; 
-            steerB = 0;
-            SpeedData.wanted_speed_mm_per_sec[0] = SpeedData.wanted_speed_mm_per_sec[1] = speedB;
-            HallData[0].HallSpeed_mm_per_s = HallData[1].HallSpeed_mm_per_s = 0;
-            dspeeds[0] = dspeeds[1] = speedB;
-            pwms[0] = pwms[1] = speedB;
-            PosnData.wanted_posn_mm[0] = HallData[0].HallPosn_mm;
-            PosnData.wanted_posn_mm[1] = HallData[1].HallPosn_mm;
-//            sensor_control = 0;
-            enable = 0;
-            sprintf(ascii_out, "Stop set\r\n");
-            break;
-
-        case 'Q':
-        case 'q':
-            processed = 1;
-            enable_immediate = 0;
-            speedB = 0; 
-            steerB = 0;
-            SpeedData.wanted_speed_mm_per_sec[0] = SpeedData.wanted_speed_mm_per_sec[1] = speedB;
-            HallData[0].HallSpeed_mm_per_s = HallData[1].HallSpeed_mm_per_s = 0;
-            dspeeds[0] = dspeeds[1] = speedB;
-            pwms[0] = pwms[1] = speedB;
-            PosnData.wanted_posn_mm[0] = HallData[0].HallPosn_mm;
-            PosnData.wanted_posn_mm[1] = HallData[1].HallPosn_mm;
-//            sensor_control = 0;
-            control_type = 0;
-            enable = 0;
-            sprintf(ascii_out, "Immediate commands disabled\r\n");
-            break;
-
-        case 'R':
-        case 'r':
-            processed = 1;
-//            sensor_stabilise ^= 1;
-//            sprintf(ascii_out, "Sensor Stabilisation is now %d\r\n", sensor_stabilise);
-            break;
-
-        case 'H':
-        case 'h':
-#ifdef HALL_INTERRUPTS
-            processed = 1;
-            sprintf(ascii_out, 
-                "L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu Dma:%d\r\n"\
-                "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu Dma:%d\r\n",
-                HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped, local_hall_params[0].dmacount,
-                HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped, local_hall_params[1].dmacount
-            );
-#else
-            sprintf(ascii_out, "Hall Data not available\r\n");
-#endif
-            break;
-
-        case 'N':
-        case 'n':
-#ifdef CONTROL_SENSOR
-            processed = 1;
-            sprintf(ascii_out, 
-                "L: OK:%d Foot:%d Angle:%d Roll:%d Accel:%d\r\n"\
-                "R: OK:%d Foot:%d Angle:%d Roll:%d Accel:%d\r\n",
-                sensor_data[0].sensor_ok, (sensor_data[0].AA_55 == 0x55)?1:0, sensor_data[0].Angle, sensor_data[0].Roll, sensor_data[0].Accelleration,
-                sensor_data[1].sensor_ok, (sensor_data[1].AA_55 == 0x55)?1:0, sensor_data[1].Angle, sensor_data[1].Roll, sensor_data[1].Accelleration
-            );
-#else
-            sprintf(ascii_out, "Sensor Data not available\r\n");
-#endif
-            break;
-
-        case 'C':
-        case 'c':
-            processed = 1;
-            sprintf(ascii_out, 
-                "Bat: %dmV(%d) Temp:%dC(%d)\r\n"
-                "L: Current:%dmA Avg:%dmA r1:%d r2:%d\r\n"\
-                "R: Current:%dmA Avg:%dmA r1:%d r2:%d\r\n",
-                (int)(electrical_measurements.batteryVoltage*1000), electrical_measurements.bat_raw, 
-                (int)electrical_measurements.board_temp_deg_c, electrical_measurements.board_temp_raw,
-                (int)(electrical_measurements.motors[0].dcAmps*1000.0), (int)(electrical_measurements.motors[0].dcAmpsAvg*1000.0), electrical_measurements.motors[0].r1, electrical_measurements.motors[0].r2,
-                (int)(electrical_measurements.motors[1].dcAmps*1000.0), (int)(electrical_measurements.motors[1].dcAmpsAvg*1000.0), electrical_measurements.motors[1].r1, electrical_measurements.motors[1].r2
-            );
-            break;
-
-        case 'G':
-        case 'g':
-            processed = 1;
-            sprintf(ascii_out, 
-                "A:%04X B:%04X C:%04X D:%04X E:%04X\r\n"\
-                "Button: %d Charge:%d\r\n",
-                (int)GPIOA->IDR, (int)GPIOB->IDR, (int)GPIOC->IDR, (int)GPIOD->IDR, (int)GPIOE->IDR,
-                (int)(BUTTON_PORT->IDR & BUTTON_PIN)?1:0,
-                (int)(CHARGER_PORT->IDR & CHARGER_PIN)?1:0
-            );
-            break;
-
-        case 'O':
-        case 'o':{
-            int control_old = control_type;
-            //stop all
-            ascii_process_immediate('x');
-            processed = 1;
-            control_type = (control_old+1) % CONTROL_TYPE_MAX;
-            sprintf(ascii_out, "control type now %d (%s)\r\n", control_type, control_types[control_type]);
-            }
-            break;
-
-        default:
-            break;
-    }
-    send_serial_data((unsigned char *) ascii_out, strlen(ascii_out));
-
-    return processed;
-}
-/////////////////////////////////////////////
-
-
-
-/////////////////////////////////////////////
-// process commands which ended CR or LF
-void ascii_process_msg(char *cmd, int len){
-    ascii_out[0] = 0;
-
-    // skip nuls, observed at startup
-    while (((*cmd) == 0) && (len > 0)){
-        cmd++;
-        len--;
-    }
-
-    if (len == 0){ // makes double prompt if /r/n is sent by terminal
-        //sprintf(ascii_out, "\r\n>");
-        //send_serial_data((unsigned char *) ascii_out, strlen(ascii_out));
-        return;
-    }
-
-    switch(cmd[0]){
-        case '?':
-            // split, else too big for buffer
-            snprintf(ascii_out, sizeof(ascii_out)-1, 
-                "Hoverboard Mk1\r\n"\
-                "Cmds (press return after):\r\n"\
-                " A n m l -set buzzer (freq, patt, len_ms)\r\n"\
-                " B -toggle sensor Board control\r\n"\
-                " E - dEbug 'E'-disable all, EC-enable consoleLog, ES enable Scope\r\n"\
-                " P -power control\r\n"\
-                "  P -disablepoweroff\r\n");
-            send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-
-            snprintf(ascii_out, sizeof(ascii_out)-1, 
-                "  PE enable poweroff\r\n"\
-                "  Pn power off in n seconds\r\n" \
-                "  Pr software reset\r\n" \
-                " I -enable Immediate commands:\r\n"\
-                "   W/S/A/D/X -Faster/Slower/Lefter/Righter/DisableDrive\r\n");
-            send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-
-            snprintf(ascii_out, sizeof(ascii_out)-1, 
-                "   H/C/G/Q -read Hall posn,speed/read Currents/read GPIOs/Quit immediate mode\r\n"\
-                "   N/O/R - read seNsor data/toggle pOsitional control/dangeR\r\n"
-                "  Ip/Is/Iw - direct to posn/speed/pwm control\r\n"\
-                " T -send a test message A-ack N-nack T-test\r\n"\
-                " F - print/set a flash constant (Fa to print all, Fi to default all):\r\n"
-                "  Fss - print, Fss<n> - set\r\n"
-                );
-            send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-            
-            for (int i = 0; i < sizeof(params)/sizeof(params[0]); i++){
-                if (params[i].uistr){
-                    snprintf(ascii_out, sizeof(ascii_out)-1, 
-                        "  %s - F%s<n>\r\n", 
-                            (params[i].description)?params[i].description:"", 
-                            params[i].uistr
-                        );
-                    send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-                }
-            }
-            snprintf(ascii_out, sizeof(ascii_out)-1, 
-                " ? -show this\r\n"
-                );
-            send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-
-            ascii_out[0] = 0;
-            break;
-
-        case 'A':
-        case 'a':{
-            int a = 0;
-            int b = 0;
-            int c = 0;
-            if (len > 1){
-                sscanf(cmd+1, "%d %d %d", &a, &b, &c);
-            }
-            if (a && (0==c)){
-                c = 1000;
-            }
-
-            buzzerFreq = a;
-            buzzerPattern = b;
-            buzzerLen = c/5; // roughly 5ms per main loop, so 1s default
-            sprintf(ascii_out, "Alarm set to %d %d %d\r\n", a, b, c);
-            break;
-        }
-
-        case 'B':
-        case 'b':
-//            sensor_control ^= 1;
-            control_type = 0;
-            speedB = 0; 
-            steerB = 0;
-            SpeedData.wanted_speed_mm_per_sec[0] = SpeedData.wanted_speed_mm_per_sec[1] = speedB;
-            dspeeds[0] = dspeeds[1] = speedB;
-            PosnData.wanted_posn_mm[0] = HallData[0].HallPosn_mm;
-            PosnData.wanted_posn_mm[1] = HallData[1].HallPosn_mm;
-//            sprintf(ascii_out, "Sensor control now %d\r\n", sensor_control);
-            break;
-        case 'C':
-        case 'c':
-            ascii_process_immediate('c');
-            // already sent
-            ascii_out[0] = 0;
-            break;
-        case 'E':
-        case 'e':
-            if (len == 1){
-                debug_out = 0;
-                enablescope = 0;
-            } else {
-                if ((cmd[1] | 0x20) == 's'){
-                    enablescope = 1;
-                    debug_out = 1;
-                }
-                if ((cmd[1] | 0x20) == 'c'){
-                    debug_out = 1;
-                }
-            }
-            sprintf(ascii_out, "debug_out now %d\r\nenablescope now %d\r\n", debug_out, enablescope);
-            break;
-        case 'F':
-        case 'f': // setting any parameter marked with uistr
-            if (len == 1){
-                sprintf(ascii_out, "no flash var given\r\n");
-            } else {
-                if ((cmd[1] | 0x20) == 'i'){ // initilaise
-                    memset(&FlashContent, 0, sizeof(FlashContent));
-                    memcpy(&FlashContent, &FlashDefaults, (sizeof(FlashContent) < sizeof(FlashDefaults))?sizeof(FlashContent) : sizeof(FlashDefaults)) ;
-                    writeFlash( (unsigned char *)&FlashContent, sizeof(FlashContent) );
-                    sprintf(ascii_out, "Flash initiailised\r\n");
-                } else {
-                    if ((cmd[1] | 0x20) == 'a'){
-                        // read all
-                        for (int i = 0; i < sizeof(params)/sizeof(params[0]); i++){
-                            if (params[i].uistr){
-                                switch (params[i].ui_type){
-                                    case UI_SHORT:
-                                        // read it
-                                        if (params[i].preread) params[i].preread();
-                                        sprintf(ascii_out, "%s(%s): %d\r\n",
-                                                (params[i].description)?params[i].description:"", 
-                                                params[i].uistr,
-                                                (int)*(short *)params[i].ptr);
-                                        send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-                                        ascii_out[0] = 0; // don't print last one twice
-                                        if (params[i].postread) params[i].postread();
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                    } else {
-                        int i = 0;
-                        int count = sizeof(params)/sizeof(params[0]);
-                        for (i = 0; i < count; i++){
-                            if (params[i].uistr){
-                                if (!strncmp(params[i].uistr, &cmd[1], strlen(params[i].uistr))){
-                                    switch (params[i].ui_type){
-                                        case UI_SHORT:
-                                            // if number supplied, write
-                                            if ((cmd[1+strlen(params[i].uistr)] >= '0') && (cmd[1+strlen(params[i].uistr)] <= '9')){
-                                                if (params[i].prewrite) params[i].prewrite();
-                                                *((short *)params[i].ptr) = atoi(&cmd[1+strlen(params[i].uistr)]);
-                                                if (params[i].postwrite) params[i].postwrite();
-                                                sprintf(ascii_out, "flash var %s(%s) now %d\r\n", 
-                                                    (params[i].description)?params[i].description:"", 
-                                                    params[i].uistr,
-                                                    (int)*(short *)params[i].ptr);
-                                            } else {
-                                                // read it
-                                                if (params[i].preread) params[i].preread();
-                                                sprintf(ascii_out, "%s(%s): %d\r\n",
-                                                        (params[i].description)?params[i].description:"", 
-                                                        params[i].uistr,
-                                                        (int)*(short *)params[i].ptr
-                                                );
-                                                send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-                                                if (params[i].postread) params[i].postread();
-                                            }
-                                            break;
-                                        default:
-                                            sprintf(ascii_out, "flash var %s(%s) unsupported type\r\n",
-                                                    (params[i].description)?params[i].description:"", 
-                                                    params[i].uistr
-                                            );
-                                            break;
-                                    }
-                                    break; // found our param, now leave
-                                }
-                            }
-                        }
-                        if (i == count){
-                            sprintf(ascii_out, "unknown flash data %s\r\n", cmd);
-                        }
-                    }
-                }
-            }
-            break; // end generic read of flash or other variable
-        case 'G':
-        case 'g':
-            ascii_process_immediate('g');
-            // already sent
-            ascii_out[0] = 0;
-            break;
-
-        case 'H':
-        case 'h':
-            ascii_process_immediate('h');
-            // already sent
-            ascii_out[0] = 0;
-            break;
-
-        case 'I':
-        case 'i':
-            speedB = 0; 
-            steerB = 0;
-            SpeedData.wanted_speed_mm_per_sec[0] = SpeedData.wanted_speed_mm_per_sec[1] = speedB;
-            dspeeds[0] = dspeeds[1] = speedB;
-            PosnData.wanted_posn_mm[0] = HallData[0].HallPosn_mm;
-            PosnData.wanted_posn_mm[1] = HallData[1].HallPosn_mm;
-            if (len == 1){
-                enable_immediate = 1;
-                sprintf(ascii_out, "Immediate commands enabled - WASDXHCGQ\r\n>");
-            } else {
-                switch (cmd[1] | 0x20){
-                    case 's':
-                        enable_immediate = 1;
-                        control_type = CONTROL_TYPE_SPEED;
-                        sprintf(ascii_out, "Immediate commands enabled - WASDXHCGQ - Speed control\r\n>");
-                        break;
-                    case 'p':
-                        enable_immediate = 1;
-                        control_type = CONTROL_TYPE_POSITION;
-                        sprintf(ascii_out, "Immediate commands enabled - WASDXHCGQ - Position control\r\n>");
-                        break;
-                    case 'w':
-                        enable_immediate = 1;
-                        control_type = CONTROL_TYPE_PWM;
-                        sprintf(ascii_out, "Immediate commands enabled - WASDXHCGQ - Power (pWm) control\r\n>");
-                        break;
-                }
-            }
-            break;
-
-        case 'N':
-        case 'n':
-            ascii_process_immediate('n');
-            // already sent
-            ascii_out[0] = 0;
-            break;
-
-        case 'P':
-        case 'p':
-            if (len == 1){
-                disablepoweroff = 1;
-                powerofftimer = 0;
-            } else {
-                if ((cmd[1] | 0x20) == 'r'){
-                    sprintf(ascii_out, "Reset in 500ms\r\n");
-                    send_serial_data_wait((unsigned char *)ascii_out, strlen(ascii_out));
-                    HAL_Delay(500);
-                    HAL_NVIC_SystemReset();
-                }
-
-                if ((cmd[1] | 0x20) == 'e'){
-                    disablepoweroff = 0;
-                    powerofftimer = 0;
-                } else {
-                    int s = -1;
-                    sscanf(cmd+1, "%d", &s);
-                    if (s >= 0){
-                        if (s == 0){
-                            powerofftimer = 1; // immediate
-                        } else {
-                            powerofftimer = ((s*1000)/DELAY_IN_MAIN_LOOP);
-                        }
-                    }
-                }
-            }
-            sprintf(ascii_out, 
-                "disablepoweroff now %d\r\n"\
-                "powerofftimer now %d\r\n",
-                disablepoweroff,
-                powerofftimer);
-            break;
-
-        case 'T':
-        case 't':
-            if (len < 2){
-                sprintf(ascii_out, "Test command needs A N or T qualifier\r\n");
-            } else {
-                // send a test message in machine protocol
-                switch (cmd[1]){
-                    case 'A':
-                    case 'a':
-                        protocol_send_ack();
-                        break;
-                    case 'N':
-                    case 'n':
-                        protocol_send_nack();
-                        break;
-                    case 'T':
-                    case 't':
-                        protocol_send_test();
-                        break;
-                }
-                // CR before prompt.... after message
-                sprintf(ascii_out, "\r\n");
-            }
-            break;
-
-        default:
-            sprintf(ascii_out, "Unknown cmd %c\r\n", cmd[0]);
-            break;
-    }
-    send_serial_data((unsigned char *) ascii_out, strlen(ascii_out));
-    // prompt
-    sprintf(ascii_out, ">");
-    send_serial_data((unsigned char *) ascii_out, strlen(ascii_out));
-
-
-}
-/////////////////////////////////////////////
-
-
 
 
 /////////////////////////////////////////////
@@ -916,29 +390,23 @@ void ascii_process_msg(char *cmd, int len){
 //
 void protocol_send_nack(){
     char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_NACK, 0 };
-    protocol_send((PROTOCOL_MSG *)tmp);
+//    protocol_send((PROTOCOL_MSG *)tmp);
+    Serial.println("Will gerne NACK schicken");
 }
 
 void protocol_send_ack(){
     char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_ACK, 0 };
-    protocol_send((PROTOCOL_MSG *)tmp);
+//    protocol_send((PROTOCOL_MSG *)tmp);
+    Serial.println("Will gerne ACK schicken");
 }
 
 void protocol_send_test(){
     char tmp[] = { PROTOCOL_SOM, 6, PROTOCOL_CMD_TEST, 'T', 'e', 's', 't', 0 };
-    protocol_send((PROTOCOL_MSG *)tmp);
+//    protocol_send((PROTOCOL_MSG *)tmp);
+    Serial.println("Will gerne TEST schicken");
 }
 
 
-void protocol_send(PROTOCOL_MSG *msg){
-    unsigned char CS = 0;
-    unsigned char *src = &msg->len;
-    for (int i = 0; i < msg->len; i++){
-        CS -= *(src++);
-    }
-    msg->bytes[msg->len-1] = CS;
-    send_serial_data((unsigned char *) msg, msg->len+2);
-}
 
 
 /////////////////////////////////////////////
@@ -956,13 +424,14 @@ void process_message(PROTOCOL_MSG *msg){
                 if (params[i].code == readvals->code){
                     if (params[i].preread) params[i].preread();
                     // NOTE: re-uses the msg object (part of stats)
-                    unsigned char *src = params[i].ptr;
+                    unsigned char *src = (unsigned char*)params[i].ptr;
                     for (int j = 0; j < params[i].len; j++){
                         writevals->content[j] = *(src++);
                     }
                     msg->len = 1+1+1+params[i].len+1;
                     // send back with 'read' command plus data like write.
-                    protocol_send(msg);
+                    //protocol_send(msg);
+                    Serial.println("Reference 1");
                     if (params[i].postread) params[i].postread();
                     break;
                 }
@@ -971,7 +440,8 @@ void process_message(PROTOCOL_MSG *msg){
             if (i == sizeof(params)/sizeof(params[0])){
                 msg->len = 1+1+1+0+1;
                 // send back with 'read' command plus data like write.
-                protocol_send(msg);
+                //protocol_send(msg);
+                Serial.println("Reference 2");
             }
             break;
         }
@@ -983,13 +453,14 @@ void process_message(PROTOCOL_MSG *msg){
                 if (params[i].code == writevals->code){
                     if (params[i].prewrite) params[i].prewrite();
                     // NOTE: re-uses the msg object (part of stats)
-                    unsigned char *dest = params[i].ptr;
+                    unsigned char *dest = (unsigned char *)params[i].ptr;
                     for (int j = 0; j < params[i].len; j++){
                         *(dest++) = writevals->content[j];
                     }
                     msg->len = 1+1+0+1;
                     // send back with 'write' command with no data.
-                    protocol_send(msg);
+                    //protocol_send(msg);
+                    Serial.println("Reference 3");
                     if (params[i].postwrite) params[i].postwrite();
                 }
             }
@@ -997,23 +468,46 @@ void process_message(PROTOCOL_MSG *msg){
             if (i == sizeof(params)/sizeof(params[0])){
                 msg->len = 1+1+1+0+1;
                 // send back with 'write' command plus data like write.
-                protocol_send(msg);
+                //protocol_send(msg);
+                Serial.println("Reference 4");
             }
             break;
         }
 
         case PROTOCOL_CMD_REBOOT:
             protocol_send_ack();
-            HAL_Delay(500);
-            HAL_NVIC_SystemReset();
+//            HAL_Delay(500);
+//            HAL_NVIC_SystemReset();
             break;
 
+        case PROTOCOL_CMD_ACK:
+            Serial.println("ACKed ");
+            break;
+
+        case PROTOCOL_CMD_NACK:
+            Serial.print("N ");
+            break;
+
+
         default:
+            Serial.write(msg->bytes, msg->len);
+            Serial.println("Protocol CMD Unknown");
             msg->bytes[0] = PROTOCOL_CMD_UNKNOWN;
             msg->len = 2;
-            protocol_send(msg);
+//            protocol_send(msg);
             break;
     }
+
+}
+void protocol_send(PROTOCOL_MSG *msg){
+    unsigned char CS = 0;
+    unsigned char *src = &msg->len;
+    for (int i = 0; i < msg->len; i++){
+        CS -= *(src++);
+    }
+    msg->bytes[msg->len-1] = CS;
+//    send_serial_data((unsigned char *) msg, msg->len+2);
+    send_serial_data((const uint8_t *) msg, (size_t) msg->len+2);
 }
 
 

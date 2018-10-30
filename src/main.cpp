@@ -7,6 +7,15 @@ TaskHandle_t TaskMainloop, TaskMotorcommunication;
 void mainloop(void *pvParameters);
 void motorCommunication(void *pvParameters);
 
+#ifdef INCLUDE_PROTOCOL
+  #include <protocol.h>
+
+  size_t send_serial_data( const uint8_t *data, size_t len ) {
+    return COM[MOTOR_COM]->write(data,len);
+//    COM[DEBUG_COM]->write(data,len);
+  }
+#endif
+
 #ifdef PADDELEC
   #include "Paddelec.h"
   Paddelec paddelec = Paddelec();
@@ -90,6 +99,7 @@ void setup() {
 #ifdef IMU
   imu.init();
 #endif 
+
 
   /* Keep this at the end of setup */
   nextMillisMotorInput = millis();
@@ -310,6 +320,35 @@ void motorCommunication( void * pvparameters) {
     // wait for 3seconds to run the logic again
     delay(30);
   }  
+#elif INCLUDE_PROTOCOL
+    while(1) {
+    PROTOCOL_MSG newMsg;
+    memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
+    PROTOCOL_MSG *msg = &newMsg;
+    PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
+    SPEED_DATA *writespeed = (SPEED_DATA *) writevals->content;
+
+    msg->SOM = PROTOCOL_SOM; //Start of Message;
+
+    writevals->cmd  = PROTOCOL_CMD_WRITEVAL;  // Write value
+    writevals->code = 0x03; // speed data from params array  
+
+    writespeed->speed_max_power            =  600;
+    writespeed->speed_min_power            = -600;
+    writespeed->speed_minimum_speed        =   40;
+    writespeed->wanted_speed_mm_per_sec[0] = motor.pwm + motor.steer;
+    writespeed->wanted_speed_mm_per_sec[1] = motor.pwm - motor.steer;
+
+
+    msg->len = sizeof(writevals->cmd) + sizeof(writevals->code) + sizeof(SPEED_DATA) + 1; // 1 for Checksum
+    protocol_send(msg);
+    delay(MOTORINPUT_PERIOD);      
+
+    while(COM[MOTOR_COM]->available())
+        {     
+          protocol_byte( COM[MOTOR_COM]->read() );
+        }
+  }
 #else
   while(1) {
     /* cast & limit values to a valid range */

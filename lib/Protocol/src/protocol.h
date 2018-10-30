@@ -19,7 +19,7 @@
 #ifndef PROCOTOL_H
 #define PROCOTOL_H
 
-#include "config.h"
+//#include "config.h"
 
 #ifdef INCLUDE_PROTOCOL
 
@@ -135,7 +135,12 @@ typedef struct tag_PROTOCOL_BYTES_WRITEVALS {
 /////////////////////////////////////////////////////////////////
 
 
-
+#include <stdint.h>
+#include <stdlib.h>
+extern size_t send_serial_data( const uint8_t *data, size_t len );
+/////////////////////////////////////////////
+// Calculate Checksum and send message
+void protocol_send(PROTOCOL_MSG *msg);
 
 #endif
 
