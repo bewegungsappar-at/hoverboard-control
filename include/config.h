@@ -1,6 +1,10 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+/*******************************************************************/
+/* Whenever possible, configs should be managed in platformio.ini! */
+/*******************************************************************/
+
 struct motorControl {
   double steer;
   double pwm;     // called "speed" in hoverboard firmware, but is only pwm duty cycle in promille
@@ -11,9 +15,6 @@ struct motorControl {
 
 extern motorControl motor;
 
-
-#include <WiFi.h>
-#include <esp_wifi.h>
 
 //#define DEBUG
 extern bool debug;
@@ -31,6 +32,10 @@ extern bool debug;
 
 //#define WIFI
 #ifdef WIFI
+
+#include <WiFi.h>
+#include <esp_wifi.h>
+
 /*********************************************************************/
 /****************************** Wifi *********************************/
 /*********************************************************************/
@@ -53,20 +58,20 @@ extern bool debug;
 /*************************  COM Port 0 *******************************/
 #define UART_BAUD0 115200           // Baudrate UART0
 #define SERIAL_PARAM0 SERIAL_8N1    // Data/Parity/Stop UART0
-#define SERIAL0_RXPIN 3             // receive Pin UART0
-#define SERIAL0_TXPIN 1             // transmit Pin UART0
+//#define SERIAL0_RXPIN 3             // receive Pin UART0
+//#define SERIAL0_TXPIN 1             // transmit Pin UART0
 #define SERIAL0_TCP_PORT 8880       // Wifi Port UART0
 /*************************  COM Port 1 *******************************/
 #define UART_BAUD1 9600           // Baudrate UART1
 #define SERIAL_PARAM1 SERIAL_8N1    // Data/Parity/Stop UART1
-#define SERIAL1_RXPIN 15            // receive Pin UART1
-#define SERIAL1_TXPIN  2            // transmit Pin UART1
+//#define SERIAL1_RXPIN 15            // receive Pin UART1
+//#define SERIAL1_TXPIN  2            // transmit Pin UART1
 #define SERIAL1_TCP_PORT 8881       // Wifi Port UART1
 /*************************  COM Port 2 *******************************/
 #define UART_BAUD2 9600            // Baudrate UART2
 #define SERIAL_PARAM2 SERIAL_8N1    // Data/Parity/Stop UART2
-#define SERIAL2_RXPIN 16            // receive Pin UART2
-#define SERIAL2_TXPIN 17            // transmit Pin UART2
+//#define SERIAL2_RXPIN 16            // receive Pin UART2
+//#define SERIAL2_TXPIN 17            // transmit Pin UART2
 #define SERIAL2_TCP_PORT 8882       // Wifi Port UART2
 //#define SERIAL2_VCCPIN 5            // Pin used as VCC
 //#define SERIAL2_GNDPIN 0            // Pin used as GND
@@ -87,19 +92,19 @@ extern bool debug;
 /*************************  Gametrak 1 ******************************/
 //#define GAMETRAK1_VCCPIN    25      // Pin used to supply Power
 //#define GAMETRAK1_GNDPIN    26      // Pin used as GND
-#define GAMETRAK1_RPIN      33      // wire length Pin Gametrak 1
-#define GAMETRAK1_PHIPIN    35     // horizontal angle Pin Gametrak 1
-#define GAMETRAK1_THETAPIN  32      // vertical angle Pin Gametrak 1
-#define GAMETRAK1_PHI_REV      1    // Phi is inverted
-#define GAMETRAK1_THETA_REV    0    // Theta is inverted
-/*************************  Gametrak 2 ******************************
-#define GAMETRAK2_VCCPIN    27      // Pin used to supply Power
-#define GAMETRAK2_GNDPIN    26      // Pin used as GND
-#define GAMETRAK2_RPIN      32      // wire length Pin Gametrak 2
-#define GAMETRAK2_PHIPIN    35      // horizontal angle Pin Gametrak 2
-#define GAMETRAK2_THETAPIN  33      // vertical angle Pin Gametrak 2
-#define GAMETRAK2_PHI_REV      1    // Phi is inverted
-#define GAMETRAK2_THETA_REV    1    // Theta is inverted
-*/
+//#define GAMETRAK1_RPIN      33      // wire length Pin Gametrak 1
+//#define GAMETRAK1_PHIPIN    35     // horizontal angle Pin Gametrak 1
+//#define GAMETRAK1_THETAPIN  32      // vertical angle Pin Gametrak 1
+//#define GAMETRAK1_PHI_REV      1    // Phi is inverted
+//#define GAMETRAK1_THETA_REV    0    // Theta is inverted
+/*************************  Gametrak 2 ******************************/
+//#define GAMETRAK2_VCCPIN    27      // Pin used to supply Power
+//#define GAMETRAK2_GNDPIN    26      // Pin used as GND
+//#define GAMETRAK2_RPIN      32      // wire length Pin Gametrak 2
+//#define GAMETRAK2_PHIPIN    35      // horizontal angle Pin Gametrak 2
+//#define GAMETRAK2_THETAPIN  33      // vertical angle Pin Gametrak 2
+//#define GAMETRAK2_PHI_REV      1    // Phi is inverted
+//#define GAMETRAK2_THETA_REV    1    // Theta is inverted
+
 
 #endif

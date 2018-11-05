@@ -8,14 +8,10 @@
 #include "Wire.h"
 #include "config.h"
 
-#ifdef TTGO
-  #define IMU_CPIN 23
-  #define IMU_ZPIN 25
-#else
-  #define IMU_GNDPIN 14
-  #define IMU_VCCPIN 32 
-#endif
-
+//#define IMU_CPIN 23
+//#define IMU_ZPIN 25
+//#define IMU_GNDPIN 14
+//#define IMU_VCCPIN 32 
 
 class Imu : public ArduinoNunchuk
 {

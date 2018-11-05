@@ -1,6 +1,8 @@
 #ifndef Platooning_H
 #define Platooning_H
 
+#ifdef PLATOONING
+
 #include <Arduino.h>
 #include "config.h"
 #include "Gametrak.h"
@@ -68,4 +70,5 @@ class Platooning
     }
 };
 
+#endif
 #endif

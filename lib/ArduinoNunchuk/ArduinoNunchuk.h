@@ -17,8 +17,8 @@
 #include <Arduino.h>
 
 /************************* Nunchuk *******************************/
-#define NUNCHUCK_VCCPIN    18      // Pin used to supply Power
-#define NUNCHUCK_GNDPIN    19      // Pin used as GND
+//#define NUNCHUCK_VCCPIN    18      // Pin used to supply Power
+//#define NUNCHUCK_GNDPIN    19      // Pin used as GND
 
 #define NUNCHUCK_JOYSTICK_THRESHOLD_LOW   77 // calibration values above this are considered invalid
 #define NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 177 // calibration values below this are considered invalid

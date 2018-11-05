@@ -1,3 +1,5 @@
+#ifdef PLATOONING
+
 #include <Arduino.h>
 #include "Platooning.h"
 
@@ -27,3 +29,5 @@ void Platooning::debug(Stream &port)
   gametrak1.debug(port);
 //  port.printf("P %5i %5i %6.2f ", gametrak1.r - gametrak1.r_last, gametrak1.r - gametrak1.r_last, gametrak1.getTheta_deg() - gametrak1.getTheta_deg());
 }
+
+#endif
