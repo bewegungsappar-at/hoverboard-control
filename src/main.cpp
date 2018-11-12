@@ -3,9 +3,11 @@
 #include <crc.h>
 #include "serialbridge.h"
 
+#ifdef MULTITASKING
 TaskHandle_t TaskMainloop, TaskMotorcommunication;
 void mainloop(void *pvParameters);
 void motorCommunication(void *pvParameters);
+#endif //MULTITASKING
 
 #ifdef INCLUDE_PROTOCOL
   #include <protocol.h>
@@ -16,10 +18,10 @@ void motorCommunication(void *pvParameters);
   }
 #endif
 
-#ifdef PADDELEC
+#if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
   #include "Paddelec.h"
   Paddelec paddelec = Paddelec();
-#endif // PADDELEC
+#endif // INPUT_PADDELEC
 
 #ifdef NUNCHUCK
   #include <ArduinoNunchuk.h>
@@ -47,7 +49,7 @@ void motorCommunication(void *pvParameters);
   #include "BLE.h"
 #endif
 
-#ifdef IMU
+#ifdef INPUT_IMU
   #include <IMU.h>
   Imu imu = Imu();
 #endif
@@ -55,13 +57,13 @@ void motorCommunication(void *pvParameters);
 bool debug = false;
 
 motorControl motor = {0.0, 0.0, 0.0, 0.0};
-uint32_t nextMillisMotorInput = 0;      // virtual timer for motor update
+uint32_t millisMotorcomm = 0;      // virtual timer for motor update
 int32_t deltaMillis;
 int errorCount=0;
 
 void setup() {
 
-#ifdef DEBUG
+#ifdef SETDEBUG
   debug = true;
 #endif
 
@@ -96,31 +98,37 @@ void setup() {
   setupBLE();
 #endif
 
-#ifdef IMU
+#ifdef INPUT_IMU
   imu.init();
 #endif 
 
+#if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
+  paddelec.init();
+#endif //INPUT_PADDELEC
+
 
   /* Keep this at the end of setup */
-  nextMillisMotorInput = millis();
+  millisMotorcomm = millis();
+
+#ifdef MULTITASKING
+  xTaskCreatePinnedToCore(
+    mainloop,                 // Task function. 
+    "Main_loop",              // name of task.
+    4000,                     // Stack size of task 
+    (void *)1,                // parameter of the task 
+    1,                        // priority of the task 
+    &TaskMainloop,            // Task handle to keep track of created task 
+    1);                       // Core (0 is used by ESP32 connectivity) 
 
   xTaskCreatePinnedToCore(
-    mainloop,                 /* Task function. */
-    "Main_loop",              /* name of task. */
-    4000,                     /* Stack size of task */
-    (void *)1,                /* parameter of the task */
-    1,                        /* priority of the task */
-    &TaskMainloop,            /* Task handle to keep track of created task */
-    1);                       /* Core (0 is used by ESP32 connectivity) */
-
-  xTaskCreatePinnedToCore(
-    motorCommunication,       /* Task function. */
-    "Motor_Comm",             /* name of task. */
-    4000,                     /* Stack size of task */
-    (void *)1,                /* parameter of the task */
-    1,                        /* priority of the task */
-    &TaskMotorcommunication,  /* Task handle to keep track of created task */
-    0);                       /* Core (0 is used by ESP32 connectivity) */
+    motorCommunication,       // Task function. 
+    "Motor_Comm",             // name of task. 
+    4000,                     // Stack size of task 
+    (void *)1,                // parameter of the task 
+    1,                        // priority of the task 
+    &TaskMotorcommunication,  // Task handle to keep track of created task 
+    0);                       // Core (0 is used by ESP32 connectivity) 
+#endif //MULTITASKING
 }
 
 
@@ -148,7 +156,12 @@ void updateSpeed() {
   motor.actualSteer_kmh = motor.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
 }
 
+#ifdef ESPnowMASTER 
+  bool isPaired = false;
+#endif
+
 void loop() {  
+#ifdef MULTITASKING
   // nope, do nothing here
   vTaskDelay(1000); // wait as much as posible ...
 }
@@ -156,6 +169,8 @@ void loop() {
 void mainloop( void *pvparameters ) {
   int taskno = (int)pvparameters;
   while(1) {
+#endif //MULTITASKING
+
   #ifdef OTA_HANDLER  
     ota();
   #endif // OTA_HANDLER
@@ -164,18 +179,16 @@ void mainloop( void *pvparameters ) {
     bridge();
   #endif
 
-    deltaMillis = millis() - nextMillisMotorInput;
-    if(deltaMillis >= 0) {
-      nextMillisMotorInput += MOTORINPUT_PERIOD;
+    deltaMillis = millis() - millisMotorcomm;
+    millisMotorcomm = millis();
 
-  #ifdef PADDELEC
-      paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, deltaMillis);
+
+#if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
+      paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
       if(debug) {
         paddelec.debug(*COM[DEBUG_COM]);
-        for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
-          if(TCPClient[1][cln]) paddelec.debug(TCPClient[1][cln]); 
       }
-  #endif // PADDELEC
+  #endif // INPUT_PADDELEC
 
   #ifdef BLE
   //  loopBLE();
@@ -185,10 +198,10 @@ void mainloop( void *pvparameters ) {
   slowReset(ble_roll, 0.0, 0.1);
   #endif
 
-  #ifdef IMU
+  #ifdef INPUT_IMU
   //  imu.loopIMU();
     imu.update(motor.pwm, motor.steer);
-    imu.debug(*COM[DEBUG_COM]);
+    if(debug) imu.debug(*COM[DEBUG_COM]);
   #endif
   
 #ifdef OLED
@@ -199,7 +212,7 @@ void mainloop( void *pvparameters ) {
     uint motorX = mX+(motor.steer/1000.0*(double)mY);
     uint motorY = mY-(motor.pwm/1000.0*(double)mY);
     
-  #ifdef IMU
+  #ifdef INPUT_IMU
     double aX =  imu.ax / 32768.0 * u8g2.getDisplayHeight()/2.0;
     double aY = -imu.ay / 32768.0 * u8g2.getDisplayWidth() /2.0;
     double aZ =  imu.az / 32768.0 * u8g2.getDisplayHeight()/2.0;
@@ -214,7 +227,7 @@ void mainloop( void *pvparameters ) {
   do {
     u8g2_prepare();
 
-  #ifdef IMU
+  #ifdef INPUT_IMU
     if(aX>0) u8g2.drawFrame(0    ,mY   ,1, aX);
     else     u8g2.drawFrame(0    ,mY+aX,1,-aX);
 
@@ -243,13 +256,10 @@ void mainloop( void *pvparameters ) {
     u8g2.setCursor(5,15);
     u8g2.printf("%4i", ESPnowdata);
   #endif
-
-    
-
   } while( u8g2.nextPage() );
 #endif
 
-  #if defined(NUNCHUCK) && defined(PADDELEC)
+  #if defined(NUNCHUCK) && (defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU))
       if(paddelec.gametrak1.r < 500 || paddelec.gametrak2.r < 500) { // switch to nunchuck control when paddle is not used
   #endif
   #if defined(NUNCHUCK)
@@ -271,7 +281,7 @@ void mainloop( void *pvparameters ) {
           errorCount = 0;
         }
   #endif
-  #if defined(NUNCHUCK) && defined(PADDELEC)
+  #if defined(NUNCHUCK) && (defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU))
       }
   #endif
 
@@ -285,25 +295,19 @@ void mainloop( void *pvparameters ) {
     #endif
       }
   #endif // PLATOONING
-    } else if(deltaMillis >= MOTORINPUT_PERIOD) { // check if system is too slow
-      if(debug) COM[DEBUG_COM]->print(" Missed Period: ");
-      if(debug) COM[DEBUG_COM]->print(deltaMillis); 
-      if(debug) COM[DEBUG_COM]->print("ms ");
-      
-      nextMillisMotorInput = millis() + MOTORINPUT_PERIOD;
-    }
+
+#ifdef MULTITASKING
     vTaskDelay(20);
   }
 }
 
-#ifdef ESPnowMASTER 
-  bool isPaired = false;
-#endif
 
 void motorCommunication( void * pvparameters) {
   int taskno = (int)pvparameters;
-#ifdef ESPnowMASTER
   while(1) {
+#endif //MULTITASKING
+
+#ifdef ESPnowMASTER
     if(!isPaired) {
       ScanForSlave();
       // If Slave is found, it would be populate in `slave` variable
@@ -319,9 +323,7 @@ void motorCommunication( void * pvparameters) {
 
     // wait for 3seconds to run the logic again
     delay(30);
-  }  
 #elif INCLUDE_PROTOCOL
-    while(1) {
     PROTOCOL_MSG newMsg;
     memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
     PROTOCOL_MSG *msg = &newMsg;
@@ -348,9 +350,7 @@ void motorCommunication( void * pvparameters) {
         {     
           protocol_byte( COM[MOTOR_COM]->read() );
         }
-  }
 #else
-  while(1) {
     /* cast & limit values to a valid range */
     int16_t steer = (int16_t) limit(-1000.0, motor.steer, 1000.0);
     int16_t pwm   = (int16_t) limit(-1000.0, motor.pwm,   1000.0);
@@ -377,13 +377,15 @@ void motorCommunication( void * pvparameters) {
       } 
     }
     #endif
-    if(debug) COM[DEBUG_COM]->print(" U: ");
-    if(debug) COM[DEBUG_COM]->printf("%6i %6i %11u ", pwm, steer, crc);
-    if(debug) COM[DEBUG_COM]->printf("%5.2f %5.2f \n", motor.actualSpeed_kmh, motor.actualSteer_kmh);
-
+    if(debug) COM[DEBUG_COM]->printf("\nU: ");
+//    if(debug) COM[DEBUG_COM]->printf("%6i %6i %11u ", pwm, steer, crc);
+    if(debug) COM[DEBUG_COM]->printf("%6i %6i ", pwm, steer);
+    if(debug) COM[DEBUG_COM]->printf("%7.2f %7.2f ", motor.actualSpeed_kmh, motor.actualSteer_kmh);
+#endif
+#ifdef MULTITASKING
     delay(MOTORINPUT_PERIOD);             
   }
-#endif
+#endif //MULTITASKING
 }
   /* TODO
   *  calculate paddle angle. if only gametrak angles are subtracted, the activation threshold depends on the distance (r)

@@ -1,5 +1,4 @@
-#ifndef IMU_H
-#define IMU_H
+#pragma once
 #include <Arduino.h>
 
 #include <ArduinoNunchuk.h>
@@ -115,14 +114,14 @@ class Imu : public ArduinoNunchuk
         int error = 0;
 
         accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-
+/*
         Serial.print(ax); Serial.print("\t");
         Serial.print(ay); Serial.print("\t");
         Serial.print(az); Serial.print("\t");
         Serial.print(gx); Serial.print("\t");
         Serial.print(gy); Serial.print("\t");
         Serial.print(gz); Serial.print("\t");
-
+*/
         cButton_last = cButton;
         zButton_last = zButton;
 
@@ -146,7 +145,7 @@ class Imu : public ArduinoNunchuk
     }
 
 
-    int  update(double &speed, double &steer) {
+    int update(double &speed, double &steer) {
 //        update();
 //        return ArduinoNunchuk::update(speed, steer);
 
@@ -241,5 +240,3 @@ class Imu : public ArduinoNunchuk
 
 
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 /*******************************************************************/
 /* Whenever possible, configs should be managed in platformio.ini! */
@@ -16,8 +15,9 @@ struct motorControl {
 extern motorControl motor;
 
 
-//#define DEBUG
+#define SETDEBUG
 extern bool debug;
+//#define MULTITASKING
 
 //#define BLE
 
@@ -82,11 +82,12 @@ extern bool debug;
 /*********************************************************************/
 /***************************** Control *******************************/
 /*********************************************************************/
-//#define PADDELEC                    // look at Paddelec.h for paddelec specific config options!
+//#define INPUT_PADDELEC                    // look at Paddelec.h for paddelec specific config options!
+//#define INPUT_PADDELECIMU
 //#define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
 //#define PLATOONING
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
-// #define IMU
+// #define INPUT_IMU
 
 // Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
 /*************************  Gametrak 1 ******************************/
@@ -105,6 +106,3 @@ extern bool debug;
 //#define GAMETRAK2_THETAPIN  33      // vertical angle Pin Gametrak 2
 //#define GAMETRAK2_PHI_REV      1    // Phi is inverted
 //#define GAMETRAK2_THETA_REV    1    // Theta is inverted
-
-
-#endif
