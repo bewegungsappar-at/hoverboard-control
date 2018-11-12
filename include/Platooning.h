@@ -1,12 +1,10 @@
-#ifndef Platooning_H
-#define Platooning_H
-
-#ifdef PLATOONING
+#pragma once
 
 #include <Arduino.h>
 #include "config.h"
 #include "Gametrak.h"
 
+#ifdef INPUT_PLATOONING
 
 class Platooning 
 {
@@ -70,5 +68,4 @@ class Platooning
     }
 };
 
-#endif
 #endif

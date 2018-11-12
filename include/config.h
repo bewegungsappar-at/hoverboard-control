@@ -1,5 +1,4 @@
 #pragma once
-
 /*******************************************************************/
 /* Whenever possible, configs should be managed in platformio.ini! */
 /*******************************************************************/
@@ -19,10 +18,18 @@ extern motorControl motor;
 extern bool debug;
 #define MULTITASKING
 
-//#define BLE
-
-//#define ESPnowMASTER
-//#define ESPnowSLAVE
+//#define INPUT_BLE
+//#define OUTPUT_BINARY
+//#define OUTPUT_BINARY_CRC
+#ifdef OUTPUT_BINARY_CRC
+  #define OUTPUT_BINARY
+#endif
+//#define OUTPUT_PROTOCOL
+#ifdef OUTPUT_PROTOCOL
+  #define INCLUDE_PROTOCOL
+#endif
+//#define OUTPUT_ESPnowMASTER
+//#define INPUT_ESPnowSLAVE
 
 //#define OLED
 
@@ -32,8 +39,6 @@ extern bool debug;
 
 //#define WIFI
 #ifdef WIFI
-
-#include <WiFi.h>
 #include <esp_wifi.h>
 
 /*********************************************************************/
@@ -76,7 +81,7 @@ extern bool debug;
 //#define SERIAL2_VCCPIN 5            // Pin used as VCC
 //#define SERIAL2_GNDPIN 0            // Pin used as GND
 
-#define bufferSize 1024
+#define bufferSize 1024           // Buffer size used to exchange data between COM and telnet
 #define MAX_NMEA_CLIENTS 4
 
 /*********************************************************************/
@@ -84,8 +89,8 @@ extern bool debug;
 /*********************************************************************/
 //#define INPUT_PADDELEC                    // look at Paddelec.h for paddelec specific config options!
 //#define INPUT_PADDELECIMU
-//#define NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
-//#define PLATOONING
+//#define INPUT_NUNCHUCK                    // look at ArduinoNunchuck.h for Nunchuck specific config options!
+//#define INPUT_PLATOONING
 #define MOTORINPUT_PERIOD   20      // Update Motor Input each xx milliseconds
 // #define INPUT_IMU
 
@@ -106,3 +111,31 @@ extern bool debug;
 //#define GAMETRAK2_THETAPIN  33      // vertical angle Pin Gametrak 2
 //#define GAMETRAK2_PHI_REV      1    // Phi is inverted
 //#define GAMETRAK2_THETA_REV    1    // Theta is inverted
+
+// ############################### VALIDATE SETTINGS ###############################
+
+#if defined(OUTPUT_PROTOCOL) && defined(OUTPUT_BINARY)
+  #error OUTPUT_PROTOCOL and OUTPUT_BINARY not allowed, both on same serial.
+#endif
+
+#if !defined(OUTPUT_PROTOCOL) && !defined(OUTPUT_BINARY) && !defined(OUTPUT_ESPnowMASTER)
+  #error no Output Method defined. Nothing will be done..
+#endif
+
+#if defined(INPUT_PADDELEC) && defined(INPUT_PADDELECIMU)
+  #error INPUT_PADDELEC and INPUT_PADDELECIMU cannot be used simultaneously.
+#endif
+
+#if !defined(INPUT_BLE) && \
+    !defined(INPUT_ESPnowSLAVE) && \
+    !defined(INPUT_IMU) && \
+    !defined(INPUT_NUNCHUCK) && \
+    !defined(INPUT_PADDELEC) && \
+    !defined(INPUT_PADDELECIMU) && \
+    !defined(INPUT_PLATOONING)
+  #error no Input Method defined. What should I do?
+#endif
+
+#if defined(INPUT_BLE)
+  #error INPUT_BLE not yet implmented. Also set define guard here.
+#endif

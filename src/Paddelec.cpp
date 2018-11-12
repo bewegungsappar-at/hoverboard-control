@@ -1,7 +1,8 @@
+
+#include "Paddelec.h"
+
 #if defined(INPUT_PADDELECIMU) || defined(INPUT_PADDELEC)
 
-#include <Arduino.h>
-#include "Paddelec.h"
 
 
 

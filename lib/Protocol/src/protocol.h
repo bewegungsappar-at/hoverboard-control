@@ -19,7 +19,7 @@
 #ifndef PROCOTOL_H
 #define PROCOTOL_H
 
-//#include "config.h"
+#include "config.h"
 
 #ifdef INCLUDE_PROTOCOL
 

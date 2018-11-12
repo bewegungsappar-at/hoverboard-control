@@ -19,7 +19,7 @@
 
 //#include "stm32f1xx_hal.h"
 //#include "defines.h"
-//#include "config.h"
+#include "config.h"
 //#include "sensorcoms.h"
 #include "protocol.h"
 //#include "hallinterrupts.h"

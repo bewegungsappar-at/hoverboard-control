@@ -1,8 +1,7 @@
-#ifdef PLATOONING
-
 #include <Arduino.h>
 #include "Platooning.h"
 
+#ifdef INPUT_PLATOONING
 
 
 void Platooning::update(double &pwm, double &steer) {

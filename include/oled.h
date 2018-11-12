@@ -1,5 +1,4 @@
-#ifndef OLED_H
-#define OLED_H
+#pragma once
 // TTGO Test. This is a test script for a "TTGO" ESP32 Dev Board
 // including an LCD module and a 18650 battery pack.
 //
@@ -472,4 +471,3 @@ void loopOLED(void) {
   delay(150);
 
 }
-#endif

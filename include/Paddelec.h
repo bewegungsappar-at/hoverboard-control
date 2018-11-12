@@ -1,7 +1,5 @@
 #pragma once
 
-#if defined(INPUT_PADDELECIMU) || defined(INPUT_PADDELEC)
-
 #include <Arduino.h>
 #include "config.h"
 #ifdef INPUT_PADDELEC
@@ -10,6 +8,7 @@
   #include <IMU.h>
 #endif
 
+#if defined(INPUT_PADDELECIMU) || defined(INPUT_PADDELEC)
 
 class Paddelec  
 {
@@ -46,15 +45,17 @@ class Paddelec
       imu.init();
       cfgPaddle.paddleAngleThreshold = 10.0;     // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
       cfgPaddle.deltaRtoSpeed        =  0.01;     // conversion factor between Gametrak movement to speed. This defines also the maximum speed.
-      cfgPaddle.pwmMultiplier        =  0.035;   // effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR          =  0.002;   // multiplier for steering
-      cfgPaddle.realign              =  0.0005;  // paddelc tries to go straight forward
-      cfgPaddle.drag                 =  0.0002;  // drag/water resistance
+      cfgPaddle.pwmMultiplier        =  0.015;   // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR          =  0.001;   // multiplier for steering
+      cfgPaddle.realign              =  0.0001;  // paddelc tries to go straight forward
+      cfgPaddle.drag                 =  0.0001;  // drag/water resistance
 #endif
       return(true);
     }
     void update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer, uint32_t deltaMillis);
     void debug(Stream &port);
+    void RLpwmToSteer(double &steer, double &pwm, double &pwmR, double &pwmL);
+    void steerToRL(double  &steer, double  &pwm, double  &pwmR, double  &pwmL);
     
   private: 
 #ifdef INPUT_PADDELEC
@@ -94,9 +95,6 @@ class Paddelec
       #endif
     }
 #endif
-    
-    void RLpwmToSteer(double &steer, double &pwm, double &pwmR, double &pwmL);
-    void steerToRL(double  &steer, double  &pwm, double  &pwmR, double  &pwmL);
 };
 
 #endif

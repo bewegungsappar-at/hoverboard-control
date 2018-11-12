@@ -1,5 +1,4 @@
-#ifndef ESPNOWSLAVE_H
-#define ESPNOWSLAVE_H
+#pragma once
 /**
    ESPNOW - Basic communication - Slave
    Date: 26th September 2017
@@ -36,6 +35,8 @@
 #include "config.h"
 
 #define CHANNEL 1
+
+extern bool ESPnowDataReceived;
 
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len);
 
@@ -85,19 +86,17 @@ uint8_t ESPnowdata = 0;
 
 // callback when data is recv from Master
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-  char macStr[18];
+/*  char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  //Serial.print("Last Packet Recv from: "); Serial.println(macStr);
-  //Serial.print("Last Packet Recv Data: "); Serial.println(data_len);
-  //Serial.println("");
+  Serial.print("Last Packet Recv from: "); Serial.println(macStr);
+  Serial.print("Last Packet Recv Data: "); Serial.println(data_len);
+  Serial.println("");
+*/
 
-
-
-if(sizeof motor == data_len)
-{
-  memcpy((void*)&motor, data, sizeof(motorControl));  //TODO: dangerous.. 
+  if(sizeof motor == data_len)
+  {
+    ESPnowDataReceived = true;
+    memcpy((void*)&motor, data, sizeof(motorControl));  //TODO: dangerous.. 
+  }
 }
-
-}
-#endif

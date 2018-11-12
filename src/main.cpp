@@ -9,12 +9,13 @@ void mainloop(void *pvParameters);
 void motorCommunication(void *pvParameters);
 #endif //MULTITASKING
 
-#ifdef INCLUDE_PROTOCOL
+#ifdef OUTPUT_PROTOCOL
   #include <protocol.h>
 
   size_t send_serial_data( const uint8_t *data, size_t len ) {
+    COM[DEBUG_COM]->write(data,len);
+    COM[DEBUG_COM]->println();
     return COM[MOTOR_COM]->write(data,len);
-//    COM[DEBUG_COM]->write(data,len);
   }
 #endif
 
@@ -23,20 +24,21 @@ void motorCommunication(void *pvParameters);
   Paddelec paddelec = Paddelec();
 #endif // INPUT_PADDELEC
 
-#ifdef NUNCHUCK
+#ifdef INPUT_NUNCHUCK
   #include <ArduinoNunchuk.h>
   ArduinoNunchuk nunchuk = ArduinoNunchuk();
-#endif // NUNCHUCK
+#endif // INPUT_NUNCHUCK
 
-#ifdef ESPnowMASTER
+#ifdef OUTPUT_ESPnowMASTER
   #include "ESPnowMaster.h"
 #endif
 
-#ifdef ESPnowSLAVE
+#ifdef INPUT_ESPnowSLAVE
   #include "ESPnowSlave.h"
+  bool ESPnowDataReceived = false;
 #endif
 
-#ifdef PLATOONING
+#ifdef INPUT_PLATOONING
   #include "Platooning.h"
   Platooning platooning = Platooning();
 #endif
@@ -45,7 +47,7 @@ void motorCommunication(void *pvParameters);
   #include "oled.h"
 #endif
 
-#ifdef BLE
+#ifdef INPUT_BLE
   #include "BLE.h"
 #endif
 
@@ -74,11 +76,11 @@ void setup() {
   setupSerialbridge();
 #endif
 
-#ifdef ESPnowMASTER
+#ifdef OUTPUT_ESPnowMASTER
   setupESPnowMaster();
 #endif
 
-#ifdef ESPnowSLAVE
+#ifdef INPUT_ESPnowSLAVE
   setupESPnowSlave();
 #endif
 
@@ -90,11 +92,11 @@ void setup() {
   setupOTA();
 #endif 
 
-#ifdef NUNCHUCK
+#ifdef INPUT_NUNCHUCK
   nunchuk.init();
 #endif
 
-#ifdef BLE
+#ifdef INPUT_BLE
   setupBLE();
 #endif
 
@@ -138,6 +140,7 @@ double limit(double min, double value, double max) {
   return value;
 }
 
+// Incrementally decrease variable
 void slowReset(double &variable, double goal, double step) {
   if      ((variable - goal) > step) variable -= step;
   else if ((goal - variable) > step) variable += step;
@@ -156,7 +159,7 @@ void updateSpeed() {
   motor.actualSteer_kmh = motor.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
 }
 
-#ifdef ESPnowMASTER 
+#ifdef OUTPUT_ESPnowMASTER 
   bool isPaired = false;
 #endif
 
@@ -167,8 +170,8 @@ void loop() {
 }
 
 void mainloop( void *pvparameters ) {
-  int taskno = (int)pvparameters;
-  while(1) {
+    int taskno = (int)pvparameters;
+    while(1) {
 #endif //MULTITASKING
 
   #ifdef OTA_HANDLER  
@@ -182,30 +185,81 @@ void mainloop( void *pvparameters ) {
     deltaMillis = millis() - millisMotorcomm;
     millisMotorcomm = millis();
 
+  // Process all Inputs
+  do {
+    slowReset(motor.pwm, 0.0, 10.0);
+    slowReset(motor.steer, 0.0, 10.0);
 
-#if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
-      paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
-      if(debug) {
-        paddelec.debug(*COM[DEBUG_COM]);
-      }
-  #endif // INPUT_PADDELEC
+  #ifdef INPUT_ESPnowSLAVE
+    // Disable all other Input Methods as soon as data from ESPnow was received
+    if(ESPnowDataReceived) break;
+  #endif
 
-  #ifdef BLE
-  //  loopBLE();
-  motor.pwm = ble_pitch;
-  motor.steer = ble_roll;
-  slowReset(ble_pitch, 0.0, 0.1);
-  slowReset(ble_roll, 0.0, 0.1);
+  #ifdef INPUT_BLE
+    //  loopBLE();
+    motor.pwm = ble_pitch;
+    motor.steer = ble_roll;
+    slowReset(ble_pitch, 0.0, 0.1);
+    slowReset(ble_roll, 0.0, 0.1);
+    break;
   #endif
 
   #ifdef INPUT_IMU
-  //  imu.loopIMU();
+    //  imu.loopIMU();
     imu.update(motor.pwm, motor.steer);
     if(debug) imu.debug(*COM[DEBUG_COM]);
+    
+    // Allow other Inputs when no Button is pressed
+    if(imu.cButton == 1) break;
+  #endif
+
+  #ifdef INPUT_PLATOONING
+    platooning.update(motor.pwm, motor.steer);
+    if(debug) platooning.debug(*COM[DEBUG_COM]);
+
+    // Allow other Inputs when Gametrak is not pulled out 
+    if(platooning.gametrak1.getR_mm() > platooning.cfgPlatooning.rActivationThreshold_mm) break;
+  #endif
+
+  #if defined(INPUT_NUNCHUCK)
+    int nunchuckError = nunchuk.update(motor.pwm, motor.steer);
+    ++errorCount;
+    nunchuk.debug(*COM[DEBUG_COM]);
+    if(nunchuckError >= 1000) {
+      if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
+    } else if(nunchuckError >= 100) {
+      if(debug) COM[DEBUG_COM]->printf("I2C Problems %4i ", nunchuckError);
+    } else if(nunchuckError > 0) {
+      if(debug) COM[DEBUG_COM]->printf("Nunchuck Comm Problems %4i ", nunchuckError);
+    } else  {
+      errorCount = 0;
+    }
+
+    if(errorCount>=5) {
+      nunchuk.reInit();
+      errorCount = 0;
+    }
+
+    // Allow other input when Nunchuck does not send speed
+    if(motor.pwm != 0.0 && motor.steer != 0.0 ) break; 
+  #endif
+
+  #ifdef INPUT_PADDELEC
+    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
+    if(debug) paddelec.debug(*COM[DEBUG_COM]);
+
+    // Allow other Inputs when Gametraks are not pulled out 
+    if(paddelec.gametrak1.r > 500 || paddelec.gametrak2.r > 500) break;
+  #endif
+
+  #ifdef INPUT_PADDELECIMU
+    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
+    if(debug) paddelec.debug(*COM[DEBUG_COM]);
   #endif
   
+  } while(false);
+  
 #ifdef OLED
-
     uint mX = u8g2.getDisplayWidth()/2; 
     uint mY = u8g2.getDisplayHeight()/2;
 
@@ -220,6 +274,16 @@ void mainloop( void *pvparameters ) {
     double gX =  imu.gx / 32768.0 * u8g2.getDisplayWidth() /2.0;
     double gY =  imu.gy / 32768.0 * u8g2.getDisplayHeight()/2.0;
     double gZ =  imu.gz / 32768.0 * u8g2.getDisplayHeight()/2.0;
+  #endif
+
+  #ifdef INPUT_PADDELECIMU
+    double pwmR=0.0, pwmL=0.0;
+    paddelec.steerToRL(motor.steer, motor.pwm, pwmR, pwmL);
+    pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
+    pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
+
+    double pitchangle = paddelec.imu.pitchangle();
+
   #endif
 
   u8g2.firstPage();  
@@ -246,55 +310,30 @@ void mainloop( void *pvparameters ) {
     if(gZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY   ,1, gZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY+gZ,1,-gZ);
   #endif
+  #ifdef INPUT_PADDELECIMU
+
+    if(pwmL>0) u8g2.drawFrame(0    ,mY   ,1, pwmL);
+    else     u8g2.drawFrame(0    ,mY+pwmL,1,-pwmL);
+
+
+    if(pwmR>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, pwmR);
+    else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+pwmR,1,-pwmR);
+    u8g2.setCursor(0,mY+30);
+    u8g2.printf("Pitch%4.0f", pitchangle);
+
+  #endif
 
     u8g2.setCursor(5,5);
     u8g2.printf("%4.0f %4.0f", motor.pwm, motor.steer);
 
     u8g2.drawLine(mX,mY,motorX,motorY);
 
-  #ifdef ESPnowSLAVE
+  #ifdef INPUT_ESPnowSLAVE
     u8g2.setCursor(5,15);
     u8g2.printf("%4i", ESPnowdata);
   #endif
   } while( u8g2.nextPage() );
 #endif
-
-  #if defined(NUNCHUCK) && (defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU))
-      if(paddelec.gametrak1.r < 500 || paddelec.gametrak2.r < 500) { // switch to nunchuck control when paddle is not used
-  #endif
-  #if defined(NUNCHUCK)
-        int nunchuckError = nunchuk.update(motor.pwm, motor.steer);
-        ++errorCount;
-        nunchuk.debug(*COM[DEBUG_COM]);
-        if(nunchuckError >= 1000) {
-          if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
-        } else if(nunchuckError >= 100) {
-          if(debug) COM[DEBUG_COM]->printf("I2C Problems %4i ", nunchuckError);
-        } else if(nunchuckError > 0) {
-          if(debug) COM[DEBUG_COM]->printf("Nunchuck Comm Problems %4i ", nunchuckError);
-        } else  {
-          errorCount = 0;
-        }
-
-        if(errorCount>=5) {
-          nunchuk.reInit();
-          errorCount = 0;
-        }
-  #endif
-  #if defined(NUNCHUCK) && (defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU))
-      }
-  #endif
-
-  #ifdef PLATOONING
-      platooning.update(motor.pwm, motor.steer);
-      if(debug) {
-        platooning.debug(*COM[DEBUG_COM]);
-    #ifdef WIFI
-        for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
-          if(TCPClient[1][cln]) platooning.debug(TCPClient[1][cln]); 
-    #endif
-      }
-  #endif // PLATOONING
 
 #ifdef MULTITASKING
     vTaskDelay(20);
@@ -307,10 +346,10 @@ void motorCommunication( void * pvparameters) {
   while(1) {
 #endif //MULTITASKING
 
-#ifdef ESPnowMASTER
+#ifdef OUTPUT_ESPnowMASTER
     if(!isPaired) {
       ScanForSlave();
-      // If Slave is found, it would be populate in `slave` variable
+      // If Slave is found, it would be populated in `slave` variable
       // We will check if `slave` is defined and then we proceed further
       if (slave.channel == CHANNEL) { // check if slave channel is defined
         // `slave` is defined
@@ -320,10 +359,8 @@ void motorCommunication( void * pvparameters) {
     } else {
       sendData((const void *) &motor, sizeof(motor));
     }
-
-    // wait for 3seconds to run the logic again
-    delay(30);
-#elif INCLUDE_PROTOCOL
+#endif
+#ifdef OUTPUT_PROTOCOL
     PROTOCOL_MSG newMsg;
     memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
     PROTOCOL_MSG *msg = &newMsg;
@@ -350,20 +387,25 @@ void motorCommunication( void * pvparameters) {
         {     
           protocol_byte( COM[MOTOR_COM]->read() );
         }
-#else
+#endif
+#ifdef OUTPUT_BINARY
     /* cast & limit values to a valid range */
     int16_t steer = (int16_t) limit(-1000.0, motor.steer, 1000.0);
     int16_t pwm   = (int16_t) limit(-1000.0, motor.pwm,   1000.0);
     
-    /* calc checksum */
+
+    /* Send motor pwm values to motor control unit */
+    COM[MOTOR_COM]->write((uint8_t *) &steer, sizeof(steer)); 
+    COM[MOTOR_COM]->write((uint8_t *) &pwm,   sizeof(pwm));
+
+  #ifdef OUTPUT_BINARY_CRC
+    /* calc and send checksum */
     uint32_t crc = 0;
     crc32((const void *)&steer, sizeof(steer), &crc); 
     crc32((const void *)&pwm,   sizeof(pwm),   &crc); 
     
-    /* Send motor pwm values to motor control unit */
-    COM[MOTOR_COM]->write((uint8_t *) &steer, sizeof(steer)); 
-    COM[MOTOR_COM]->write((uint8_t *) &pwm,   sizeof(pwm));
     COM[MOTOR_COM]->write((uint8_t *) &crc,   sizeof(crc));
+  #endif
 
     /* refresh actual motor speed */
     updateSpeed();
@@ -383,17 +425,7 @@ void motorCommunication( void * pvparameters) {
     if(debug) COM[DEBUG_COM]->printf("%7.2f %7.2f ", motor.actualSpeed_kmh, motor.actualSteer_kmh);
 #endif
 #ifdef MULTITASKING
-    delay(MOTORINPUT_PERIOD);             
+    delay(MOTORINPUT_PERIOD);           
   }
 #endif //MULTITASKING
 }
-  /* TODO
-  *  calculate paddle angle. if only gametrak angles are subtracted, the activation threshold depends on the distance (r)
-  *  independet variables for left and right wheel, recover MIXER
-  *  CRC checksum, maybe message counter?
-  *  perfect freewheeling, paddle strenght effect based on paddle angle
-  *  define minimum r to function
-  *  check phi vor valid values
-  *  use timer to get constant deltas
-  *  put everything inti functions
-  */

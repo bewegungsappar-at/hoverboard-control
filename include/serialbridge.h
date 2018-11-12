@@ -1,6 +1,4 @@
-#ifndef SERIALBRIDGE_H
-#define SERIALBRIDGE_H
-
+#pragma once
 
 #include "config.h"
 #include <Arduino.h>
@@ -31,5 +29,3 @@
 extern HardwareSerial* COM[NUM_COM];
 
 void setupSerial();
-
-#endif //SERIALBRIDGE_H

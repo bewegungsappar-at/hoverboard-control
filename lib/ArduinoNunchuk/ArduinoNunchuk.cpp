@@ -180,8 +180,8 @@ int ArduinoNunchuk::update(double &speed, double &steer)
       if(analogX > analogX_max) analogX_max = analogX;
       if(analogY > analogY_max) analogY_max = analogY;
     }
-    steer = 0;
-    speed = 0;
+    steer = 0.0;
+    speed = 0.0;
   } else if(!cButton && zButton && !zButton_last && (rollangle() > 90.0 || rollangle() < -90.0) ) {
     Serial2.print("1234567"); // Insert padding byte into serial stream to realign serial buffer
   } else
@@ -200,8 +200,8 @@ int ArduinoNunchuk::update(double &speed, double &steer)
       else                           speed = (analogY - analogY_zero) * 1000.0/(analogY_zero - analogY_min) * NUNCHUCK_JOYSTICK_SPEED_MULT;
 
     } else {
-      steer = 0;
-      speed = 0;
+      steer = 0.0;
+      speed = 0.0;
     }
   }
   return error;
@@ -215,7 +215,6 @@ uint8_t ArduinoNunchuk::_sendByte(byte data, byte location)
   if(Wire.write(data) != 1) return 9;
 
   return Wire.endTransmission();
-//  delay(10); //TODO was: 10ms, is it necessary?
 }
 
 void ArduinoNunchuk::debug(Stream &port)

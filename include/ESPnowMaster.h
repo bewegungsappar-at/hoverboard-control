@@ -1,5 +1,4 @@
-#ifndef ESPNOWMASTER_H
-#define ESPNOWMASTER_H
+#pragma once
 #include <Arduino.h>
 
 /**
@@ -266,4 +265,3 @@ void loopESPnowMaster() {
   // wait for 3seconds to run the logic again
   delay(3000);
 }
-#endif

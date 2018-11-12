@@ -1,3 +1,4 @@
+#pragma once
 /*
  * ArduinoNunchuk.h - Improved Wii Nunchuk library for Arduino
  *
@@ -12,8 +13,6 @@
  *
  */
 
-#ifndef ArduinoNunchuk_H
-#define ArduinoNunchuk_H
 #include <Arduino.h>
 
 /************************* Nunchuk *******************************/
@@ -67,5 +66,3 @@ class ArduinoNunchuk
   private:
     uint8_t _sendByte(byte data, byte location);
 };
-
-#endif

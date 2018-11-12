@@ -1,6 +1,4 @@
-#ifndef Gametrak_H
-#define Gametrak_H
-
+#pragma once
 #include <Arduino.h>
 
 
@@ -43,6 +41,3 @@ class Gametrak {
     bool inv_phi;
     bool inv_theta;
 };
-
-
-#endif
