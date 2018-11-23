@@ -88,16 +88,15 @@ void loop() {
   #endif
 
   #ifdef DEBUG_PLOTTER
-  // Plot
   plot.Plot();
 #endif
 
 
   #ifdef MULTITASKING
 
-    delay(100); 
+    delay(20); 
 
-    #else
+  #else
 
     mainloop( (void *)1 );
     motorCommunication( (void *)1 );
