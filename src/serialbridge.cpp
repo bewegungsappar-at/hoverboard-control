@@ -1,6 +1,7 @@
 #include "serialbridge.h"
 #include <Arduino.h>
 #include "config.h"
+#include "main.h"
 
 #ifdef WIFI
 #include <esp_wifi.h>

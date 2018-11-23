@@ -34,7 +34,7 @@ class Imu : public ArduinoNunchuk
     }
 
     void init() {
-#ifndef OLED
+#ifndef DEBUG_OLED
     #ifdef TTGO
         Wire.begin(5,4);
     #else
