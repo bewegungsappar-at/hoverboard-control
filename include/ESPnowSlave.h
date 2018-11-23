@@ -67,7 +67,7 @@ void configDeviceAP() {
 }
 
 void setupESPnowSlave() {
-  Serial.begin(115200);
+//  Serial.begin(115200);
   Serial.println("ESPNow/Basic/Slave Example");
   //Set device in AP mode to begin with
   WiFi.mode(WIFI_AP);

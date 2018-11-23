@@ -36,7 +36,7 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
   double paddleAngle = -imu.pitchangle();
 #endif
 
-  Serial.print("PD: ");
+//  Serial.print("PD: ");
 
   /* process paddle strokes */
   if       (paddleAngle > cfgPaddle.paddleAngleThreshold) {    // gametrak2 side of paddle is down
@@ -51,11 +51,11 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
     /* update speed and apply crosstalk */
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
-    Serial.print("g2L ");
+//    Serial.print("g2L ");
 #ifdef INPUT_PADDELEC
-    Serial.printf("%6i %6i %6i ",(int)((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
+//    Serial.printf("%6i %6i %6i ",(int)((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
 #elif INPUT_PADDELECIMU
-    Serial.printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
+//    Serial.printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
 #endif
 
 
@@ -71,15 +71,15 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
     /* update speed and apply crosstalk */
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
-    Serial.print("g1R ");
+//    Serial.print("g1R ");
 #ifdef INPUT_PADDELEC
-    Serial.printf("%6i %6i %6i ",(int)((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
+//    Serial.printf("%6i %6i %6i ",(int)((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
 #elif INPUT_PADDELECIMU
-    Serial.printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
+//    Serial.printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
 #endif
   } else  {
-    Serial.print("___ ");
-    Serial.printf("%6i %6i %6i ", 0, 0, 0);
+//    Serial.print("___ ");
+//    Serial.printf("%6i %6i %6i ", 0, 0, 0);
   }
       
   // TODO: calculate paddle engagement by angle, not only difference of adc values

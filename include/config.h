@@ -14,6 +14,7 @@
 
 //#define DEBUG_CONSOLE         // Debug through Serial Interface
 //#define DEBUG_PLOTTER         // Plot Values through Serial Interface
+                                // Get Listener: https://github.com/devinaconley/arduino-plotter/wiki/Installation-and-Quickstart
 
 
 /*************************** Output Method *****************************/

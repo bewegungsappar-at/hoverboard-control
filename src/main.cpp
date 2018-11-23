@@ -22,6 +22,11 @@ void motorCommunication(void *pvParameters);
   bool debug = false;
 #endif
 
+#ifdef DEBUG_PLOTTER
+  #include "Plotter.h"
+  Plotter plot;
+#endif
+
 motorControl motor = {0.0, 0.0, 0.0, 0.0};
 int32_t deltaMillis;
 
@@ -37,6 +42,13 @@ void setup() {
 
 #ifdef DEBUG_OLED
   setupOLED();
+#endif
+
+#ifdef DEBUG_PLOTTER
+  // Start plotter
+ // plot.Begin();
+
+  plot.AddTimeGraph( "Motor Output", 500, "PWM", motor.pwm, "Steer", motor.steer, "vehicle Speed", motor.actualSpeed_kmh, "vehicle Steer", motor.actualSteer_kmh );
 #endif
 
 #ifdef OTA_HANDLER  
@@ -74,6 +86,11 @@ void loop() {
   #ifdef WIFI
     bridge();
   #endif
+
+  #ifdef DEBUG_PLOTTER
+  // Plot
+  plot.Plot();
+#endif
 
 
   #ifdef MULTITASKING

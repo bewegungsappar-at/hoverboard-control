@@ -13,3 +13,8 @@ struct motorControl {
 
 extern motorControl motor;
 extern bool debug;
+
+#ifdef DEBUG_PLOTTER
+  #include "Plotter.h"
+  extern Plotter plot;
+#endif
