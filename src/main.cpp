@@ -13,8 +13,8 @@ void motorCommunication(void *pvParameters);
   #include <protocol.h>
 
   size_t send_serial_data( const uint8_t *data, size_t len ) {
-    COM[DEBUG_COM]->write(data,len);
-    COM[DEBUG_COM]->println();
+//    COM[DEBUG_COM]->write(data,len);
+//    COM[DEBUG_COM]->println();
     return COM[MOTOR_COM]->write(data,len);
   }
 #endif
