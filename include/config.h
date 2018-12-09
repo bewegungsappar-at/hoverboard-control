@@ -1,7 +1,7 @@
 #pragma once
 
 // ############################### Settings ###############################
-// Whenever possible, settings should be managed in platformio.ini! 
+// Whenever possible, settings should be managed in platformio.ini!
 
 /****************************** System *********************************/
 
@@ -22,9 +22,9 @@
 //#define OUTPUT_BINARY         // Binary Protocol, no checksum, easy to loose syc, very dangerous and unstable
 //#define OUTPUT_BINARY_CRC     // Binary Protocol, with checksum, easy to loose syc and therefore unstable
 //#define OUTPUT_PROTOCOL       // Binary Protocol, very powerful but still Alpha
-//#define OUTPUT_ESPnowMASTER   // Relay PWM and Steer through ESPnow to Slave 
+//#define OUTPUT_ESPnowMASTER   // Relay PWM and Steer through ESPnow to Slave
 
-#define MOTORINPUT_PERIOD   20  // Update Motor each xx milliseconds
+#define MOTORINPUT_PERIOD   10  // Update Motor each xx milliseconds
 
 /******************************* Wifi **********************************/
 
@@ -32,7 +32,7 @@
 #ifdef WIFI
 #include <esp_wifi.h>
 
-#define OTA_HANDLER 
+#define OTA_HANDLER
 
 //#define WIFI_TRYSTA   // Try to connect to network on boot
 
@@ -83,7 +83,7 @@
 //#define INPUT_PLATOONING
 //#define INPUT_IMU
 
-// Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used 
+// Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used
 /****  Gametrak 1 ****/
 //#define GAMETRAK1_VCCPIN    25      // Pin used to supply Power
 //#define GAMETRAK1_GNDPIN    26      // Pin used as GND

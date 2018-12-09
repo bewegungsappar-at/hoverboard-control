@@ -41,7 +41,7 @@ uint32_t millisMotorcomm = 0;      // virtual timer for motor update
 int errorCount=0;
 
 void setupInput() {
-    
+
     #ifdef INPUT_ESPnowSLAVE
     setupESPnowSlave();
     #endif
@@ -57,7 +57,7 @@ void setupInput() {
 
     #ifdef INPUT_IMU
     imu.init();
-    #endif 
+    #endif
 
     #if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
     paddelec.init();
@@ -108,7 +108,7 @@ void mainloop( void *pvparameters ) {
     //  imu.loopIMU();
     imu.update(motor.pwm, motor.steer);
     if(debug) imu.debug(*COM[DEBUG_COM]);
-    
+
     // Allow other Inputs when no Button is pressed
     if(imu.cButton == 1) break;
   #endif
@@ -117,7 +117,7 @@ void mainloop( void *pvparameters ) {
     platooning.update(motor.pwm, motor.steer);
     if(debug) platooning.debug(*COM[DEBUG_COM]);
 
-    // Allow other Inputs when Gametrak is not pulled out 
+    // Allow other Inputs when Gametrak is not pulled out
     if(platooning.gametrak1.getR_mm() > platooning.cfgPlatooning.rActivationThreshold_mm) break;
   #endif
 
@@ -141,14 +141,14 @@ void mainloop( void *pvparameters ) {
     }
 
     // Allow other input when Nunchuck does not send speed
-    if(motor.pwm != 0.0 && motor.steer != 0.0 ) break; 
+    if(motor.pwm != 0.0 && motor.steer != 0.0 ) break;
   #endif
 
   #ifdef INPUT_PADDELEC
     paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
 
-    // Allow other Inputs when Gametraks are not pulled out 
+    // Allow other Inputs when Gametraks are not pulled out
     if(paddelec.gametrak1.r > 500 || paddelec.gametrak2.r > 500) break;
   #endif
 
@@ -156,16 +156,16 @@ void mainloop( void *pvparameters ) {
     paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
   #endif
-  
+
   } while(false);
-  
+
 #ifdef DEBUG_OLED
-    uint mX = u8g2.getDisplayWidth()/2; 
+    uint mX = u8g2.getDisplayWidth()/2;
     uint mY = u8g2.getDisplayHeight()/2;
 
     uint motorX = mX+(motor.steer/1000.0*(double)mY);
     uint motorY = mY-(motor.pwm/1000.0*(double)mY);
-    
+
   #ifdef INPUT_IMU
     double aX =  imu.ax / 32768.0 * u8g2.getDisplayHeight()/2.0;
     double aY = -imu.ay / 32768.0 * u8g2.getDisplayWidth() /2.0;
@@ -186,8 +186,8 @@ void mainloop( void *pvparameters ) {
 
   #endif
 
-  u8g2.firstPage();  
-  
+  u8g2.firstPage();
+
   do {
     u8g2_prepare();
 
@@ -197,7 +197,7 @@ void mainloop( void *pvparameters ) {
 
     if(aY>0) u8g2.drawFrame(   mX,0, aY,1);
     else     u8g2.drawFrame(mX+aY,0,-aY,1);
-    
+
     if(aZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, aZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+aZ,1,-aZ);
 
@@ -206,7 +206,7 @@ void mainloop( void *pvparameters ) {
 
     if(gX>0) u8g2.drawFrame(   mX,2, gX,1);
     else     u8g2.drawFrame(mX+gX,2,-gX,1);
-    
+
     if(gZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY   ,1, gZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY+gZ,1,-gZ);
   #endif
@@ -236,7 +236,7 @@ void mainloop( void *pvparameters ) {
 #endif
 
 #ifdef MULTITASKING
-    vTaskDelay(20);
+    vTaskDelay(10);
   }
 #endif //MULTITASKING
 }

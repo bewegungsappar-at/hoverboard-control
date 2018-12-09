@@ -88,10 +88,10 @@ volatile HALL_DATA_STRUCT HallData[2];
 // or  can be stated as : (06+54+54+65+73+74+06)&0xff = 0
 //
 // if a message is received with invalid checksum, then nack will be sent.
-// if a message is received complete, it will with be responded to with a 
+// if a message is received complete, it will with be responded to with a
 // return message, or with the ack message
 //
-// for simplicities sake, we will treat the hoverboard controller as a 
+// for simplicities sake, we will treat the hoverboard controller as a
 // slave unit always - i.e. not ask it to send *unsolicited* messages.
 // in this way, it does not need to wait for ack, etc. from the host.
 // if the host gets a bad message, or no response, it can retry.
@@ -146,10 +146,14 @@ SPEED_DATA SpeedData = {
     {0, 0},
 
     600, // max power (PWM)
-    -600,  // min power 
+    -600,  // min power
     40 // minimum mm/s which we can ask for
 };
 
+PWM_STEER_CMD PwmSteerCmd = {
+    .base_pwm = 0,
+    .steer = 0,
+};
 
 int speed_control = 0; // incicates protocol driven
 
@@ -218,7 +222,7 @@ void PreRead_getposnupdate(){
 
 void PostWrite_setposnupdate(){
     HallData[0].HallPosn_mm_lastread = Position.LeftAbsolute;
-    HallData[1].HallPosn_mm_lastread = Position.RightAbsolute; 
+    HallData[1].HallPosn_mm_lastread = Position.RightAbsolute;
 }
 
 typedef struct tag_POSN_INCR {
@@ -229,8 +233,8 @@ typedef struct tag_POSN_INCR {
 POSN_INCR PositionIncr;
 
 void PostWrite_incrementposition(){
-    PosnData.wanted_posn_mm[0] += PositionIncr.Left; 
-    PosnData.wanted_posn_mm[1] += PositionIncr.Right; 
+    PosnData.wanted_posn_mm[0] += PositionIncr.Left;
+    PosnData.wanted_posn_mm[1] += PositionIncr.Right;
 }
 
 
@@ -289,6 +293,7 @@ PARAMSTAT params[] = {
     { 0x04, NULL, NULL, UI_NONE, &Position,          sizeof(Position),       PARAM_RW,   PreRead_getposnupdate, NULL, NULL, PostWrite_setposnupdate },
     { 0x05, NULL, NULL, UI_NONE, &PositionIncr,      sizeof(PositionIncr),   PARAM_RW,    NULL, NULL, NULL, PostWrite_incrementposition },
     { 0x06, NULL, NULL, UI_NONE, &PosnData,          sizeof(PosnData),       PARAM_RW,    NULL, NULL, NULL, NULL },
+    { 0x07, NULL, NULL, UI_NONE, &PwmSteerCmd,          sizeof(PwmSteerCmd),       PARAM_RW,    NULL, NULL, NULL, NULL },
 
     { 0x80, "flash magic", "m", UI_SHORT, &FlashContent.magic, sizeof(short), PARAM_RW, NULL, NULL, NULL, PostWrite_writeflash },  // write this with CURRENT_MAGIC to commit to flash
 
@@ -318,7 +323,7 @@ void ascii_process_msg(char *cmd, int len);
 
 
 ///////////////////////////////////////////////////
-// local variables for handling the machine protocol, 
+// local variables for handling the machine protocol,
 // not really for external usage
 //
 typedef struct tag_PROTOCOL_STAT {
@@ -352,7 +357,7 @@ void protocol_byte( unsigned char byte ){
                 s.CS = 0;
             } else {
                 //////////////////////////////////////////////////////
-                // if the byte was NOT SOM (02), then treat it as an 
+                // if the byte was NOT SOM (02), then treat it as an
                 // ascii protocol byte.  BOTH protocol can co-exist
 //                ascii_byte( byte );
                 //////////////////////////////////////////////////////
@@ -410,10 +415,10 @@ void protocol_send_test(){
 
 
 /////////////////////////////////////////////
-// a complete machineprotocl message has been 
+// a complete machineprotocl message has been
 // received without error
 void process_message(PROTOCOL_MSG *msg){
-    PROTOCOL_BYTES *bytes = (PROTOCOL_BYTES *)msg->bytes; 
+    PROTOCOL_BYTES *bytes = (PROTOCOL_BYTES *)msg->bytes;
     switch (bytes->cmd){
         case PROTOCOL_CMD_READVAL:{
 
