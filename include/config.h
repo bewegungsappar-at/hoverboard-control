@@ -111,6 +111,7 @@
 
 #ifdef OUTPUT_PROTOCOL
   #define INCLUDE_PROTOCOL
+  #define HALL_INTERRUPTS
 #endif
 
 

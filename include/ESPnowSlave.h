@@ -37,6 +37,7 @@
 #define CHANNEL 1
 
 extern bool ESPnowDataReceived;
+esp_now_peer_info_t master;
 
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len);
 
@@ -94,9 +95,10 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   Serial.println("");
 */
 
-  if(sizeof motor == data_len)
+  if(sizeof motor.setpoint == data_len)
   {
     ESPnowDataReceived = true;
-    memcpy((void*)&motor, data, sizeof(motorControl));  //TODO: dangerous.. 
+    memcpy((void*)&motor.setpoint, data, sizeof(motorSetpoint));  //TODO: dangerous.. 
   }
+  esp_now_send(mac_addr, (uint8_t*)&motor.measured, sizeof(motor.measured));
 }

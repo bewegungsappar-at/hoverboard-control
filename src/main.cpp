@@ -22,7 +22,7 @@ void motorCommunication(void *pvParameters);
   bool debug = false;
 #endif
 
-motorControl motor = {0.0, 0.0, 0.0, 0.0};
+motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
 int32_t deltaMillis;
 
 void setup() {

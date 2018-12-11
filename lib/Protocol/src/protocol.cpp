@@ -28,7 +28,7 @@
 #include <Arduino.h>
 
 #include "flashcontent.h"
-
+#include "main.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -220,6 +220,15 @@ void PreRead_getposnupdate(){
     Position.RightOffset = HallData[1].HallPosn_mm - HallData[1].HallPosn_mm_lastread;
 }
 
+void PostRead_halldata() {
+    motor.measured.actualSpeed_kmh = (HallData[0].HallSpeed_mm_per_s + HallData[1].HallSpeed_mm_per_s) / 2.0; 
+    motor.measured.actualSteer_kmh = HallData[0].HallSpeed_mm_per_s - motor.measured.actualSpeed_kmh; 
+    Serial.printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n"\
+                  "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n",
+                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,
+                  HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped);
+}
+
 void PostWrite_setposnupdate(){
     HallData[0].HallPosn_mm_lastread = Position.LeftAbsolute;
     HallData[1].HallPosn_mm_lastread = Position.RightAbsolute;
@@ -287,7 +296,7 @@ PARAMSTAT params[] = {
     { 0x01, NULL, NULL, UI_NONE, &sensor_data,       sizeof(sensor_data),    PARAM_R,    NULL, NULL, NULL, NULL },
 #endif
 #ifdef HALL_INTERRUPTS
-    { 0x02, NULL, NULL, UI_NONE, (void *)&HallData,          sizeof(HallData),       PARAM_R,    NULL, NULL, NULL, NULL },
+    { 0x02, NULL, NULL, UI_NONE, (void *)&HallData,          sizeof(HallData),       PARAM_R,    NULL, PostRead_halldata, NULL, NULL },
 #endif
     { 0x03, NULL, NULL, UI_NONE, &SpeedData,         sizeof(SpeedData),      PARAM_RW,   PreRead_getspeeds, NULL, NULL, PostWrite_setspeeds },
     { 0x04, NULL, NULL, UI_NONE, &Position,          sizeof(Position),       PARAM_RW,   PreRead_getposnupdate, NULL, NULL, PostWrite_setposnupdate },
@@ -431,7 +440,8 @@ void process_message(PROTOCOL_MSG *msg){
                     // NOTE: re-uses the msg object (part of stats)
                     unsigned char *src = (unsigned char*)params[i].ptr;
                     for (int j = 0; j < params[i].len; j++){
-                        writevals->content[j] = *(src++);
+//                        writevals->content[j] = *(src++);
+                        *(src++) = writevals->content[j]; // TODO: very dangerous, at a read command, everything is overwritten.
                     }
                     msg->len = 1+1+1+params[i].len+1;
                     // send back with 'read' command plus data like write.
@@ -467,6 +477,7 @@ void process_message(PROTOCOL_MSG *msg){
                     //protocol_send(msg);
                     Serial.println("Reference 3");
                     if (params[i].postwrite) params[i].postwrite();
+                    break;
                 }
             }
             // nothing written

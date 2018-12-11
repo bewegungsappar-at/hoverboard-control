@@ -87,8 +87,8 @@ void mainloop( void *pvparameters ) {
 
   // Process all Inputs
   do {
-    slowReset(motor.pwm, 0.0, 10.0);
-    slowReset(motor.steer, 0.0, 10.0);
+    slowReset(motor.setpoint.pwm, 0.0, 10.0);
+    slowReset(motor.setpoint.steer, 0.0, 10.0);
 
   #ifdef INPUT_ESPnowSLAVE
     // Disable all other Input Methods as soon as data from ESPnow was received
@@ -97,8 +97,8 @@ void mainloop( void *pvparameters ) {
 
   #ifdef INPUT_BLE
     //  loopBLE();
-    motor.pwm = ble_pitch;
-    motor.steer = ble_roll;
+    motor.setpoint.pwm = ble_pitch;
+    motor.setpoint.steer = ble_roll;
     slowReset(ble_pitch, 0.0, 0.1);
     slowReset(ble_roll, 0.0, 0.1);
     break;
@@ -106,7 +106,7 @@ void mainloop( void *pvparameters ) {
 
   #ifdef INPUT_IMU
     //  imu.loopIMU();
-    imu.update(motor.pwm, motor.steer);
+    imu.update(motor.setpoint.pwm, motor.setpoint.steer);
     if(debug) imu.debug(*COM[DEBUG_COM]);
 
     // Allow other Inputs when no Button is pressed
@@ -114,7 +114,7 @@ void mainloop( void *pvparameters ) {
   #endif
 
   #ifdef INPUT_PLATOONING
-    platooning.update(motor.pwm, motor.steer);
+    platooning.update(motor.setpoint.pwm, motor.setpoint.steer);
     if(debug) platooning.debug(*COM[DEBUG_COM]);
 
     // Allow other Inputs when Gametrak is not pulled out
@@ -122,7 +122,7 @@ void mainloop( void *pvparameters ) {
   #endif
 
   #if defined(INPUT_NUNCHUCK)
-    int nunchuckError = nunchuk.update(motor.pwm, motor.steer);
+    int nunchuckError = nunchuk.update(motor.setpoint.pwm, motor.setpoint.steer);
     ++errorCount;
     nunchuk.debug(*COM[DEBUG_COM]);
     if(nunchuckError >= 1000) {
@@ -141,11 +141,11 @@ void mainloop( void *pvparameters ) {
     }
 
     // Allow other input when Nunchuck does not send speed
-    if(motor.pwm != 0.0 && motor.steer != 0.0 ) break;
+    if(motor.setpoint.pwm != 0.0 && motor.setpoint.steer != 0.0 ) break;
   #endif
 
   #ifdef INPUT_PADDELEC
-    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
+    paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
 
     // Allow other Inputs when Gametraks are not pulled out
@@ -153,7 +153,7 @@ void mainloop( void *pvparameters ) {
   #endif
 
   #ifdef INPUT_PADDELECIMU
-    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
+    paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
   #endif
 
@@ -163,8 +163,8 @@ void mainloop( void *pvparameters ) {
     uint mX = u8g2.getDisplayWidth()/2;
     uint mY = u8g2.getDisplayHeight()/2;
 
-    uint motorX = mX+(motor.steer/1000.0*(double)mY);
-    uint motorY = mY-(motor.pwm/1000.0*(double)mY);
+    uint motorX = mX+(motor.setpoint.steer/1000.0*(double)mY);
+    uint motorY = mY-(motor.setpoint.pwm/1000.0*(double)mY);
 
   #ifdef INPUT_IMU
     double aX =  imu.ax / 32768.0 * u8g2.getDisplayHeight()/2.0;
@@ -178,7 +178,7 @@ void mainloop( void *pvparameters ) {
 
   #ifdef INPUT_PADDELECIMU
     double pwmR=0.0, pwmL=0.0;
-    paddelec.steerToRL(motor.steer, motor.pwm, pwmR, pwmL);
+    paddelec.steerToRL(motor.setpoint.steer, motor.setpoint.pwm, pwmR, pwmL);
     pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
     pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
 
@@ -224,7 +224,7 @@ void mainloop( void *pvparameters ) {
   #endif
 
     u8g2.setCursor(5,5);
-    u8g2.printf("%4.0f %4.0f", motor.pwm, motor.steer);
+    u8g2.printf("%4.0f %4.0f", motor.setpoint.pwm, motor.setpoint.steer);
 
     u8g2.drawLine(mX,mY,motorX,motorY);
 

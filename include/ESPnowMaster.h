@@ -226,6 +226,13 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("Last Packet Send Status: "); Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
+// callback when data is recv from Master
+void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
+  if(sizeof motor.measured == data_len) {
+    memcpy((void*)&motor.measured, data, sizeof(motorMeasured));  //TODO: dangerous.. 
+  }
+}
+
 void setupESPnowMaster() {
   Serial.begin(115200);
   //Set device in STA mode to begin with
@@ -238,6 +245,7 @@ void setupESPnowMaster() {
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
+  esp_now_register_recv_cb(OnDataRecv);
 }
 
 void loopESPnowMaster() {
