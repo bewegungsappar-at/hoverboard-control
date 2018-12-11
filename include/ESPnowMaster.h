@@ -198,9 +198,9 @@ void sendData(const void *data, size_t n_bytes) {
   const uint8_t *peer_addr = slave.peer_addr;
 //  Serial.print("Sending: "); Serial.println(data);
   esp_err_t result = esp_now_send(peer_addr, (uint8_t*)data, n_bytes);
-  Serial.print("Send Status: ");
+//  Serial.print("Send Status: ");
   if (result == ESP_OK) {
-    Serial.println("Success");
+//    Serial.println("Success");
   } else if (result == ESP_ERR_ESPNOW_NOT_INIT) {
     // How did we get so far!!
     Serial.println("ESPNOW not Init.");
@@ -219,17 +219,18 @@ void sendData(const void *data, size_t n_bytes) {
 
 // callback when data is sent from Master to Slave
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  char macStr[18];
+/*  char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
   Serial.print("Last Packet Sent to: "); Serial.println(macStr);
   Serial.print("Last Packet Send Status: "); Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+*/
 }
 
 // callback when data is recv from Master
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   if(sizeof motor.measured == data_len) {
-    memcpy((void*)&motor.measured, data, sizeof(motorMeasured));  //TODO: dangerous.. 
+    memcpy((void*)&motor.measured, data, sizeof(motorMeasured));  //TODO: dangerous..
   }
 }
 

@@ -124,7 +124,7 @@ void mainloop( void *pvparameters ) {
   #if defined(INPUT_NUNCHUCK)
     int nunchuckError = nunchuk.update(motor.setpoint.pwm, motor.setpoint.steer);
     ++errorCount;
-    nunchuk.debug(*COM[DEBUG_COM]);
+    if(debug) nunchuk.debug(*COM[DEBUG_COM]);
     if(nunchuckError >= 1000) {
       if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
     } else if(nunchuckError >= 100) {

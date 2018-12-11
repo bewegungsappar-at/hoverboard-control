@@ -10,8 +10,8 @@
   #include <protocol.h>
 
   size_t send_serial_data( const uint8_t *data, size_t len ) {
-    COM[DEBUG_COM]->write(data,len);
-    COM[DEBUG_COM]->println();
+//    COM[DEBUG_COM]->write(data,len);
+//    COM[DEBUG_COM]->println();
     return COM[MOTOR_COM]->write(data,len);
   }
 #endif
@@ -82,7 +82,7 @@ void motorCommunication( void * pvparameters) {
 
     memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
     PROTOCOL_BYTES_READVALS *readvals = (PROTOCOL_BYTES_READVALS *) msg->bytes;
-    
+
     msg->SOM = PROTOCOL_SOM; //Start of Message;
 
     readvals->cmd  = PROTOCOL_CMD_READVAL;  // Read value

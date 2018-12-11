@@ -221,12 +221,14 @@ void PreRead_getposnupdate(){
 }
 
 void PostRead_halldata() {
-    motor.measured.actualSpeed_kmh = (HallData[0].HallSpeed_mm_per_s + HallData[1].HallSpeed_mm_per_s) / 2.0; 
-    motor.measured.actualSteer_kmh = HallData[0].HallSpeed_mm_per_s - motor.measured.actualSpeed_kmh; 
-    Serial.printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n"\
-                  "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n",
-                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,
-                  HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped);
+    motor.measured.actualSpeed_kmh = (HallData[0].HallSpeed_mm_per_s + HallData[1].HallSpeed_mm_per_s) / 2.0 * 3600.0 / 1000000.0;
+    motor.measured.actualSteer_kmh = (HallData[0].HallSpeed_mm_per_s * 3600.0 / 1000000.0 )- motor.measured.actualSpeed_kmh;
+
+    Serial.printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
+//    Serial.printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu   "\
+//                  "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n",
+//                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,
+//                  HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped);
 }
 
 void PostWrite_setposnupdate(){
@@ -384,7 +386,7 @@ void protocol_byte( unsigned char byte ){
             if (s.count == s.curr_msg.len){
                 if (s.CS != 0){
                     protocol_send_nack();
-                    Serial.write((unsigned char *)&s.curr_msg,s.curr_msg.len);
+//                    Serial.write((unsigned char *)&s.curr_msg,s.curr_msg.len);
                 } else {
                     process_message(&s.curr_msg);  // this should ack or return a message
                 }
@@ -446,7 +448,7 @@ void process_message(PROTOCOL_MSG *msg){
                     msg->len = 1+1+1+params[i].len+1;
                     // send back with 'read' command plus data like write.
                     //protocol_send(msg);
-                    Serial.println("Reference 1");
+//                    Serial.println("Reference 1");
                     if (params[i].postread) params[i].postread();
                     break;
                 }
@@ -475,7 +477,7 @@ void process_message(PROTOCOL_MSG *msg){
                     msg->len = 1+1+0+1;
                     // send back with 'write' command with no data.
                     //protocol_send(msg);
-                    Serial.println("Reference 3");
+//                    Serial.println("Reference 3");
                     if (params[i].postwrite) params[i].postwrite();
                     break;
                 }
