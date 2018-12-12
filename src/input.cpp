@@ -18,8 +18,8 @@
   ArduinoNunchuk nunchuk = ArduinoNunchuk();
 #endif // INPUT_NUNCHUCK
 
-#ifdef INPUT_ESPnowSLAVE
-  #include "ESPnowSlave.h"
+#ifdef INPUT_ESPNOW
+  #include "ESP32_espnow_MasterSlave.h"
   bool ESPnowDataReceived = false;
 #endif
 
@@ -42,8 +42,8 @@ int errorCount=0;
 
 void setupInput() {
 
-    #ifdef INPUT_ESPnowSLAVE
-    setupESPnowSlave();
+    #ifdef INPUT_ESPNOW
+    setupEspNow();
     #endif
 
 
@@ -90,7 +90,7 @@ void mainloop( void *pvparameters ) {
     slowReset(motor.setpoint.pwm, 0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
 
-  #ifdef INPUT_ESPnowSLAVE
+  #ifdef INPUT_ESPNOW
     // Disable all other Input Methods as soon as data from ESPnow was received
     if(ESPnowDataReceived) break;
   #endif
@@ -228,10 +228,6 @@ void mainloop( void *pvparameters ) {
 
     u8g2.drawLine(mX,mY,motorX,motorY);
 
-  #ifdef INPUT_ESPnowSLAVE
-    u8g2.setCursor(5,15);
-    u8g2.printf("%4i", ESPnowdata);
-  #endif
   } while( u8g2.nextPage() );
 #endif
 

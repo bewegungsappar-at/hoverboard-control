@@ -16,10 +16,8 @@
   }
 #endif
 
-#ifdef OUTPUT_ESPnowMASTER
-  #include "ESPnowMaster.h"
-  bool isPaired = false;
-
+#if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
+  #include "ESP32_espnow_MasterSlave.h"
 #endif
 
 
@@ -31,8 +29,8 @@ double limit(double min, double value, double max) {
 
 void setupOutput() {
 
-    #ifdef OUTPUT_ESPnowMASTER
-    setupESPnowMaster();
+    #ifdef OUTPUT_ESPNOW
+    setupEspNow();
     #endif
 }
 
@@ -42,20 +40,21 @@ void motorCommunication( void * pvparameters) {
   while(1) {
 #endif //MULTITASKING
 
-#ifdef OUTPUT_ESPnowMASTER
-    if(!isPaired) {
-      ScanForSlave();
-      // If Slave is found, it would be populated in `slave` variable
-      // We will check if `slave` is defined and then we proceed further
-      if (slave.channel == CHANNEL) { // check if slave channel is defined
-        // `slave` is defined
-        // Add slave as peer if it has not been added already
-        isPaired = manageSlave();
-      }
-    } else {
-      sendData((const void *) &motor, sizeof(motor));
+#ifdef OUTPUT_ESPNOW
+  if (SlaveCnt > 0) { // check if slave channel is defined
+    // `slave` is defined
+    sendData((const void *) &motor.setpoint, sizeof(motor.setpoint));
+  } else {
+    ScanForSlave();
+    if (SlaveCnt > 0) { // check if slave channel is defined
+      // `slave` is defined
+      // Add slave as peer if it has not been added already
+      manageSlave();
+      // pair success or already paired
     }
+  }
 #endif
+
 #ifdef OUTPUT_PROTOCOL
     PROTOCOL_MSG newMsg;
     memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
@@ -147,8 +146,21 @@ void motorCommunication( void * pvparameters) {
 #define SPEED_PWM_CONVERSION_FACTOR  0.2   // Assume 100% PWM = 1000 = Full Speed = 20km/h = 20000 m/h. Therefore 20000 / 1000 = 20
 #define SPEED_FILTER                 0.015  // Low pass Filter Value. 1 means no filter at all, 0 no value update.
 void updateSpeed() {
-  #ifndef OUTPUT_ESPnowMASTER
-    motor.measured.actualSpeed_kmh = motor.measured.actualSpeed_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.pwm   * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
-    motor.measured.actualSteer_kmh = motor.measured.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
-  #endif
+#ifdef INPUT_ESPNOW
+  if (SlaveCnt > 0) { // check if slave channel is defined
+    // `slave` is defined
+    sendData((const void *) &motor.measured, sizeof(motor.measured));
+  } else {
+    ScanForSlave();
+    if (SlaveCnt > 0) { // check if slave channel is defined
+      // `slave` is defined
+      // Add slave as peer if it has not been added already
+      manageSlave();
+      // pair success or already paired
+    }
+  }
+#else
+  motor.measured.actualSpeed_kmh = motor.measured.actualSpeed_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.pwm   * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
+  motor.measured.actualSteer_kmh = motor.measured.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
+#endif
 }

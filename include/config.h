@@ -22,7 +22,7 @@
 //#define OUTPUT_BINARY         // Binary Protocol, no checksum, easy to loose syc, very dangerous and unstable
 //#define OUTPUT_BINARY_CRC     // Binary Protocol, with checksum, easy to loose syc and therefore unstable
 //#define OUTPUT_PROTOCOL       // Binary Protocol, very powerful but still Alpha
-//#define OUTPUT_ESPnowMASTER   // Relay PWM and Steer through ESPnow to Slave
+//#define OUTPUT_ESPNOW   // Relay PWM and Steer through ESPnow to Slave
 
 #define MOTORINPUT_PERIOD   10  // Update Motor each xx milliseconds
 
@@ -75,7 +75,7 @@
 
 /*************************** Input Method ******************************/
 
-//#define INPUT_ESPnowSLAVE
+//#define INPUT_ESPNOW
 //#define INPUT_BLE
 //#define INPUT_PADDELEC                    // look at Paddelec.h for paddelec specific config options!
 //#define INPUT_PADDELECIMU
@@ -121,7 +121,7 @@
   #error OUTPUT_PROTOCOL and OUTPUT_BINARY not allowed, both on same serial.
 #endif
 
-#if !defined(OUTPUT_PROTOCOL) && !defined(OUTPUT_BINARY) && !defined(OUTPUT_ESPnowMASTER)
+#if !defined(OUTPUT_PROTOCOL) && !defined(OUTPUT_BINARY) && !defined(OUTPUT_ESPNOW)
   #error no Output Method defined. Nothing will be done..
 #endif
 
@@ -130,7 +130,7 @@
 #endif
 
 #if !defined(INPUT_BLE) && \
-    !defined(INPUT_ESPnowSLAVE) && \
+    !defined(INPUT_ESPNOW) && \
     !defined(INPUT_IMU) && \
     !defined(INPUT_NUNCHUCK) && \
     !defined(INPUT_PADDELEC) && \
@@ -143,10 +143,10 @@
   #error INPUT_BLE not yet implmented. Also set define guard here.
 #endif
 
-#if defined(WIFI) && (defined(INPUT_ESPnowSLAVE) || defined(OUTPUT_ESPnowMASTER))
+#if defined(WIFI) && (defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW))
   #error ESPnow is Wifi too. Cannot coexist.
 #endif
 
-#if defined(INPUT_ESPnowSLAVE) && defined(OUTPUT_ESPnowMASTER)
+#if defined(INPUT_ESPNOW) && defined(OUTPUT_ESPNOW)
   #error ESP now has to bei EITHER Master or Slave
 #endif

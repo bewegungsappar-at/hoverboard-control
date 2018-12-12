@@ -32,6 +32,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#ifdef INPUT_ESPNOW
+  #include "ESP32_espnow_MasterSlave.h"
+#endif
+
+#include "serialbridge.h"
 
 #ifdef INCLUDE_PROTOCOL
 
@@ -224,11 +229,25 @@ void PostRead_halldata() {
     motor.measured.actualSpeed_kmh = (HallData[0].HallSpeed_mm_per_s + HallData[1].HallSpeed_mm_per_s) / 2.0 * 3600.0 / 1000000.0;
     motor.measured.actualSteer_kmh = (HallData[0].HallSpeed_mm_per_s * 3600.0 / 1000000.0 )- motor.measured.actualSpeed_kmh;
 
-    Serial.printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
+    if(debug) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
 //    Serial.printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu   "\
 //                  "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n",
 //                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,
 //                  HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped);
+#ifdef INPUT_ESPNOW
+  if (SlaveCnt > 0) { // check if slave channel is defined
+    // `slave` is defined
+    sendData((const void *) &motor.measured, sizeof(motor.measured));
+  } else {
+    ScanForSlave();
+    if (SlaveCnt > 0) { // check if slave channel is defined
+      // `slave` is defined
+      // Add slave as peer if it has not been added already
+      manageSlave();
+      // pair success or already paired
+    }
+  }
+#endif
 }
 
 void PostWrite_setposnupdate(){
