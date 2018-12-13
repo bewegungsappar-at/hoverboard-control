@@ -31,6 +31,11 @@ motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
 int32_t deltaMillis;
 
 void setup() {
+
+#ifdef DEBUG_OLED
+  setupOLED();
+#endif
+
   setupOutput();
   setupInput();
   setupSerial();

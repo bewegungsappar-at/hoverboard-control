@@ -22,7 +22,7 @@
 
 #ifdef INPUT_ESPNOW
   #include "ESP32_espnow_MasterSlave.h"
-  bool ESPnowDataReceived = false;
+  int espnowTimeout = 10000;
 #endif
 
 #ifdef INPUT_PLATOONING
@@ -93,7 +93,10 @@ void mainloop( void *pvparameters ) {
 
   #ifdef INPUT_ESPNOW
     // Disable all other Input Methods as soon as data from ESPnow was received
-    if(ESPnowDataReceived) break;
+    if(espnowTimeout < 30) {
+      espnowTimeout++;
+      break;
+    }
   #endif
 
   #ifdef INPUT_BLE
@@ -134,18 +137,18 @@ void mainloop( void *pvparameters ) {
         nunchukReinitCount = 0;
         break;
       case NUNCHUK_ERR_COUNT:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT");
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT ");
         break;
       case NUNCHUK_ERR_NOINIT:
         nunchuk.reInit();
         nunchukReinitCount = 0;
-        if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT");
+        if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT ");
         break;
       case NUNCHUK_ERR_SEND:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND");
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND ");
         break;
       case NUNCHUK_ERR_ZERO:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO");
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO ");
         break;
     }
 

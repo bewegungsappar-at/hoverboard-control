@@ -47,7 +47,7 @@ void setupSerial() {
   #endif
   delay(300);
 
-  #ifdef DEBUG_PLOTTER
+  #ifndef DEBUG_PLOTTER
     COM[0]->begin(UART_BAUD0, SERIAL_PARAM0, SERIAL0_RXPIN, SERIAL0_TXPIN);
   #endif
     COM[1]->begin(UART_BAUD1, SERIAL_PARAM1, SERIAL1_RXPIN, SERIAL1_TXPIN);

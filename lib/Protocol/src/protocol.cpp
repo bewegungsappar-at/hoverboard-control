@@ -31,6 +31,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "main.h"
+#include "input.h"
 #ifdef INPUT_ESPNOW
   #include "ESP32_espnow_MasterSlave.h"
 #endif
@@ -234,18 +236,20 @@ void PostRead_halldata() {
 //                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,
 //                  HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped);
 #ifdef INPUT_ESPNOW
-  if (SlaveCnt > 0) { // check if slave channel is defined
-    // `slave` is defined
-    sendData((const void *) &motor.measured, sizeof(motor.measured));
-  } else {
-    ScanForSlave();
-    if (SlaveCnt > 0) { // check if slave channel is defined
-      // `slave` is defined
-      // Add slave as peer if it has not been added already
-      manageSlave();
-      // pair success or already paired
+    if(espnowTimeout) {
+        if (SlaveCnt > 0) { // check if slave channel is defined
+            // `slave` is defined
+            sendData((const void *) &motor.measured, sizeof(motor.measured));
+        } else {
+            ScanForSlave();
+            if (SlaveCnt > 0) { // check if slave channel is defined
+            // `slave` is defined
+            // Add slave as peer if it has not been added already
+            manageSlave();
+            // pair success or already paired
+            }
+        }
     }
-  }
 #endif
 }
 

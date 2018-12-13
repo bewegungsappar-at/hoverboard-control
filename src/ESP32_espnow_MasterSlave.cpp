@@ -226,10 +226,9 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
 
 #ifdef INPUT_ESPNOW
   if(sizeof(motorMeasured) == data_len) {
-    ESPnowDataReceived = true;
+    espnowTimeout = 0;
     memcpy((void*)&motor.setpoint, data, sizeof(motorSetpoint));  //TODO: dangerous..
     if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
-
   }
 #endif
 #ifdef OUTPUT_ESPNOW
