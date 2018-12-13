@@ -23,7 +23,7 @@ void motorCommunication(void *pvParameters);
 #endif
 
 #ifdef DEBUG_PLOTTER
-  #include "Plotter.h"
+  #include <Plotter.h>
   Plotter plot;
 #endif
 
@@ -44,7 +44,7 @@ void setup() {
   // Start plotter
  // plot.Begin();
 
-  plot.AddTimeGraph( "Motor Output", 500, "PWM", motor.pwm, "Steer", motor.steer, "vehicle Speed", motor.actualSpeed_kmh, "vehicle Steer", motor.actualSteer_kmh );
+  plot.AddTimeGraph( "Motor Output", 500, "PWM", motor.setpoint.pwm, "Steer", motor.setpoint.steer, "vehicle Speed", motor.measured.actualSpeed_kmh, "vehicle Steer", motor.measured.actualSteer_kmh );
 #endif
 
 #ifdef OTA_HANDLER
@@ -90,7 +90,7 @@ void loop() {
 
   #ifdef MULTITASKING
 
-    delay(20); 
+    delay(20);
 
   #else
 

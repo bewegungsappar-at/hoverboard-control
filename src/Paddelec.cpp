@@ -1,9 +1,10 @@
 
 #include "Paddelec.h"
+#include "serialbridge.h"
 
 #if defined(INPUT_PADDELECIMU) || defined(INPUT_PADDELEC)
 
-
+#define INPUT_PADDELEC_DEBUG false
 
 
 void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer_kmh, uint32_t deltaMillis) {
@@ -36,11 +37,11 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
   double paddleAngle = -imu.pitchangle();
 #endif
 
-//  Serial.print("PD: ");
+  if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("PD: ");
 
   /* process paddle strokes */
   if       (paddleAngle > cfgPaddle.paddleAngleThreshold) {    // gametrak2 side of paddle is down
- 
+
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
 #ifdef INPUT_PADDELEC
     double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed) - speedL_kmh;
@@ -51,11 +52,11 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
     /* update speed and apply crosstalk */
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
-//    Serial.print("g2L ");
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("g2L ");
 #ifdef INPUT_PADDELEC
-//    Serial.printf("%6i %6i %6i ",(int)((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
 #elif INPUT_PADDELECIMU
-//    Serial.printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
 #endif
 
 
@@ -71,17 +72,17 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
     /* update speed and apply crosstalk */
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
-//    Serial.print("g1R ");
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("g1R ");
 #ifdef INPUT_PADDELEC
-//    Serial.printf("%6i %6i %6i ",(int)((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
 #elif INPUT_PADDELECIMU
-//    Serial.printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
 #endif
   } else  {
-//    Serial.print("___ ");
-//    Serial.printf("%6i %6i %6i ", 0, 0, 0);
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("___ ");
+    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
   }
-      
+
   // TODO: calculate paddle engagement by angle, not only difference of adc values
   // TODO: use paddle angle as strength multiplier
 
@@ -89,7 +90,7 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
   RLpwmToSteer(steer, pwm, pwmR, pwmL);
 }
 
-void Paddelec::debug(Stream &port) 
+void Paddelec::debug(Stream &port)
 {
 #ifdef INPUT_PADDELEC
   gametrak1.debug(port);

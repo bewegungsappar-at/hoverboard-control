@@ -7,6 +7,8 @@
 #include "Wire.h"
 #include "config.h"
 
+#define IMU_DEBUG true
+
 //#define IMU_CPIN 23
 //#define IMU_ZPIN 25
 //#define IMU_GNDPIN 14
@@ -47,35 +49,44 @@ class Imu : public ArduinoNunchuk
         // it's really up to you depending on your project)
 
         // initialize device
-        Serial.println("Initializing I2C devices...");
+        if(IMU_DEBUG) delay(3000);
+        if(IMU_DEBUG) Serial.println("Initializing I2C devices...");
         accelgyro.initialize();
 
         // verify connection
-        Serial.println("Testing device connections...");
-        Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+        if(IMU_DEBUG) Serial.println("Testing device connections...");
+        if(IMU_DEBUG) Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
         // use the code below to change accel/gyro offset values
-        /*
-        Serial.println("Updating internal sensor offsets...");
+        if(IMU_DEBUG) Serial.println("Updating internal sensor offsets...");
         // -76	-2359	1688	0	0	0
-        Serial.print(accelgyro.getXAccelOffset()); Serial.print("\t"); // -76
-        Serial.print(accelgyro.getYAccelOffset()); Serial.print("\t"); // -2359
-        Serial.print(accelgyro.getZAccelOffset()); Serial.print("\t"); // 1688
-        Serial.print(accelgyro.getXGyroOffset()); Serial.print("\t"); // 0
-        Serial.print(accelgyro.getYGyroOffset()); Serial.print("\t"); // 0
-        Serial.print(accelgyro.getZGyroOffset()); Serial.print("\t"); // 0
-        Serial.print("\n");
-        accelgyro.setXGyroOffset(220);
-        accelgyro.setYGyroOffset(76);
-        accelgyro.setZGyroOffset(-85);
-        Serial.print(accelgyro.getXAccelOffset()); Serial.print("\t"); // -76
-        Serial.print(accelgyro.getYAccelOffset()); Serial.print("\t"); // -2359
-        Serial.print(accelgyro.getZAccelOffset()); Serial.print("\t"); // 1688
-        Serial.print(accelgyro.getXGyroOffset()); Serial.print("\t"); // 0
-        Serial.print(accelgyro.getYGyroOffset()); Serial.print("\t"); // 0
-        Serial.print(accelgyro.getZGyroOffset()); Serial.print("\t"); // 0
-        Serial.print("\n");
-        */
+        if(IMU_DEBUG) Serial.print(accelgyro.getXAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -76
+        if(IMU_DEBUG) Serial.print(accelgyro.getYAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -2359
+        if(IMU_DEBUG) Serial.print(accelgyro.getZAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // 1688
+        if(IMU_DEBUG) Serial.print(accelgyro.getXGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
+        if(IMU_DEBUG) Serial.print(accelgyro.getYGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
+        if(IMU_DEBUG) Serial.print(accelgyro.getZGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
+        if(IMU_DEBUG) Serial.print("\n");
+        if(IMU_DEBUG) accelgyro.setXGyroOffset(220);
+        if(IMU_DEBUG) accelgyro.setYGyroOffset(76);
+        if(IMU_DEBUG) accelgyro.setZGyroOffset(-85);
+        if(IMU_DEBUG) Serial.print(accelgyro.getXAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -76
+        if(IMU_DEBUG) Serial.print(accelgyro.getYAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -2359
+        if(IMU_DEBUG) Serial.print(accelgyro.getZAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // 1688
+        if(IMU_DEBUG) Serial.print(accelgyro.getXGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
+        if(IMU_DEBUG) Serial.print(accelgyro.getYGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
+        if(IMU_DEBUG) Serial.print(accelgyro.getZGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
+        if(IMU_DEBUG) Serial.print("\n");
+
+        if(IMU_DEBUG) Serial.println("Config values...");
+        if(IMU_DEBUG) Serial.print("digital low-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDLPFMode());
+        if(IMU_DEBUG) Serial.print("gyroscope output rate divider: "); if(IMU_DEBUG) Serial.println(accelgyro.getRate());
+        if(IMU_DEBUG) Serial.print("full-scale gyroscope range: "); if(IMU_DEBUG) Serial.println(accelgyro.getFullScaleGyroRange());
+        if(IMU_DEBUG) Serial.print("full-scale accelerometer range: "); if(IMU_DEBUG) Serial.println(accelgyro.getFullScaleAccelRange());
+        if(IMU_DEBUG) Serial.print(" high-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDHPFMode());
+        // Datasheet see https://www.invensense.com/products/motion-tracking/6-axis/mpu-6050/
+
+
        update();
        ArduinoNunchuk::cButton = 0;
        ArduinoNunchuk::zButton = 0;

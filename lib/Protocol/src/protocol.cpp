@@ -28,7 +28,6 @@
 #include <Arduino.h>
 
 #include "flashcontent.h"
-#include "main.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
