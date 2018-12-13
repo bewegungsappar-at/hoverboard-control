@@ -20,23 +20,23 @@
 
 void ArduinoNunchuk::init()
 {
-  /* Power Cycle Nunchuck */
-  #ifdef NUNCHUCK_GNDPIN
-    pinMode(NUNCHUCK_GNDPIN,INPUT);
+  /* Power Cycle Nunchuk */
+  #ifdef NUNCHUK_GNDPIN
+    pinMode(NUNCHUK_GNDPIN,INPUT);
   #endif
-  #ifdef NUNCHUCK_VCCPIN
-    pinMode(NUNCHUCK_VCCPIN,INPUT);
+  #ifdef NUNCHUK_VCCPIN
+    pinMode(NUNCHUK_VCCPIN,INPUT);
   #endif
 
   delay(100);
-  
-  #ifdef NUNCHUCK_GNDPIN
-    pinMode(NUNCHUCK_GNDPIN,OUTPUT);
-    digitalWrite(NUNCHUCK_GNDPIN,LOW);
+
+  #ifdef NUNCHUK_GNDPIN
+    pinMode(NUNCHUK_GNDPIN,OUTPUT);
+    digitalWrite(NUNCHUK_GNDPIN,LOW);
   #endif
-  #ifdef NUNCHUCK_VCCPIN
-    pinMode(NUNCHUCK_VCCPIN,OUTPUT);
-    digitalWrite(NUNCHUCK_VCCPIN,HIGH);
+  #ifdef NUNCHUK_VCCPIN
+    pinMode(NUNCHUK_VCCPIN,OUTPUT);
+    digitalWrite(NUNCHUK_VCCPIN,HIGH);
   #endif
 
   delay(100);
@@ -56,23 +56,23 @@ void ArduinoNunchuk::init()
 bool ArduinoNunchuk::reInit()
 {
 
-    /* Power Cycle Nunchuck */
-  #ifdef NUNCHUCK_GNDPIN
-    pinMode(NUNCHUCK_GNDPIN,INPUT);
+    /* Power Cycle Nunchuk */
+  #ifdef NUNCHUK_GNDPIN
+    pinMode(NUNCHUK_GNDPIN,INPUT);
   #endif
-  #ifdef NUNCHUCK_VCCPIN
-    pinMode(NUNCHUCK_VCCPIN,INPUT);
+  #ifdef NUNCHUK_VCCPIN
+    pinMode(NUNCHUK_VCCPIN,INPUT);
   #endif
 
   delay(100);
-  
-  #ifdef NUNCHUCK_GNDPIN
-    pinMode(NUNCHUCK_GNDPIN,OUTPUT);
-    digitalWrite(NUNCHUCK_GNDPIN,LOW);
+
+  #ifdef NUNCHUK_GNDPIN
+    pinMode(NUNCHUK_GNDPIN,OUTPUT);
+    digitalWrite(NUNCHUK_GNDPIN,LOW);
   #endif
-  #ifdef NUNCHUCK_VCCPIN
-    pinMode(NUNCHUCK_VCCPIN,OUTPUT);
-    digitalWrite(NUNCHUCK_VCCPIN,HIGH);
+  #ifdef NUNCHUK_VCCPIN
+    pinMode(NUNCHUK_VCCPIN,OUTPUT);
+    digitalWrite(NUNCHUK_VCCPIN,HIGH);
   #endif
 
   delay(100);
@@ -81,29 +81,33 @@ bool ArduinoNunchuk::reInit()
   return ArduinoNunchuk::_sendByte(0x00, 0xFB);
 }
 
-int ArduinoNunchuk::update()
-{
-  int error = 0;
+int ArduinoNunchuk::update() {
+  // Send sensor value request
+  if(ArduinoNunchuk::_sendByte(0x00, 0x00)) return NUNCHUK_ERR_SEND;
+  delay(1); // TODO: Is this needed? Maybe to give enough time to sample data?
 
-  error = ArduinoNunchuk::_sendByte(0x00, 0x00)*100;
-  delay(1);
 
-  int count = 0;
+  // request 6 bytes
+  if(Wire.requestFrom(ADDRESS, 6) != 6) return NUNCHUK_ERR_COUNT;
+
+
+  // read 6 bytes
   unsigned char values[6];
+  int count   = 0;
   int countFF = 0;
-  if(Wire.requestFrom(ADDRESS, 6) != 6) error++;
+  int count00 = 0;
 
-  while(Wire.available())
-  {
+  while(Wire.available()) {
     values[count] = Wire.read();
     if(values[count] == 0xFF) countFF++;
+    if(values[count] == 0x00) count00++;
     count++;
   }
-  if(count!=6) error++;
+  if(count!=6)   return NUNCHUK_ERR_COUNT;
+  if(countFF==6) return NUNCHUK_ERR_NOINIT; // if all Bytes are FF, the Nunchuk needs to be initialised probably. Errors indicate communication problems.
+  if(count00==6) return NUNCHUK_ERR_ZERO;   // if all Bytes are FF, the Nunchuk needs to be initialised probably. Errors indicate communication problems.
 
-  if(countFF<6 && error == 0)  // if all Bytes are FF, the Nunchuck needs to be initialised probably. Errors indicate communication problems.
-  {
-    /* valid set received */
+// process data
     cButton_last = cButton;
     zButton_last = zButton;
 
@@ -114,19 +118,8 @@ int ArduinoNunchuk::update()
     ArduinoNunchuk::accelZ = ((values[4] << 2) | ((values[5] >> 6) & 3))-511;
     ArduinoNunchuk::zButton = !((values[5] >> 0) & 1);
     ArduinoNunchuk::cButton = !((values[5] >> 1) & 1);
-  } else 
-  {
-    /* something went wrong - slowly reset everything to safe values */
-    slowReset(analogX, analogX_zero, 1);
-    slowReset(analogY, analogY_zero, 1);
-    slowReset(accelX, accelX_start, 5);
-    slowReset(accelY, accelY_start, 5);
-    slowReset(accelZ, accelZ_start, 5);
-    zButton = 0;
-//    cButton = 0; // cButton is used to switch between acceleration mode and joystick mode
-  }
-  if(countFF == 6) return error + 1000;
-  else return error;
+
+  return NUNCHUK_ERR_NOERR;
 }
 
 void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
@@ -135,16 +128,13 @@ void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
   else                               variable  = goal;
 }
 
-int ArduinoNunchuk::update(double &speed, double &steer)
-{
-  int error = 0;
-  error = update();
+int ArduinoNunchuk::update(double &pwm, double &steer) {
+  int error = update();
+  if(error != NUNCHUK_ERR_NOERR) return error;
 
-  if(cButton && !zButton) 
+  if(cButton && !zButton) {
   /* acceleration control mode when cButton is pressed */
-  {
-    if(cButton_last != cButton)
-    {
+    if(cButton_last != cButton) {
       /* use current position as zero */
       accelX_start = accelX;
       accelY_start = accelY;
@@ -153,19 +143,17 @@ int ArduinoNunchuk::update(double &speed, double &steer)
       yaw_zero     = yawangle();
       roll_zero    = rollangle();
     }
-    double newSteer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUCK_ACCEL_STEER_ANGLE);
-    double newSpeed = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUCK_ACCEL_SPEED_ANGLE);
+    double newSteer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUK_ACCEL_STEER_ANGLE);
+    double newPwm = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUK_ACCEL_SPEED_ANGLE);
 
     newSteer = steer + limit(-70.0, newSteer - steer, 70.0);
-    newSpeed = speed + limit(-70.0, newSpeed - speed, 70.0);
+    newPwm = pwm + limit(-70.0, newPwm - pwm, 70.0);
 
     steer = (steer * 0.5) + (0.5 * newSteer);
-    speed = (speed * 0.5) + (0.5 * newSpeed);
-  } else if (cButton && zButton)
+    pwm = (pwm * 0.5) + (0.5 * newPwm);
+  } else if (cButton && zButton) {
   /* Joystick calibration mode when both buttons are pressed */
-  {
-    if((zButton_last != zButton) || (cButton_last != cButton))  // do calibration
-    {
+    if((zButton_last != zButton) || (cButton_last != cButton)) { // do calibration
       /* revoke old calibration, set zero */
       analogX_zero = analogX;
       analogY_zero = analogY;
@@ -181,30 +169,28 @@ int ArduinoNunchuk::update(double &speed, double &steer)
       if(analogY > analogY_max) analogY_max = analogY;
     }
     steer = 0.0;
-    speed = 0.0;
+    pwm = 0.0;
   } else if(!cButton && zButton && !zButton_last && (rollangle() > 90.0 || rollangle() < -90.0) ) {
     Serial2.print("1234567"); // Insert padding byte into serial stream to realign serial buffer
-  } else
+  } else {
   /* use Joystick as Input */
-  {
-    // check if calib is plausible 
-    if(analogX_min  < NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogX_max  > NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
-    && analogY_min  < NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogY_max  > NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
-    && analogX_zero > NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogX_zero < NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
-    && analogY_zero > NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogY_zero < NUNCHUCK_JOYSTICK_THRESHOLD_HIGH) 
-    {
-      if((analogX - analogX_zero)>0) steer = (analogX - analogX_zero) * 1000.0/(analogX_max - analogX_zero) * NUNCHUCK_JOYSTICK_STEER_MULT;
-      else                           steer = (analogX - analogX_zero) * 1000.0/(analogX_zero - analogX_min) * NUNCHUCK_JOYSTICK_STEER_MULT;
+    // check if calib is plausible
+    if(analogX_min  < NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogX_max  > NUNCHUK_JOYSTICK_THRESHOLD_HIGH
+    && analogY_min  < NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogY_max  > NUNCHUK_JOYSTICK_THRESHOLD_HIGH
+    && analogX_zero > NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogX_zero < NUNCHUK_JOYSTICK_THRESHOLD_HIGH
+    && analogY_zero > NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogY_zero < NUNCHUK_JOYSTICK_THRESHOLD_HIGH) {
+      if((analogX - analogX_zero)>0) steer = (analogX - analogX_zero) * 1000.0/(analogX_max - analogX_zero) * NUNCHUK_JOYSTICK_STEER_MULT;
+      else                           steer = (analogX - analogX_zero) * 1000.0/(analogX_zero - analogX_min) * NUNCHUK_JOYSTICK_STEER_MULT;
 
-      if((analogY - analogY_zero)>0) speed = (analogY - analogY_zero) * 1000.0/(analogY_max - analogY_zero) * NUNCHUCK_JOYSTICK_SPEED_MULT;
-      else                           speed = (analogY - analogY_zero) * 1000.0/(analogY_zero - analogY_min) * NUNCHUCK_JOYSTICK_SPEED_MULT;
+      if((analogY - analogY_zero)>0) pwm = (analogY - analogY_zero) * 1000.0/(analogY_max - analogY_zero) * NUNCHUK_JOYSTICK_SPEED_MULT;
+      else                           pwm = (analogY - analogY_zero) * 1000.0/(analogY_zero - analogY_min) * NUNCHUK_JOYSTICK_SPEED_MULT;
 
     } else {
       steer = 0.0;
-      speed = 0.0;
+      pwm = 0.0;
     }
   }
-  return error;
+  return NUNCHUK_ERR_NOERR;
 }
 
 uint8_t ArduinoNunchuk::_sendByte(byte data, byte location)
@@ -225,7 +211,7 @@ void ArduinoNunchuk::debug(Stream &port)
   port.printf("%2i %2i  ", zButton, cButton);
 }
 
-bool ArduinoNunchuk::checkID() 
+bool ArduinoNunchuk::checkID()
 {
   int count = 0;
   unsigned char values[4];

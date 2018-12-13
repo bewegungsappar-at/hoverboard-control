@@ -13,13 +13,15 @@
   Paddelec paddelec = Paddelec();
 #endif // INPUT_PADDELEC
 
-#ifdef INPUT_NUNCHUCK
+#ifdef INPUT_NUNCHUK
   #include <ArduinoNunchuk.h>
   ArduinoNunchuk nunchuk = ArduinoNunchuk();
-#endif // INPUT_NUNCHUCK
+  int nunchukReinitCount=0;
+  int nunchukTimeout=0;
+#endif // INPUT_NUNCHUK
 
-#ifdef INPUT_ESPnowSLAVE
-  #include "ESPnowSlave.h"
+#ifdef INPUT_ESPNOW
+  #include "ESP32_espnow_MasterSlave.h"
   bool ESPnowDataReceived = false;
 #endif
 
@@ -38,16 +40,15 @@
 #endif
 
 uint32_t millisMotorcomm = 0;      // virtual timer for motor update
-int errorCount=0;
 
 void setupInput() {
-    
-    #ifdef INPUT_ESPnowSLAVE
-    setupESPnowSlave();
+
+    #ifdef INPUT_ESPNOW
+    setupEspNow();
     #endif
 
 
-    #ifdef INPUT_NUNCHUCK
+    #ifdef INPUT_NUNCHUK
     nunchuk.init();
     #endif
 
@@ -57,7 +58,7 @@ void setupInput() {
 
     #ifdef INPUT_IMU
     imu.init();
-    #endif 
+    #endif
 
     #if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
     paddelec.init();
@@ -87,18 +88,18 @@ void mainloop( void *pvparameters ) {
 
   // Process all Inputs
   do {
-    slowReset(motor.pwm, 0.0, 10.0);
-    slowReset(motor.steer, 0.0, 10.0);
+    slowReset(motor.setpoint.pwm, 0.0, 10.0);
+    slowReset(motor.setpoint.steer, 0.0, 10.0);
 
-  #ifdef INPUT_ESPnowSLAVE
+  #ifdef INPUT_ESPNOW
     // Disable all other Input Methods as soon as data from ESPnow was received
     if(ESPnowDataReceived) break;
   #endif
 
   #ifdef INPUT_BLE
     //  loopBLE();
-    motor.pwm = ble_pitch;
-    motor.steer = ble_roll;
+    motor.setpoint.pwm = ble_pitch;
+    motor.setpoint.steer = ble_roll;
     slowReset(ble_pitch, 0.0, 0.1);
     slowReset(ble_roll, 0.0, 0.1);
     break;
@@ -106,66 +107,88 @@ void mainloop( void *pvparameters ) {
 
   #ifdef INPUT_IMU
     //  imu.loopIMU();
-    imu.update(motor.pwm, motor.steer);
+    imu.update(motor.setpoint.pwm, motor.setpoint.steer);
     if(debug) imu.debug(*COM[DEBUG_COM]);
-    
+
     // Allow other Inputs when no Button is pressed
     if(imu.cButton == 1) break;
   #endif
 
   #ifdef INPUT_PLATOONING
-    platooning.update(motor.pwm, motor.steer);
+    platooning.update(motor.setpoint.pwm, motor.setpoint.steer);
     if(debug) platooning.debug(*COM[DEBUG_COM]);
 
-    // Allow other Inputs when Gametrak is not pulled out 
+    // Allow other Inputs when Gametrak is not pulled out
     if(platooning.gametrak1.getR_mm() > platooning.cfgPlatooning.rActivationThreshold_mm) break;
   #endif
 
-  #if defined(INPUT_NUNCHUCK)
-    int nunchuckError = nunchuk.update(motor.pwm, motor.steer);
-    ++errorCount;
-    nunchuk.debug(*COM[DEBUG_COM]);
-    if(nunchuckError >= 1000) {
-      if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
-    } else if(nunchuckError >= 100) {
-      if(debug) COM[DEBUG_COM]->printf("I2C Problems %4i ", nunchuckError);
-    } else if(nunchuckError > 0) {
-      if(debug) COM[DEBUG_COM]->printf("Nunchuck Comm Problems %4i ", nunchuckError);
-    } else  {
-      errorCount = 0;
+  #if defined(INPUT_NUNCHUK)
+    ++nunchukTimeout;
+    ++nunchukReinitCount;
+
+    if(debug) nunchuk.debug(*COM[DEBUG_COM]);
+
+    switch(nunchuk.update(motor.setpoint.pwm, motor.setpoint.steer)) {
+      case NUNCHUK_ERR_NOERR:
+        nunchukTimeout = 0;
+        nunchukReinitCount = 0;
+        break;
+      case NUNCHUK_ERR_COUNT:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT");
+        break;
+      case NUNCHUK_ERR_NOINIT:
+        nunchuk.reInit();
+        nunchukReinitCount = 0;
+        if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT");
+        break;
+      case NUNCHUK_ERR_SEND:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND");
+        break;
+      case NUNCHUK_ERR_ZERO:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO");
+        break;
     }
 
-    if(errorCount>=5) {
+    // try fixing the Nunchuk by resetting
+    if(nunchukReinitCount>=5) {
       nunchuk.reInit();
-      errorCount = 0;
+      if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk ");
+      nunchukReinitCount = 0;
     }
 
-    // Allow other input when Nunchuck does not send speed
-    if(motor.pwm != 0.0 && motor.steer != 0.0 ) break; 
+    // set safe value when no data is received
+    if(nunchukTimeout>=10) {
+      motor.setpoint.pwm   = 0.0;
+      motor.setpoint.steer = 0.0;
+      if(debug) COM[DEBUG_COM]->print("Nunchuk Timeout");
+    }
+
+    // Do not allow other inputs to override when Nunchuk has sent data
+    if(motor.setpoint.pwm != 0.0 && motor.setpoint.steer != 0.0 ) break;
   #endif
 
   #ifdef INPUT_PADDELEC
-    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
+    paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
 
-    // Allow other Inputs when Gametraks are not pulled out 
+    // Allow other Inputs when Gametraks are not pulled out
     if(paddelec.gametrak1.r > 500 || paddelec.gametrak2.r > 500) break;
   #endif
 
   #ifdef INPUT_PADDELECIMU
-    paddelec.update(motor.pwm, motor.steer, motor.actualSpeed_kmh, motor.actualSteer_kmh, (uint32_t)deltaMillis);
+    paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
   #endif
-  
+
   } while(false);
-  
+
 #ifdef DEBUG_OLED
-    uint mX = u8g2.getDisplayWidth()/2; 
+    uint mX = u8g2.getDisplayWidth()/2;
     uint mY = u8g2.getDisplayHeight()/2;
 
-    uint motorX = mX+(motor.steer/1000.0*(double)mY);
-    uint motorY = mY-(motor.pwm/1000.0*(double)mY);
-    
+    uint motorX = mX+(motor.setpoint.steer/1000.0*(double)mY);
+    uint motorY = mY-(motor.setpoint.pwm/1000.0*(double)mY);
+
   #ifdef INPUT_IMU
     double aX =  imu.ax / 32768.0 * u8g2.getDisplayHeight()/2.0;
     double aY = -imu.ay / 32768.0 * u8g2.getDisplayWidth() /2.0;
@@ -178,7 +201,7 @@ void mainloop( void *pvparameters ) {
 
   #ifdef INPUT_PADDELECIMU
     double pwmR=0.0, pwmL=0.0;
-    paddelec.steerToRL(motor.steer, motor.pwm, pwmR, pwmL);
+    paddelec.steerToRL(motor.setpoint.steer, motor.setpoint.pwm, pwmR, pwmL);
     pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
     pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
 
@@ -186,8 +209,8 @@ void mainloop( void *pvparameters ) {
 
   #endif
 
-  u8g2.firstPage();  
-  
+  u8g2.firstPage();
+
   do {
     u8g2_prepare();
 
@@ -197,7 +220,7 @@ void mainloop( void *pvparameters ) {
 
     if(aY>0) u8g2.drawFrame(   mX,0, aY,1);
     else     u8g2.drawFrame(mX+aY,0,-aY,1);
-    
+
     if(aZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, aZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+aZ,1,-aZ);
 
@@ -206,7 +229,7 @@ void mainloop( void *pvparameters ) {
 
     if(gX>0) u8g2.drawFrame(   mX,2, gX,1);
     else     u8g2.drawFrame(mX+gX,2,-gX,1);
-    
+
     if(gZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY   ,1, gZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY+gZ,1,-gZ);
   #endif
@@ -224,19 +247,15 @@ void mainloop( void *pvparameters ) {
   #endif
 
     u8g2.setCursor(5,5);
-    u8g2.printf("%4.0f %4.0f", motor.pwm, motor.steer);
+    u8g2.printf("%4.0f %4.0f", motor.setpoint.pwm, motor.setpoint.steer);
 
     u8g2.drawLine(mX,mY,motorX,motorY);
 
-  #ifdef INPUT_ESPnowSLAVE
-    u8g2.setCursor(5,15);
-    u8g2.printf("%4i", ESPnowdata);
-  #endif
   } while( u8g2.nextPage() );
 #endif
 
 #ifdef MULTITASKING
-    vTaskDelay(20);
+    vTaskDelay(10);
   }
 #endif //MULTITASKING
 }

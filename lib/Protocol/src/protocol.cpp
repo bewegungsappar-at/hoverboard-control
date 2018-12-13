@@ -28,10 +28,15 @@
 #include <Arduino.h>
 
 #include "flashcontent.h"
-
+#include "main.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#ifdef INPUT_ESPNOW
+  #include "ESP32_espnow_MasterSlave.h"
+#endif
+
+#include "serialbridge.h"
 
 #ifdef INCLUDE_PROTOCOL
 
@@ -88,10 +93,10 @@ volatile HALL_DATA_STRUCT HallData[2];
 // or  can be stated as : (06+54+54+65+73+74+06)&0xff = 0
 //
 // if a message is received with invalid checksum, then nack will be sent.
-// if a message is received complete, it will with be responded to with a 
+// if a message is received complete, it will with be responded to with a
 // return message, or with the ack message
 //
-// for simplicities sake, we will treat the hoverboard controller as a 
+// for simplicities sake, we will treat the hoverboard controller as a
 // slave unit always - i.e. not ask it to send *unsolicited* messages.
 // in this way, it does not need to wait for ack, etc. from the host.
 // if the host gets a bad message, or no response, it can retry.
@@ -146,10 +151,14 @@ SPEED_DATA SpeedData = {
     {0, 0},
 
     600, // max power (PWM)
-    -600,  // min power 
+    -600,  // min power
     40 // minimum mm/s which we can ask for
 };
 
+PWM_STEER_CMD PwmSteerCmd = {
+    .base_pwm = 0,
+    .steer = 0,
+};
 
 int speed_control = 0; // incicates protocol driven
 
@@ -216,9 +225,34 @@ void PreRead_getposnupdate(){
     Position.RightOffset = HallData[1].HallPosn_mm - HallData[1].HallPosn_mm_lastread;
 }
 
+void PostRead_halldata() {
+    motor.measured.actualSpeed_kmh = (HallData[0].HallSpeed_mm_per_s + HallData[1].HallSpeed_mm_per_s) / 2.0 * 3600.0 / 1000000.0;
+    motor.measured.actualSteer_kmh = (HallData[0].HallSpeed_mm_per_s * 3600.0 / 1000000.0 )- motor.measured.actualSpeed_kmh;
+
+    if(debug) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
+//    Serial.printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu   "\
+//                  "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n",
+//                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,
+//                  HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped);
+#ifdef INPUT_ESPNOW
+  if (SlaveCnt > 0) { // check if slave channel is defined
+    // `slave` is defined
+    sendData((const void *) &motor.measured, sizeof(motor.measured));
+  } else {
+    ScanForSlave();
+    if (SlaveCnt > 0) { // check if slave channel is defined
+      // `slave` is defined
+      // Add slave as peer if it has not been added already
+      manageSlave();
+      // pair success or already paired
+    }
+  }
+#endif
+}
+
 void PostWrite_setposnupdate(){
     HallData[0].HallPosn_mm_lastread = Position.LeftAbsolute;
-    HallData[1].HallPosn_mm_lastread = Position.RightAbsolute; 
+    HallData[1].HallPosn_mm_lastread = Position.RightAbsolute;
 }
 
 typedef struct tag_POSN_INCR {
@@ -229,8 +263,8 @@ typedef struct tag_POSN_INCR {
 POSN_INCR PositionIncr;
 
 void PostWrite_incrementposition(){
-    PosnData.wanted_posn_mm[0] += PositionIncr.Left; 
-    PosnData.wanted_posn_mm[1] += PositionIncr.Right; 
+    PosnData.wanted_posn_mm[0] += PositionIncr.Left;
+    PosnData.wanted_posn_mm[1] += PositionIncr.Right;
 }
 
 
@@ -283,12 +317,13 @@ PARAMSTAT params[] = {
     { 0x01, NULL, NULL, UI_NONE, &sensor_data,       sizeof(sensor_data),    PARAM_R,    NULL, NULL, NULL, NULL },
 #endif
 #ifdef HALL_INTERRUPTS
-    { 0x02, NULL, NULL, UI_NONE, (void *)&HallData,          sizeof(HallData),       PARAM_R,    NULL, NULL, NULL, NULL },
+    { 0x02, NULL, NULL, UI_NONE, (void *)&HallData,          sizeof(HallData),       PARAM_R,    NULL, PostRead_halldata, NULL, NULL },
 #endif
     { 0x03, NULL, NULL, UI_NONE, &SpeedData,         sizeof(SpeedData),      PARAM_RW,   PreRead_getspeeds, NULL, NULL, PostWrite_setspeeds },
     { 0x04, NULL, NULL, UI_NONE, &Position,          sizeof(Position),       PARAM_RW,   PreRead_getposnupdate, NULL, NULL, PostWrite_setposnupdate },
     { 0x05, NULL, NULL, UI_NONE, &PositionIncr,      sizeof(PositionIncr),   PARAM_RW,    NULL, NULL, NULL, PostWrite_incrementposition },
     { 0x06, NULL, NULL, UI_NONE, &PosnData,          sizeof(PosnData),       PARAM_RW,    NULL, NULL, NULL, NULL },
+    { 0x07, NULL, NULL, UI_NONE, &PwmSteerCmd,          sizeof(PwmSteerCmd),       PARAM_RW,    NULL, NULL, NULL, NULL },
 
     { 0x80, "flash magic", "m", UI_SHORT, &FlashContent.magic, sizeof(short), PARAM_RW, NULL, NULL, NULL, PostWrite_writeflash },  // write this with CURRENT_MAGIC to commit to flash
 
@@ -318,7 +353,7 @@ void ascii_process_msg(char *cmd, int len);
 
 
 ///////////////////////////////////////////////////
-// local variables for handling the machine protocol, 
+// local variables for handling the machine protocol,
 // not really for external usage
 //
 typedef struct tag_PROTOCOL_STAT {
@@ -352,7 +387,7 @@ void protocol_byte( unsigned char byte ){
                 s.CS = 0;
             } else {
                 //////////////////////////////////////////////////////
-                // if the byte was NOT SOM (02), then treat it as an 
+                // if the byte was NOT SOM (02), then treat it as an
                 // ascii protocol byte.  BOTH protocol can co-exist
 //                ascii_byte( byte );
                 //////////////////////////////////////////////////////
@@ -370,7 +405,7 @@ void protocol_byte( unsigned char byte ){
             if (s.count == s.curr_msg.len){
                 if (s.CS != 0){
                     protocol_send_nack();
-                    Serial.write((unsigned char *)&s.curr_msg,s.curr_msg.len);
+//                    Serial.write((unsigned char *)&s.curr_msg,s.curr_msg.len);
                 } else {
                     process_message(&s.curr_msg);  // this should ack or return a message
                 }
@@ -410,10 +445,10 @@ void protocol_send_test(){
 
 
 /////////////////////////////////////////////
-// a complete machineprotocl message has been 
+// a complete machineprotocl message has been
 // received without error
 void process_message(PROTOCOL_MSG *msg){
-    PROTOCOL_BYTES *bytes = (PROTOCOL_BYTES *)msg->bytes; 
+    PROTOCOL_BYTES *bytes = (PROTOCOL_BYTES *)msg->bytes;
     switch (bytes->cmd){
         case PROTOCOL_CMD_READVAL:{
 
@@ -426,12 +461,13 @@ void process_message(PROTOCOL_MSG *msg){
                     // NOTE: re-uses the msg object (part of stats)
                     unsigned char *src = (unsigned char*)params[i].ptr;
                     for (int j = 0; j < params[i].len; j++){
-                        writevals->content[j] = *(src++);
+//                        writevals->content[j] = *(src++);
+                        *(src++) = writevals->content[j]; // TODO: very dangerous, at a read command, everything is overwritten.
                     }
                     msg->len = 1+1+1+params[i].len+1;
                     // send back with 'read' command plus data like write.
                     //protocol_send(msg);
-                    Serial.println("Reference 1");
+//                    Serial.println("Reference 1");
                     if (params[i].postread) params[i].postread();
                     break;
                 }
@@ -460,8 +496,9 @@ void process_message(PROTOCOL_MSG *msg){
                     msg->len = 1+1+0+1;
                     // send back with 'write' command with no data.
                     //protocol_send(msg);
-                    Serial.println("Reference 3");
+//                    Serial.println("Reference 3");
                     if (params[i].postwrite) params[i].postwrite();
+                    break;
                 }
             }
             // nothing written

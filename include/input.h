@@ -5,3 +5,5 @@
 
 void setupInput();
 void mainloop( void *pvparameters );
+
+extern bool ESPnowDataReceived;

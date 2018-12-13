@@ -20,6 +20,7 @@
 #define PROCOTOL_H
 
 #include "config.h"
+#include <inttypes.h> // int16_t
 
 #ifdef INCLUDE_PROTOCOL
 
@@ -65,7 +66,15 @@ typedef struct tag_SPEED_DATA {
 
 extern SPEED_DATA SpeedData;
 
+typedef struct {
+    // both of these values range from -1000 to 1000
+    // base_pwm plus/minus steer is the raw value per wheel
+    // wether steer is added or substracted depends on the side R/L
+    int16_t base_pwm;
+    int16_t steer;
+} PWM_STEER_CMD;
 
+extern PWM_STEER_CMD PwmSteerCmd;
 
 
 extern int control_type;
@@ -90,7 +99,7 @@ typedef struct tag_PROTOCOL_MSG {
     unsigned char SOM; // 0x02
     unsigned char len; // len is len of ALL bytes to follow, including CS
     unsigned char bytes[254];  // variable number of data bytes, with a checksum on the end
-    // checksum such that sum of bytes len to CS is zero     
+    // checksum such that sum of bytes len to CS is zero
 } PROTOCOL_MSG;
 
 // content of 'bytes' above, for single byte commands
