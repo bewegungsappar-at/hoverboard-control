@@ -15,16 +15,24 @@
 
 #include <Arduino.h>
 
-/************************* Nunchuk *******************************/
-//#define NUNCHUCK_VCCPIN    18      // Pin used to supply Power
-//#define NUNCHUCK_GNDPIN    19      // Pin used as GND
+#define NUNCHUK_ERR_NOERR  0
+#define NUNCHUK_ERR_COUNT  1 // Wrong amount of data read
+#define NUNCHUK_ERR_NOINIT 2 // Answer only 0xFF, needs to be initialized
+#define NUNCHUK_ERR_SEND   3 // Error during sending
+#define NUNCHUK_ERR_ZERO   4 // Answer only 0x00, invalid (all acceleration values 0 is very unlikely)
 
-#define NUNCHUCK_JOYSTICK_THRESHOLD_LOW   77 // calibration values above this are considered invalid
-#define NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 177 // calibration values below this are considered invalid
-#define NUNCHUCK_JOYSTICK_STEER_MULT     0.5 // 0.8 too much
-#define NUNCHUCK_JOYSTICK_SPEED_MULT     0.7 // 0.5 way too slow
-#define NUNCHUCK_ACCEL_SPEED_ANGLE        60 // Pitch angle needed to reach full speed (60° with factor 0.5 was too slow)
-#define NUNCHUCK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
+
+
+/************************* Nunchuk *******************************/
+//#define NUNCHUK_VCCPIN    18      // Pin used to supply Power
+//#define NUNCHUK_GNDPIN    19      // Pin used as GND
+
+#define NUNCHUK_JOYSTICK_THRESHOLD_LOW   77 // calibration values above this are considered invalid
+#define NUNCHUK_JOYSTICK_THRESHOLD_HIGH 177 // calibration values below this are considered invalid
+#define NUNCHUK_JOYSTICK_STEER_MULT     0.5 // 0.8 too much
+#define NUNCHUK_JOYSTICK_SPEED_MULT     0.7 // 0.5 way too slow
+#define NUNCHUK_ACCEL_SPEED_ANGLE        60 // Pitch angle needed to reach full speed (60° with factor 0.5 was too slow)
+#define NUNCHUK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
 
 class ArduinoNunchuk
 {
@@ -42,7 +50,7 @@ class ArduinoNunchuk
     int  update();
     void debug(Stream &port);
     int  update(double &speed, double &steer);
-    bool checkID(); 
+    bool checkID();
     bool reInit();
 
     double rollangle()  { return (atan2(accelX, accelZ) * 180.0 / M_PI); }

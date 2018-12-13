@@ -10,7 +10,7 @@
 //#define IMU_CPIN 23
 //#define IMU_ZPIN 25
 //#define IMU_GNDPIN 14
-//#define IMU_VCCPIN 32 
+//#define IMU_VCCPIN 32
 
 class Imu : public ArduinoNunchuk
 {
@@ -45,7 +45,7 @@ class Imu : public ArduinoNunchuk
         // initialize serial communication
         // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
         // it's really up to you depending on your project)
-    
+
         // initialize device
         Serial.println("Initializing I2C devices...");
         accelgyro.initialize();
@@ -152,7 +152,7 @@ class Imu : public ArduinoNunchuk
   int error = 0;
   error = update();
 
-  if(cButton && !zButton) 
+  if(cButton && !zButton)
   /* acceleration control mode when cButton is pressed */
   {
     if(cButton_last != cButton)
@@ -165,8 +165,8 @@ class Imu : public ArduinoNunchuk
       yaw_zero     = yawangle();
       roll_zero    = rollangle();
     }
-    double newSteer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUCK_ACCEL_STEER_ANGLE);
-    double newSpeed = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUCK_ACCEL_SPEED_ANGLE);
+    double newSteer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUK_ACCEL_STEER_ANGLE);
+    double newSpeed = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUK_ACCEL_SPEED_ANGLE);
 
     //newSteer = steer + limit(-70.0, newSteer - steer, 70.0);
     //newSpeed = speed + limit(-70.0, newSpeed - speed, 70.0);
@@ -199,17 +199,17 @@ class Imu : public ArduinoNunchuk
   } else
   /* use Joystick as Input */
   {
-    // check if calib is plausible 
-    if(analogX_min  < NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogX_max  > NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
-    && analogY_min  < NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogY_max  > NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
-    && analogX_zero > NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogX_zero < NUNCHUCK_JOYSTICK_THRESHOLD_HIGH 
-    && analogY_zero > NUNCHUCK_JOYSTICK_THRESHOLD_LOW  && analogY_zero < NUNCHUCK_JOYSTICK_THRESHOLD_HIGH) 
+    // check if calib is plausible
+    if(analogX_min  < NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogX_max  > NUNCHUK_JOYSTICK_THRESHOLD_HIGH
+    && analogY_min  < NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogY_max  > NUNCHUK_JOYSTICK_THRESHOLD_HIGH
+    && analogX_zero > NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogX_zero < NUNCHUK_JOYSTICK_THRESHOLD_HIGH
+    && analogY_zero > NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogY_zero < NUNCHUK_JOYSTICK_THRESHOLD_HIGH)
     {
-      if((analogX - analogX_zero)>0) steer = (analogX - analogX_zero) * 1000.0/(analogX_max - analogX_zero) * NUNCHUCK_JOYSTICK_STEER_MULT;
-      else                           steer = (analogX - analogX_zero) * 1000.0/(analogX_zero - analogX_min) * NUNCHUCK_JOYSTICK_STEER_MULT;
+      if((analogX - analogX_zero)>0) steer = (analogX - analogX_zero) * 1000.0/(analogX_max - analogX_zero) * NUNCHUK_JOYSTICK_STEER_MULT;
+      else                           steer = (analogX - analogX_zero) * 1000.0/(analogX_zero - analogX_min) * NUNCHUK_JOYSTICK_STEER_MULT;
 
-      if((analogY - analogY_zero)>0) speed = (analogY - analogY_zero) * 1000.0/(analogY_max - analogY_zero) * NUNCHUCK_JOYSTICK_SPEED_MULT;
-      else                           speed = (analogY - analogY_zero) * 1000.0/(analogY_zero - analogY_min) * NUNCHUCK_JOYSTICK_SPEED_MULT;
+      if((analogY - analogY_zero)>0) speed = (analogY - analogY_zero) * 1000.0/(analogY_max - analogY_zero) * NUNCHUK_JOYSTICK_SPEED_MULT;
+      else                           speed = (analogY - analogY_zero) * 1000.0/(analogY_zero - analogY_min) * NUNCHUK_JOYSTICK_SPEED_MULT;
 
     } else {
       steer = 0;

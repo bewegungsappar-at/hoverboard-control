@@ -13,10 +13,12 @@
   Paddelec paddelec = Paddelec();
 #endif // INPUT_PADDELEC
 
-#ifdef INPUT_NUNCHUCK
+#ifdef INPUT_NUNCHUK
   #include <ArduinoNunchuk.h>
   ArduinoNunchuk nunchuk = ArduinoNunchuk();
-#endif // INPUT_NUNCHUCK
+  int nunchukReinitCount=0;
+  int nunchukTimeout=0;
+#endif // INPUT_NUNCHUK
 
 #ifdef INPUT_ESPNOW
   #include "ESP32_espnow_MasterSlave.h"
@@ -38,7 +40,6 @@
 #endif
 
 uint32_t millisMotorcomm = 0;      // virtual timer for motor update
-int errorCount=0;
 
 void setupInput() {
 
@@ -47,7 +48,7 @@ void setupInput() {
     #endif
 
 
-    #ifdef INPUT_NUNCHUCK
+    #ifdef INPUT_NUNCHUK
     nunchuk.init();
     #endif
 
@@ -121,26 +122,48 @@ void mainloop( void *pvparameters ) {
     if(platooning.gametrak1.getR_mm() > platooning.cfgPlatooning.rActivationThreshold_mm) break;
   #endif
 
-  #if defined(INPUT_NUNCHUCK)
-    int nunchuckError = nunchuk.update(motor.setpoint.pwm, motor.setpoint.steer);
-    ++errorCount;
+  #if defined(INPUT_NUNCHUK)
+    ++nunchukTimeout;
+    ++nunchukReinitCount;
+
     if(debug) nunchuk.debug(*COM[DEBUG_COM]);
-    if(nunchuckError >= 1000) {
-      if(debug) COM[DEBUG_COM]->printf("Reinit Nunchuck %4i ", nunchuckError);
-    } else if(nunchuckError >= 100) {
-      if(debug) COM[DEBUG_COM]->printf("I2C Problems %4i ", nunchuckError);
-    } else if(nunchuckError > 0) {
-      if(debug) COM[DEBUG_COM]->printf("Nunchuck Comm Problems %4i ", nunchuckError);
-    } else  {
-      errorCount = 0;
+
+    switch(nunchuk.update(motor.setpoint.pwm, motor.setpoint.steer)) {
+      case NUNCHUK_ERR_NOERR:
+        nunchukTimeout = 0;
+        nunchukReinitCount = 0;
+        break;
+      case NUNCHUK_ERR_COUNT:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT");
+        break;
+      case NUNCHUK_ERR_NOINIT:
+        nunchuk.reInit();
+        nunchukReinitCount = 0;
+        if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT");
+        break;
+      case NUNCHUK_ERR_SEND:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND");
+        break;
+      case NUNCHUK_ERR_ZERO:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO");
+        break;
     }
 
-    if(errorCount>=5) {
+    // try fixing the Nunchuk by resetting
+    if(nunchukReinitCount>=5) {
       nunchuk.reInit();
-      errorCount = 0;
+      if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk ");
+      nunchukReinitCount = 0;
     }
 
-    // Allow other input when Nunchuck does not send speed
+    // set safe value when no data is received
+    if(nunchukTimeout>=10) {
+      motor.setpoint.pwm   = 0.0;
+      motor.setpoint.steer = 0.0;
+      if(debug) COM[DEBUG_COM]->print("Nunchuk Timeout");
+    }
+
+    // Do not allow other inputs to override when Nunchuk has sent data
     if(motor.setpoint.pwm != 0.0 && motor.setpoint.steer != 0.0 ) break;
   #endif
 
