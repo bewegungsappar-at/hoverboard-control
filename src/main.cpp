@@ -26,6 +26,11 @@ motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
 int32_t deltaMillis;
 
 void setup() {
+
+#ifdef DEBUG_OLED
+  setupOLED();
+#endif
+
   setupOutput();
   setupInput();
   setupSerial();
@@ -35,39 +40,35 @@ void setup() {
   setupSerialbridge();
 #endif
 
-#ifdef DEBUG_OLED
-  setupOLED();
-#endif
-
-#ifdef OTA_HANDLER  
+#ifdef OTA_HANDLER
   setupOTA();
-#endif 
+#endif
 
 #ifdef MULTITASKING
   xTaskCreatePinnedToCore(
-    mainloop,                 // Task function. 
+    mainloop,                 // Task function.
     "Main_loop",              // name of task.
-    4000,                     // Stack size of task 
-    (void *)1,                // parameter of the task 
-    1,                        // priority of the task 
-    &TaskMainloop,            // Task handle to keep track of created task 
-    1);                       // Core (0 is used by ESP32 connectivity) 
+    4000,                     // Stack size of task
+    (void *)1,                // parameter of the task
+    1,                        // priority of the task
+    &TaskMainloop,            // Task handle to keep track of created task
+    1);                       // Core (0 is used by ESP32 connectivity)
 
   xTaskCreatePinnedToCore(
-    motorCommunication,       // Task function. 
-    "Motor_Comm",             // name of task. 
-    4000,                     // Stack size of task 
-    (void *)1,                // parameter of the task 
-    1,                        // priority of the task 
-    &TaskMotorcommunication,  // Task handle to keep track of created task 
-    0);                       // Core (0 is used by ESP32 connectivity) 
+    motorCommunication,       // Task function.
+    "Motor_Comm",             // name of task.
+    4000,                     // Stack size of task
+    (void *)1,                // parameter of the task
+    1,                        // priority of the task
+    &TaskMotorcommunication,  // Task handle to keep track of created task
+    0);                       // Core (0 is used by ESP32 connectivity)
 #endif //MULTITASKING
 }
 
 
-void loop() {  
+void loop() {
 
-  #ifdef OTA_HANDLER  
+  #ifdef OTA_HANDLER
     ota();
   #endif // OTA_HANDLER
 
@@ -78,14 +79,14 @@ void loop() {
 
   #ifdef MULTITASKING
 
-    delay(100); 
+    delay(100);
 
     #else
 
     mainloop( (void *)1 );
     motorCommunication( (void *)1 );
-    delay(MOTORINPUT_PERIOD);    
-    
+    delay(MOTORINPUT_PERIOD);
+
   #endif //MULTITASKING
 
 }
