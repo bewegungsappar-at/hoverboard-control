@@ -39,6 +39,15 @@ void ArduinoNunchuk::init()
     digitalWrite(NUNCHUK_VCCPIN,HIGH);
   #endif
 
+  // initialize array used for sliding average
+  for(int i; i<7; i++) {
+    for(int j; j<NUNCHUK_HISTORY; j++) {
+      avg_history[i][j] = 0;
+    }
+    avg_sum[i] = 0;
+  }
+  avg_ptr=0;
+
   delay(100);
 
 
@@ -105,19 +114,81 @@ int ArduinoNunchuk::update() {
   }
   if(count!=6)   return NUNCHUK_ERR_COUNT;
   if(countFF==6) return NUNCHUK_ERR_NOINIT; // if all Bytes are FF, the Nunchuk needs to be initialised probably. Errors indicate communication problems.
-  if(count00==6) return NUNCHUK_ERR_ZERO;   // if all Bytes are FF, the Nunchuk needs to be initialised probably. Errors indicate communication problems.
+  if(count00==6) return NUNCHUK_ERR_ZERO;   // if all Bytes are 00.
+
 
 // process data
-    cButton_last = cButton;
-    zButton_last = zButton;
 
-    ArduinoNunchuk::analogX = values[0];
-    ArduinoNunchuk::analogY = values[1];
-    ArduinoNunchuk::accelX = ((values[2] << 2) | ((values[5] >> 2) & 3))-511;
-    ArduinoNunchuk::accelY = ((values[3] << 2) | ((values[5] >> 4) & 3))-511;
-    ArduinoNunchuk::accelZ = ((values[4] << 2) | ((values[5] >> 6) & 3))-511;
-    ArduinoNunchuk::zButton = !((values[5] >> 0) & 1);
-    ArduinoNunchuk::cButton = !((values[5] >> 1) & 1);
+  // remove oldest value from sum
+  for(int i = 0; i<7; i++) {
+    avg_sum[i] -= avg_history[i][avg_ptr];
+  }
+
+  // get latest values
+  avg_history[0][avg_ptr] = values[0];                                         // analogX
+  avg_history[1][avg_ptr] = values[1];                                         // analogY
+  avg_history[2][avg_ptr] = ((values[2] << 2) | ((values[5] >> 2) & 3))-511;   // accelX
+  avg_history[3][avg_ptr] = ((values[3] << 2) | ((values[5] >> 4) & 3))-511;   // accelY
+  avg_history[4][avg_ptr] = ((values[4] << 2) | ((values[5] >> 6) & 3))-511;   // accelZ
+  avg_history[5][avg_ptr] = !((values[5] >> 0) & 1);                           // zButton
+  avg_history[6][avg_ptr] = !((values[5] >> 1) & 1);                           // cButton
+
+  // add latest value to sum
+  for(int i = 0; i<7; i++) {
+    avg_sum[i] += avg_history[i][avg_ptr];
+  }
+
+  // check if new values are valid
+  int deviationCount = 0;
+
+  if( abs( avg_history[0][avg_ptr] - ( avg_sum[0] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ANALOGTHRESH ) {
+    ArduinoNunchuk::analogX = avg_history[0][avg_ptr];
+  } else {
+    deviationCount++;
+  }
+
+  if( abs( avg_history[1][avg_ptr] - ( avg_sum[1] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ANALOGTHRESH ) {
+    ArduinoNunchuk::analogY = avg_history[1][avg_ptr];
+  } else {
+    deviationCount++;
+  }
+
+  if( abs( avg_history[2][avg_ptr] - ( avg_sum[2] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ACCELTHRESH ) {
+    ArduinoNunchuk::accelX = avg_history[2][avg_ptr];
+  } else {
+    deviationCount++;
+  }
+
+  if( abs( avg_history[3][avg_ptr] - ( avg_sum[3] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ACCELTHRESH ) {
+    ArduinoNunchuk::accelY = avg_history[3][avg_ptr];
+  } else {
+    deviationCount++;
+  }
+
+  if( abs( avg_history[4][avg_ptr] - ( avg_sum[4] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ACCELTHRESH ) {
+    ArduinoNunchuk::accelZ = avg_history[4][avg_ptr];
+  } else {
+    deviationCount++;
+  }
+
+  if( abs( ( avg_history[5][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[5] ) < NUNCHUK_HIST_BUTTONTHRESH ) {
+    zButton_last = zButton;
+    ArduinoNunchuk::zButton = avg_history[5][avg_ptr];
+  } else {
+//    deviationCount++;
+  }
+
+  if( abs( ( avg_history[6][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[6] ) < NUNCHUK_HIST_BUTTONTHRESH ) {
+    cButton_last = cButton;
+    ArduinoNunchuk::cButton = avg_history[6][avg_ptr];
+  } else {
+//    deviationCount++;
+  }
+
+  
+
+  if(deviationCount > 0) return NUNCHUK_ERR_DEV1 + deviationCount - 1;
+
 
   return NUNCHUK_ERR_NOERR;
 }
@@ -130,7 +201,7 @@ void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
 
 int ArduinoNunchuk::update(double &pwm, double &steer) {
   int error = update();
-  if(error != NUNCHUK_ERR_NOERR) return error;
+  if(error != NUNCHUK_ERR_NOERR && ( error < NUNCHUK_ERR_DEV1 || error >= NUNCHUK_ERR_DEV3) ) return error;
 
   if(cButton && !zButton) {
   /* acceleration control mode when cButton is pressed */

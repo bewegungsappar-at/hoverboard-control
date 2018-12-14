@@ -88,12 +88,12 @@ void mainloop( void *pvparameters ) {
 
   // Process all Inputs
   do {
-    slowReset(motor.setpoint.pwm, 0.0, 10.0);
+    slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
 
   #ifdef INPUT_ESPNOW
     // Disable all other Input Methods as soon as data from ESPnow was received
-    if(espnowTimeout < 30) {
+    if(espnowTimeout < 10) {
       espnowTimeout++;
       break;
     }

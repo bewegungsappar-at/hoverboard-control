@@ -20,6 +20,13 @@
 #define NUNCHUK_ERR_NOINIT 2 // Answer only 0xFF, needs to be initialized
 #define NUNCHUK_ERR_SEND   3 // Error during sending
 #define NUNCHUK_ERR_ZERO   4 // Answer only 0x00, invalid (all acceleration values 0 is very unlikely)
+#define NUNCHUK_ERR_DEV1 101 // 1 value deviates from historic values
+#define NUNCHUK_ERR_DEV2 102 // 2 values deviate from historic values
+#define NUNCHUK_ERR_DEV3 103 // 3 values deviate from historic values
+#define NUNCHUK_ERR_DEV4 104 // 4 values deviate from historic values
+#define NUNCHUK_ERR_DEV5 105 // 5 values deviate from historic values
+#define NUNCHUK_ERR_DEV6 106 // 6 values deviate from historic values
+#define NUNCHUK_ERR_DEV7 107 // 7 values deviate from historic values
 
 
 
@@ -33,6 +40,10 @@
 #define NUNCHUK_JOYSTICK_SPEED_MULT     0.7 // 0.5 way too slow
 #define NUNCHUK_ACCEL_SPEED_ANGLE        60 // Pitch angle needed to reach full speed (60° with factor 0.5 was too slow)
 #define NUNCHUK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
+#define NUNCHUK_HISTORY                  16 // Number of array size for history. Use multiples of 2 to simplify division
+#define NUNCHUK_HIST_ANALOGTHRESH        10 // If value deviates by this number, consider invalid
+#define NUNCHUK_HIST_ACCELTHRESH         10 // If value deviates by this number, consider invalid
+#define NUNCHUK_HIST_BUTTONTHRESH        10 // This many values out of history need to match to consider button press valid
 
 class ArduinoNunchuk
 {
@@ -58,6 +69,11 @@ class ArduinoNunchuk
     double yawangle()   { return (atan2(accelZ, accelX) * 180.0 / M_PI); } // TODO: Check if it is working..
 
   protected:
+    uint16_t avg_history[7][NUNCHUK_HISTORY];
+    long avg_sum[7];
+    int avg_ptr;
+
+
     void slowReset(int &variable, int goal, int step);
 
     double scaleAngle(double angle, double factor)    {

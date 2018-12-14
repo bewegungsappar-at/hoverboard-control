@@ -41,6 +41,8 @@
 
 #ifdef INCLUDE_PROTOCOL
 
+#define DEBUG_PROTOCOL false
+
 //////////////////////////////////////////////////////////////
 // this is the Hall data we gather, and can be read elsewhere
 // one for each wheel
@@ -231,12 +233,12 @@ void PostRead_halldata() {
     motor.measured.actualSteer_kmh = (HallData[0].HallSpeed_mm_per_s * 3600.0 / 1000000.0 )- motor.measured.actualSpeed_kmh;
 
     if(debug) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
-//    Serial.printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu   "\
+//    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu   "\
 //                  "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n",
 //                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,
 //                  HallData[1].HallPosn, HallData[1].HallPosn_mm, HallData[1].HallSpeed, HallData[1].HallSpeed_mm_per_s, HallData[1].HallTimeDiff, HallData[1].HallSkipped);
 #ifdef INPUT_ESPNOW
-    if(espnowTimeout) {
+    if(espnowTimeout < 10) {
         if (SlaveCnt > 0) { // check if slave channel is defined
             // `slave` is defined
             sendData((const void *) &motor.measured, sizeof(motor.measured));
@@ -408,7 +410,7 @@ void protocol_byte( unsigned char byte ){
             if (s.count == s.curr_msg.len){
                 if (s.CS != 0){
                     protocol_send_nack();
-//                    Serial.write((unsigned char *)&s.curr_msg,s.curr_msg.len);
+//                    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->write((unsigned char *)&s.curr_msg,s.curr_msg.len);
                 } else {
                     process_message(&s.curr_msg);  // this should ack or return a message
                 }
@@ -429,19 +431,19 @@ void protocol_byte( unsigned char byte ){
 void protocol_send_nack(){
     char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_NACK, 0 };
 //    protocol_send((PROTOCOL_MSG *)tmp);
-    Serial.println("Will gerne NACK schicken");
+    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Will gerne NACK schicken");
 }
 
 void protocol_send_ack(){
     char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_ACK, 0 };
 //    protocol_send((PROTOCOL_MSG *)tmp);
-    Serial.println("Will gerne ACK schicken");
+    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Will gerne ACK schicken");
 }
 
 void protocol_send_test(){
     char tmp[] = { PROTOCOL_SOM, 6, PROTOCOL_CMD_TEST, 'T', 'e', 's', 't', 0 };
 //    protocol_send((PROTOCOL_MSG *)tmp);
-    Serial.println("Will gerne TEST schicken");
+    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Will gerne TEST schicken");
 }
 
 
@@ -470,7 +472,7 @@ void process_message(PROTOCOL_MSG *msg){
                     msg->len = 1+1+1+params[i].len+1;
                     // send back with 'read' command plus data like write.
                     //protocol_send(msg);
-//                    Serial.println("Reference 1");
+//                    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Reference 1");
                     if (params[i].postread) params[i].postread();
                     break;
                 }
@@ -480,7 +482,7 @@ void process_message(PROTOCOL_MSG *msg){
                 msg->len = 1+1+1+0+1;
                 // send back with 'read' command plus data like write.
                 //protocol_send(msg);
-                Serial.println("Reference 2");
+                if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Reference 2");
             }
             break;
         }
@@ -499,7 +501,7 @@ void process_message(PROTOCOL_MSG *msg){
                     msg->len = 1+1+0+1;
                     // send back with 'write' command with no data.
                     //protocol_send(msg);
-//                    Serial.println("Reference 3");
+//                    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Reference 3");
                     if (params[i].postwrite) params[i].postwrite();
                     break;
                 }
@@ -509,7 +511,7 @@ void process_message(PROTOCOL_MSG *msg){
                 msg->len = 1+1+1+0+1;
                 // send back with 'write' command plus data like write.
                 //protocol_send(msg);
-                Serial.println("Reference 4");
+                if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Reference 4");
             }
             break;
         }
@@ -521,17 +523,17 @@ void process_message(PROTOCOL_MSG *msg){
             break;
 
         case PROTOCOL_CMD_ACK:
-            Serial.println("ACKed ");
+            if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("ACKed ");
             break;
 
         case PROTOCOL_CMD_NACK:
-            Serial.print("N ");
+            if(DEBUG_PROTOCOL) COM[DEBUG_COM]->print("N ");
             break;
 
 
         default:
-            Serial.write(msg->bytes, msg->len);
-            Serial.println("Protocol CMD Unknown");
+            if(DEBUG_PROTOCOL) COM[DEBUG_COM]->write(msg->bytes, msg->len);
+            if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Protocol CMD Unknown");
             msg->bytes[0] = PROTOCOL_CMD_UNKNOWN;
             msg->len = 2;
 //            protocol_send(msg);
