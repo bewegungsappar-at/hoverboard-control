@@ -18,6 +18,13 @@
 
 #define ADDRESS 0x52
 
+#ifdef DEBUG_PLOTTER
+  #include <Plotter.h>
+  extern Plotter plot;
+
+  int avg_diff[5];
+#endif
+
 void ArduinoNunchuk::init()
 {
   /* Power Cycle Nunchuk */
@@ -57,6 +64,12 @@ void ArduinoNunchuk::init()
 
   ArduinoNunchuk::_sendByte(0x55, 0xF0);
   ArduinoNunchuk::_sendByte(0x00, 0xFB);
+
+#ifdef DEBUG_PLOTTER
+  plot.AddTimeGraph( "Nunchuk Acceleration", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
+  plot.AddTimeGraph( "Nunchuk Buttons/Joy", 500, "Button C", cButton, "Button Z", zButton, "X", analogX, "Y", analogY, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
+#endif
+
 
   ArduinoNunchuk::update();
 }
@@ -141,31 +154,39 @@ int ArduinoNunchuk::update() {
   // check if new values are valid
   int deviationCount = 0;
 
-  if( abs( avg_history[0][avg_ptr] - ( avg_sum[0] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ANALOGTHRESH ) {
+  #ifndef DEBUG_PLOTTER
+    int avg_diff[5];
+  #endif
+
+  for(int i = 0; i<5; i++) {
+    avg_diff[i] = avg_history[i][avg_ptr] - ( avg_sum[i] / NUNCHUK_HISTORY );
+  }
+
+  if( abs( avg_diff[0] ) < NUNCHUK_HIST_ANALOGTHRESH ) {
     ArduinoNunchuk::analogX = avg_history[0][avg_ptr];
   } else {
     deviationCount++;
   }
 
-  if( abs( avg_history[1][avg_ptr] - ( avg_sum[1] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ANALOGTHRESH ) {
+  if( abs( avg_diff[1] ) < NUNCHUK_HIST_ANALOGTHRESH ) {
     ArduinoNunchuk::analogY = avg_history[1][avg_ptr];
   } else {
     deviationCount++;
   }
 
-  if( abs( avg_history[2][avg_ptr] - ( avg_sum[2] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ACCELTHRESH ) {
+  if( abs( avg_diff[2] ) < NUNCHUK_HIST_ACCELTHRESH ) {
     ArduinoNunchuk::accelX = avg_history[2][avg_ptr];
   } else {
     deviationCount++;
   }
 
-  if( abs( avg_history[3][avg_ptr] - ( avg_sum[3] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ACCELTHRESH ) {
+  if( abs( avg_diff[3] ) < NUNCHUK_HIST_ACCELTHRESH ) {
     ArduinoNunchuk::accelY = avg_history[3][avg_ptr];
   } else {
     deviationCount++;
   }
 
-  if( abs( avg_history[4][avg_ptr] - ( avg_sum[4] / NUNCHUK_HISTORY ) ) < NUNCHUK_HIST_ACCELTHRESH ) {
+  if( abs( avg_diff[4] ) < NUNCHUK_HIST_ACCELTHRESH ) {
     ArduinoNunchuk::accelZ = avg_history[4][avg_ptr];
   } else {
     deviationCount++;
@@ -185,7 +206,9 @@ int ArduinoNunchuk::update() {
 //    deviationCount++;
   }
 
-  
+  #ifdef DEBUG_PLOTTER
+    plot.Plot();
+  #endif
 
   if(deviationCount > 0) return NUNCHUK_ERR_DEV1 + deviationCount - 1;
 

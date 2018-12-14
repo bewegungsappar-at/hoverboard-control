@@ -4,6 +4,7 @@
 #include "input.h"
 #include "output.h"
 #include "serialbridge.h"
+#include "ArduinoNunchuk.h"
 
 #ifdef MULTITASKING
 TaskHandle_t TaskMainloop, TaskMotorcommunication;
@@ -46,10 +47,7 @@ void setup() {
 #endif
 
 #ifdef DEBUG_PLOTTER
-  // Start plotter
- // plot.Begin();
-
-  plot.AddTimeGraph( "Motor Output", 500, "PWM", motor.setpoint.pwm, "Steer", motor.setpoint.steer, "vehicle Speed", motor.measured.actualSpeed_kmh, "vehicle Steer", motor.measured.actualSteer_kmh );
+//  plot.AddTimeGraph( "Motor Output", 500, "PWM", motor.setpoint.pwm, "Steer", motor.setpoint.steer, "vehicle Speed", motor.measured.actualSpeed_kmh, "vehicle Steer", motor.measured.actualSteer_kmh );
 #endif
 
 #ifdef OTA_HANDLER
@@ -89,13 +87,13 @@ void loop() {
   #endif
 
   #ifdef DEBUG_PLOTTER
-    plot.Plot();
+//    plot.Plot();
   #endif
 
 
   #ifdef MULTITASKING
 
-    delay(20);
+    delay(10);
 
   #else
 
