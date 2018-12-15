@@ -40,10 +40,10 @@
 #define NUNCHUK_JOYSTICK_SPEED_MULT     0.7 // 0.5 way too slow
 #define NUNCHUK_ACCEL_SPEED_ANGLE        60 // Pitch angle needed to reach full speed (60° with factor 0.5 was too slow)
 #define NUNCHUK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
-#define NUNCHUK_HISTORY                  16 // Number of array size for history. Use multiples of 2 to simplify division
-#define NUNCHUK_HIST_ANALOGTHRESH        10 // If value deviates by this number, consider invalid
-#define NUNCHUK_HIST_ACCELTHRESH         10 // If value deviates by this number, consider invalid
-#define NUNCHUK_HIST_BUTTONTHRESH        10 // This many values out of history need to match to consider button press valid
+#define NUNCHUK_HISTORY                   8 // Number of array size for history. Use multiples of 2 to simplify division
+#define NUNCHUK_HIST_ANALOGTHRESH        60 // If value deviates by this number, consider invalid
+#define NUNCHUK_HIST_ACCELTHRESH         50 // If value deviates by this number, consider invalid
+#define NUNCHUK_HIST_BUTTONTHRESH         0 // This many values out of history can deviate to still consider the button press valid
 
 class ArduinoNunchuk
 {
@@ -69,7 +69,7 @@ class ArduinoNunchuk
     double yawangle()   { return (atan2(accelZ, accelX) * 180.0 / M_PI); } // TODO: Check if it is working..
 
   protected:
-    uint16_t avg_history[7][NUNCHUK_HISTORY];
+    int16_t avg_history[7][NUNCHUK_HISTORY];
     long avg_sum[7];
     int avg_ptr;
 

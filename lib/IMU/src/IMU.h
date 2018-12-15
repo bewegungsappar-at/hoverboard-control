@@ -9,6 +9,11 @@
 
 #define IMU_DEBUG true
 
+#ifdef DEBUG_PLOTTER
+  #include <Plotter.h>
+  extern Plotter plot;
+#endif
+
 //#define IMU_CPIN 23
 //#define IMU_ZPIN 25
 //#define IMU_GNDPIN 14
@@ -78,12 +83,14 @@ class Imu : public ArduinoNunchuk
         if(IMU_DEBUG) Serial.print(accelgyro.getZGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
         if(IMU_DEBUG) Serial.print("\n");
 
+        accelgyro.setDLPFMode(6);
+        accelgyro.setRate(0);
         if(IMU_DEBUG) Serial.println("Config values...");
         if(IMU_DEBUG) Serial.print("digital low-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDLPFMode());
         if(IMU_DEBUG) Serial.print("gyroscope output rate divider: "); if(IMU_DEBUG) Serial.println(accelgyro.getRate());
         if(IMU_DEBUG) Serial.print("full-scale gyroscope range: "); if(IMU_DEBUG) Serial.println(accelgyro.getFullScaleGyroRange());
         if(IMU_DEBUG) Serial.print("full-scale accelerometer range: "); if(IMU_DEBUG) Serial.println(accelgyro.getFullScaleAccelRange());
-        if(IMU_DEBUG) Serial.print(" high-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDHPFMode());
+        if(IMU_DEBUG) Serial.print("high-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDHPFMode());
         // Datasheet see https://www.invensense.com/products/motion-tracking/6-axis/mpu-6050/
 
 

@@ -232,7 +232,7 @@ void PostRead_halldata() {
     motor.measured.actualSpeed_kmh = (HallData[0].HallSpeed_mm_per_s + HallData[1].HallSpeed_mm_per_s) / 2.0 * 3600.0 / 1000000.0;
     motor.measured.actualSteer_kmh = (HallData[0].HallSpeed_mm_per_s * 3600.0 / 1000000.0 )- motor.measured.actualSpeed_kmh;
 
-    if(debug) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
+    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
 //    if(DEBUG_PROTOCOL) COM[DEBUG_COM]->printf("L: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu   "\
 //                  "R: P:%ld(%ldmm) S:%ld(%ldmm/s) dT:%lu Skip:%lu\r\n",
 //                  HallData[0].HallPosn, HallData[0].HallPosn_mm, HallData[0].HallSpeed, HallData[0].HallSpeed_mm_per_s, HallData[0].HallTimeDiff, HallData[0].HallSkipped,

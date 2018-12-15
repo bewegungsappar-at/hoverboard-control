@@ -66,8 +66,17 @@ void ArduinoNunchuk::init()
   ArduinoNunchuk::_sendByte(0x00, 0xFB);
 
 #ifdef DEBUG_PLOTTER
-  plot.AddTimeGraph( "Nunchuk Acceleration", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
-  plot.AddTimeGraph( "Nunchuk Buttons/Joy", 500, "Button C", cButton, "Button Z", zButton, "X", analogX, "Y", analogY, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
+//  plot.AddTimeGraph( "Nunchuk Acceleration + diff", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
+//  plot.AddTimeGraph( "Nunchuk Acceleration", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ);
+  plot.AddTimeGraph( "Nunchuk Acceleration diff", 500, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
+
+//  plot.AddTimeGraph( "Nunchuk Joy + diff", 500, "X", analogX, "Y", analogY, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
+//  plot.AddTimeGraph( "Nunchuk Joy", 500, "X", analogX, "Y", analogY);
+  plot.AddTimeGraph( "Nunchuk Joy diff", 500, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
+
+//  plot.AddTimeGraph( "Nunchuk Buttons", 500, "Button C", cButton, "Button Z", zButton );
+  plot.AddTimeGraph( "Nunchuk Buttons Sum", 500, "Sum C", avg_sum[6], "Sum Z", avg_sum[5] );
+
 #endif
 
 
@@ -160,6 +169,8 @@ int ArduinoNunchuk::update() {
 
   for(int i = 0; i<5; i++) {
     avg_diff[i] = avg_history[i][avg_ptr] - ( avg_sum[i] / NUNCHUK_HISTORY );
+//    if(avg_diff[i] > NUNCHUK_HIST_ANALOGTHRESH ) avg_diff[i] = NUNCHUK_HIST_ANALOGTHRESH ;
+//    else if(avg_diff[i] < (-NUNCHUK_HIST_ANALOGTHRESH ) ) avg_diff[i] = -NUNCHUK_HIST_ANALOGTHRESH ;
   }
 
   if( abs( avg_diff[0] ) < NUNCHUK_HIST_ANALOGTHRESH ) {
@@ -192,19 +203,22 @@ int ArduinoNunchuk::update() {
     deviationCount++;
   }
 
-  if( abs( ( avg_history[5][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[5] ) < NUNCHUK_HIST_BUTTONTHRESH ) {
+  if( abs( ( avg_history[5][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[5] ) <= NUNCHUK_HIST_BUTTONTHRESH ) {
     zButton_last = zButton;
     ArduinoNunchuk::zButton = avg_history[5][avg_ptr];
   } else {
-//    deviationCount++;
+    deviationCount++;
   }
 
-  if( abs( ( avg_history[6][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[6] ) < NUNCHUK_HIST_BUTTONTHRESH ) {
+  if( abs( ( avg_history[6][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[6] ) <= NUNCHUK_HIST_BUTTONTHRESH ) {
     cButton_last = cButton;
     ArduinoNunchuk::cButton = avg_history[6][avg_ptr];
   } else {
-//    deviationCount++;
+    deviationCount++;
   }
+
+  avg_ptr++;
+  if(NUNCHUK_HISTORY == avg_ptr) avg_ptr = 0;
 
   #ifdef DEBUG_PLOTTER
     plot.Plot();
@@ -224,7 +238,7 @@ void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
 
 int ArduinoNunchuk::update(double &pwm, double &steer) {
   int error = update();
-  if(error != NUNCHUK_ERR_NOERR && ( error < NUNCHUK_ERR_DEV1 || error >= NUNCHUK_ERR_DEV3) ) return error;
+  if(error != NUNCHUK_ERR_NOERR && error != NUNCHUK_ERR_DEV1 && error != NUNCHUK_ERR_DEV1 ) return error;
 
   if(cButton && !zButton) {
   /* acceleration control mode when cButton is pressed */
@@ -265,7 +279,9 @@ int ArduinoNunchuk::update(double &pwm, double &steer) {
     steer = 0.0;
     pwm = 0.0;
   } else if(!cButton && zButton && !zButton_last && (rollangle() > 90.0 || rollangle() < -90.0) ) {
-    Serial2.print("1234567"); // Insert padding byte into serial stream to realign serial buffer
+    #ifdef OUTPUT_BINARY
+      COM[MOTOR_COM]->print("1234567"); // Insert padding byte into serial stream to realign serial buffer
+    #endif
   } else {
   /* use Joystick as Input */
     // check if calib is plausible
@@ -302,7 +318,7 @@ void ArduinoNunchuk::debug(Stream &port)
   port.print("N ");
   port.printf("%4i %4i | ", analogX, analogY);
   port.printf("%4i %4i %4i | ", accelX, accelY, accelZ);
-  port.printf("%2i %2i  ", zButton, cButton);
+  port.printf("%2i %2i  \n", zButton, cButton);
 }
 
 bool ArduinoNunchuk::checkID()

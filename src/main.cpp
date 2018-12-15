@@ -37,9 +37,9 @@ void setup() {
   setupOLED();
 #endif
 
+  setupSerial();
   setupOutput();
   setupInput();
-  setupSerial();
 
 #ifdef WIFI
   setupWifi();

@@ -57,7 +57,11 @@ void setupInput() {
     #endif
 
     #ifdef INPUT_IMU
-    imu.init();
+      imu.init();
+      #ifdef DEBUG_PLOTTER
+        plot.AddTimeGraph( "IMU acceleration", 500, "ax", imu.ax, "ay", imu.ay, "az", imu.az);
+        plot.AddTimeGraph( "IMU gyro", 500, "ax", imu.gx, "gy", imu.gy, "gz", imu.gz);
+      #endif
     #endif
 
     #if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
@@ -132,10 +136,6 @@ void mainloop( void *pvparameters ) {
     if(debug) nunchuk.debug(*COM[DEBUG_COM]);
 
     switch(nunchuk.update(motor.setpoint.pwm, motor.setpoint.steer)) {
-      case NUNCHUK_ERR_NOERR:
-        nunchukTimeout = 0;
-        nunchukReinitCount = 0;
-        break;
       case NUNCHUK_ERR_COUNT:
         if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT ");
         break;
@@ -149,6 +149,29 @@ void mainloop( void *pvparameters ) {
         break;
       case NUNCHUK_ERR_ZERO:
         if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO ");
+        break;
+      case NUNCHUK_ERR_DEV3:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV3 ");
+        break;
+      case NUNCHUK_ERR_DEV4:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV4 ");
+        break;
+      case NUNCHUK_ERR_DEV5:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV5 ");
+        break;
+      case NUNCHUK_ERR_DEV6:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV6 ");
+        break;
+      case NUNCHUK_ERR_DEV7:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV7 ");
+        break;
+      case NUNCHUK_ERR_DEV1:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV1 (continuing) ");
+      case NUNCHUK_ERR_DEV2:
+        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV2 (continuing) ");
+      case NUNCHUK_ERR_NOERR:
+        nunchukTimeout = 0;
+        nunchukReinitCount = 0;
         break;
     }
 
@@ -184,6 +207,9 @@ void mainloop( void *pvparameters ) {
   #endif
 
   } while(false);
+  #if defined(DEBUG_PLOTTER) && defined(INPUT_IMU)
+    plot.Plot();
+  #endif
 
 #ifdef DEBUG_OLED
     uint mX = u8g2.getDisplayWidth()/2;
