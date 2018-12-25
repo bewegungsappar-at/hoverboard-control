@@ -5,14 +5,6 @@
 
 #ifdef WIFI
     #include <esp_wifi.h>
-    #include <WiFi.h>
-    #include <WiFiClient.h>
-
-    extern WiFiServer server_0;
-    extern WiFiServer server_1;
-    extern WiFiServer server_2;
-    extern WiFiServer *server[NUM_COM];
-    extern WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
     void setupWifi();
     void setupSerialbridge();
     void setupOTA();

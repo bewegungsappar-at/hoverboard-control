@@ -20,6 +20,11 @@
   #include "ESP32_espnow_MasterSlave.h"
 #endif
 
+#ifdef WIFI
+  #include <WiFi.h>
+  extern WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
+#endif
+
 
 double limit(double min, double value, double max) {
   if(value<min) value = min;
