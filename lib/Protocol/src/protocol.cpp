@@ -39,6 +39,13 @@
 
 #include "serialbridge.h"
 
+
+BUZZER Buzzer = {
+    .buzzerFreq = 0,
+    .buzzerPattern = 0,
+    .buzzerLen = 0,
+};
+
 #ifdef INCLUDE_PROTOCOL
 
 #define DEBUG_PROTOCOL false
@@ -128,7 +135,7 @@ extern int disablepoweroff;
 extern int powerofftimer;
 extern uint8_t buzzerFreq;    // global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
 extern uint8_t buzzerPattern; // global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
-extern int buzzerLen;
+extern uint16_t buzzerLen;
 extern int enablescope; // enable scope on values
 
 int speedB = 0;
@@ -162,6 +169,21 @@ PWM_STEER_CMD PwmSteerCmd = {
     .base_pwm = 0,
     .steer = 0,
 };
+
+
+// after write we call this...
+void PostWrite_setbuzzer(void){
+//    buzzerFreq      = Buzzer.buzzerFreq;
+//    buzzerLen       = Buzzer.buzzerLen;
+//    buzzerPattern   = Buzzer.buzzerPattern;
+}
+
+// before read we call this...
+void PreRead_getbuzzer(void){
+//    Buzzer.buzzerFreq       = buzzerFreq;
+//    Buzzer.buzzerLen        = buzzerLen;
+//    Buzzer.buzzerPattern    = buzzerPattern;
+}
 
 int speed_control = 0; // incicates protocol driven
 
@@ -328,7 +350,8 @@ PARAMSTAT params[] = {
     { 0x04, NULL, NULL, UI_NONE, &Position,          sizeof(Position),       PARAM_RW,   PreRead_getposnupdate, NULL, NULL, PostWrite_setposnupdate },
     { 0x05, NULL, NULL, UI_NONE, &PositionIncr,      sizeof(PositionIncr),   PARAM_RW,    NULL, NULL, NULL, PostWrite_incrementposition },
     { 0x06, NULL, NULL, UI_NONE, &PosnData,          sizeof(PosnData),       PARAM_RW,    NULL, NULL, NULL, NULL },
-    { 0x07, NULL, NULL, UI_NONE, &PwmSteerCmd,          sizeof(PwmSteerCmd),       PARAM_RW,    NULL, NULL, NULL, NULL },
+    { 0x07, NULL, NULL, UI_NONE, &PwmSteerCmd,       sizeof(PwmSteerCmd),    PARAM_RW,    NULL, NULL, NULL, NULL },
+    { 0x08, NULL, NULL, UI_NONE, &Buzzer,            sizeof(Buzzer),         PARAM_RW,   PreRead_getbuzzer,     NULL, NULL, PostWrite_setbuzzer },
 
     { 0x80, "flash magic", "m", UI_SHORT, &FlashContent.magic, sizeof(short), PARAM_RW, NULL, NULL, NULL, PostWrite_writeflash },  // write this with CURRENT_MAGIC to commit to flash
 

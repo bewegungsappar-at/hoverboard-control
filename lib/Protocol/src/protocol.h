@@ -16,13 +16,10 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef PROCOTOL_H
-#define PROCOTOL_H
+#pragma once
 
 #include "config.h"
 #include <inttypes.h> // int16_t
-
-#ifdef INCLUDE_PROTOCOL
 
 
 /////////////////////////////////////////////////////////////////
@@ -66,6 +63,16 @@ typedef struct tag_SPEED_DATA {
 
 extern SPEED_DATA SpeedData;
 
+
+typedef struct {
+    uint8_t buzzerFreq;
+    uint8_t buzzerPattern;
+    uint16_t buzzerLen;
+} BUZZER;
+
+extern BUZZER Buzzer;
+
+
 typedef struct {
     // both of these values range from -1000 to 1000
     // base_pwm plus/minus steer is the raw value per wheel
@@ -94,7 +101,7 @@ extern int control_type;
 // test - 02 06 54 54 65 73 74 06
 /////////////////////////////////////////////////////////////////
 
-#pragma pack(push(1))
+#pragma pack(push, 1)
 typedef struct tag_PROTOCOL_MSG {
     unsigned char SOM; // 0x02
     unsigned char len; // len is len of ALL bytes to follow, including CS
@@ -152,7 +159,3 @@ extern size_t send_serial_data( const uint8_t *data, size_t len );
 /////////////////////////////////////////////
 // Calculate Checksum and send message
 void protocol_send(PROTOCOL_MSG *msg);
-
-#endif
-
-#endif

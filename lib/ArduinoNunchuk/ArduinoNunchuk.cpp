@@ -15,6 +15,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "ArduinoNunchuk.h"
+#include "protocol.h"
 
 #define ADDRESS 0x52
 
@@ -282,6 +283,12 @@ int ArduinoNunchuk::update(double &pwm, double &steer) {
     #ifdef OUTPUT_BINARY
       COM[MOTOR_COM]->print("1234567"); // Insert padding byte into serial stream to realign serial buffer
     #endif
+
+  } else if(!cButton && zButton) {
+    Buzzer.buzzerFreq = 4;
+    Buzzer.buzzerPattern = 0;
+    Buzzer.buzzerLen = 100;
+
   } else {
   /* use Joystick as Input */
     // check if calib is plausible

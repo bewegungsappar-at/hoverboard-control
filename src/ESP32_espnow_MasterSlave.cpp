@@ -52,7 +52,7 @@
 #include "main.h"
 #include "input.h"
 #include "serialbridge.h"
-
+#include "protocol.h"
 
 
 // Global copy of slave
@@ -229,6 +229,12 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     espnowTimeout = 0;
     memcpy((void*)&motor.setpoint, data, sizeof(motorSetpoint));  //TODO: dangerous..
     if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
+  #ifdef OUTPUT_PROTOCOL
+  } else if(sizeof(Buzzer) == data_len) {
+//    espnowTimeout = 0;
+    memcpy((void*)&Buzzer, data, sizeof(Buzzer));  //TODO: dangerous..
+    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", Buzzer.buzzerFreq, Buzzer.buzzerPattern, Buzzer.buzzerLen);
+  #endif
   }
 #endif
 #ifdef OUTPUT_ESPNOW

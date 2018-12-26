@@ -4,10 +4,10 @@
 #include "config.h"
 #include <crc.h>
 #include "serialbridge.h"
+#include <protocol.h>
 
 
 #ifdef OUTPUT_PROTOCOL
-  #include <protocol.h>
 
   size_t send_serial_data( const uint8_t *data, size_t len ) {
 //    COM[DEBUG_COM]->write(data,len);
@@ -49,7 +49,13 @@ void motorCommunication( void * pvparameters) {
   if (SlaveCnt > 0) { // check if slave channel is defined
     // `slave` is defined
     sendData((const void *) &motor.setpoint, sizeof(motor.setpoint));
-  } else {
+    if( (Buzzer.buzzerFreq != 0) || (Buzzer.buzzerLen != 0) || (Buzzer.buzzerPattern != 0) ) {
+      sendData((const void *) &Buzzer, sizeof(Buzzer));
+
+      Buzzer.buzzerFreq = 0;
+      Buzzer.buzzerLen = 0;
+      Buzzer.buzzerPattern = 0;
+    }
     ScanForSlave();
     if (SlaveCnt > 0) { // check if slave channel is defined
       // `slave` is defined
@@ -62,6 +68,8 @@ void motorCommunication( void * pvparameters) {
 
 #ifdef OUTPUT_PROTOCOL
     PROTOCOL_MSG newMsg;
+
+    /* Send pwm and steer via protocol */
     memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
     PROTOCOL_MSG *msg = &newMsg;
     PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
@@ -78,12 +86,12 @@ void motorCommunication( void * pvparameters) {
     msg->len = sizeof(writevals->cmd) + sizeof(writevals->code) + sizeof(writespeed) + 1; // 1 for Checksum
     protocol_send(msg);
 
-
-    while(COM[MOTOR_COM]->available())
-    {
+    /* Read and Process Incoming data */
+    while(COM[MOTOR_COM]->available()) {
       protocol_byte( COM[MOTOR_COM]->read() );
     }
 
+    /* Request Hall data via protocol */
     memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
     PROTOCOL_BYTES_READVALS *readvals = (PROTOCOL_BYTES_READVALS *) msg->bytes;
 
@@ -96,10 +104,35 @@ void motorCommunication( void * pvparameters) {
 
     protocol_send(msg);
 
-    while(COM[MOTOR_COM]->available())
-        {
+    /* Read and Process Incoming data */
+    while(COM[MOTOR_COM]->available()) {
           protocol_byte( COM[MOTOR_COM]->read() );
         }
+
+    /* Send Buzzer Data */
+    // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
+    if( (Buzzer.buzzerFreq != 0) || (Buzzer.buzzerLen != 0) || (Buzzer.buzzerPattern != 0) ) {
+      memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
+      PROTOCOL_MSG *msg = &newMsg;
+      PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
+      BUZZER *writebuzzer = (BUZZER *) writevals->content;
+
+      msg->SOM = PROTOCOL_SOM; //Start of Message;
+
+      writevals->cmd  = PROTOCOL_CMD_WRITEVAL;  // Write value
+      writevals->code = 0x08; // buzzer from params array
+
+      writebuzzer->buzzerFreq = Buzzer.buzzerFreq;
+      writebuzzer->buzzerPattern = Buzzer.buzzerPattern;
+      writebuzzer->buzzerLen = Buzzer.buzzerLen;
+
+      msg->len = sizeof(writevals->cmd) + sizeof(writevals->code) + sizeof(writebuzzer) + 1; // 1 for Checksum
+      protocol_send(msg);
+
+      Buzzer.buzzerFreq = 0;
+      Buzzer.buzzerLen = 0;
+      Buzzer.buzzerPattern = 0;
+    }
 #endif
 #ifdef OUTPUT_BINARY
     /* cast & limit values to a valid range */
