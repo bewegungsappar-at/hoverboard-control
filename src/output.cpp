@@ -18,6 +18,8 @@
 
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
   #include "ESP32_espnow_MasterSlave.h"
+  #include "input.h"
+  int scanCounter = 0;
 #endif
 
 #ifdef WIFI
@@ -49,6 +51,7 @@ void motorCommunication( void * pvparameters) {
   if (SlaveCnt > 0) { // check if slave channel is defined
     // `slave` is defined
     sendData((const void *) &motor.setpoint, sizeof(motor.setpoint));
+
     if( (Buzzer.buzzerFreq != 0) || (Buzzer.buzzerLen != 0) || (Buzzer.buzzerPattern != 0) ) {
       sendData((const void *) &Buzzer, sizeof(Buzzer));
 
@@ -56,6 +59,8 @@ void motorCommunication( void * pvparameters) {
       Buzzer.buzzerLen = 0;
       Buzzer.buzzerPattern = 0;
     }
+
+  } else if(scanCounter == 0) {
     ScanForSlave();
     if (SlaveCnt > 0) { // check if slave channel is defined
       // `slave` is defined
@@ -63,6 +68,9 @@ void motorCommunication( void * pvparameters) {
       manageSlave();
       // pair success or already paired
     }
+    scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
+  } else {
+    scanCounter--;
   }
 #endif
 
@@ -106,8 +114,8 @@ void motorCommunication( void * pvparameters) {
 
     /* Read and Process Incoming data */
     while(COM[MOTOR_COM]->available()) {
-          protocol_byte( COM[MOTOR_COM]->read() );
-        }
+      protocol_byte( COM[MOTOR_COM]->read() );
+    }
 
     /* Send Buzzer Data */
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
@@ -184,21 +192,31 @@ void motorCommunication( void * pvparameters) {
 #define SPEED_PWM_CONVERSION_FACTOR  0.2   // Assume 100% PWM = 1000 = Full Speed = 20km/h = 20000 m/h. Therefore 20000 / 1000 = 20
 #define SPEED_FILTER                 0.015  // Low pass Filter Value. 1 means no filter at all, 0 no value update.
 void updateSpeed() {
-#ifdef INPUT_ESPNOW
-  if (SlaveCnt > 0) { // check if slave channel is defined
-    // `slave` is defined
-    sendData((const void *) &motor.measured, sizeof(motor.measured));
-  } else {
-    ScanForSlave();
-    if (SlaveCnt > 0) { // check if slave channel is defined
-      // `slave` is defined
-      // Add slave as peer if it has not been added already
-      manageSlave();
-      // pair success or already paired
-    }
-  }
-#else
+
+#if !defined(OUTPUT_PROTOCOL) && !defined (OUTPUT_ESPNOW)
   motor.measured.actualSpeed_kmh = motor.measured.actualSpeed_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.pwm   * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
   motor.measured.actualSteer_kmh = motor.measured.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
 #endif
+
+
+#ifdef INPUT_ESPNOW
+  if(espnowTimeout > 100) {
+    if (SlaveCnt > 0) { // check if slave channel is defined
+      // `slave` is defined
+      sendData((const void *) &motor.measured, sizeof(motor.measured));
+    } else if(scanCounter == 0) {
+      ScanForSlave();
+      if (SlaveCnt > 0) { // check if slave channel is defined
+        // `slave` is defined
+        // Add slave as peer if it has not been added already
+        manageSlave();
+        // pair success or already paired
+      }
+      scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
+    } else {
+      scanCounter--;
+    }
+  }
+#endif
+
 }
