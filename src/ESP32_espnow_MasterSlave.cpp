@@ -60,10 +60,14 @@
 esp_now_peer_info_t slaves[NUMSLAVES] = {};
 int SlaveCnt = 0;
 bool debug_espnow = false;
+int hideAP = 0;
 
 #define CHANNEL_MASTER 3
 #define CHANNEL_SLAVE 1
 #define PRINTSCANRESULTS 0
+
+void configDeviceAP();
+
 
 // Init ESP Now with fallback
 void InitESPNow() {
@@ -101,7 +105,7 @@ void ScanForSlave() {
       }
       delay(10);
       // Check if the current device starts with `Slave`
-      if (SSID.indexOf("ESPNOW") == 0) {
+      if (SSID.indexOf(ESPNOW_PREFIX) == 0) {
         // SSID of interest
         if(debug_espnow) COM[DEBUG_COM]->print(i + 1); if(debug_espnow) COM[DEBUG_COM]->print(": "); if(debug_espnow) COM[DEBUG_COM]->print(SSID); if(debug_espnow) COM[DEBUG_COM]->print(" ["); if(debug_espnow) COM[DEBUG_COM]->print(BSSIDstr); if(debug_espnow) COM[DEBUG_COM]->print("]"); if(debug_espnow) COM[DEBUG_COM]->print(" ("); if(debug_espnow) COM[DEBUG_COM]->print(RSSI); if(debug_espnow) COM[DEBUG_COM]->print(")"); if(debug_espnow) COM[DEBUG_COM]->println("");
         // Get BSSID => Mac Address of the Slave
@@ -223,6 +227,10 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
   if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
   if(debug_espnow) COM[DEBUG_COM]->println("");
+  if(!hideAP) {
+    hideAP = 1;
+    configDeviceAP();
+  }
 
 #ifdef INPUT_ESPNOW
   if(sizeof(motorMeasured) == data_len) {
@@ -249,11 +257,12 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
 
 // config AP SSID
 void configDeviceAP() {
-  String Prefix = "ESPNOW:";
+  String Prefix1 = ESPNOW_PREFIX;
+  String Prefix2 = ":";
   String Mac = WiFi.macAddress();
-  String SSID = Prefix + Mac;
+  String SSID = Prefix1 + Prefix2 + Mac;
   String Password = "123456789";
-  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), CHANNEL_SLAVE, 0);
+  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), CHANNEL_SLAVE, hideAP);
   if (!result) {
     if(debug_espnow) COM[DEBUG_COM]->println("AP Config failed.");
   } else {

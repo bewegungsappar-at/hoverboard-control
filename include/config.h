@@ -24,6 +24,7 @@
 //#define OUTPUT_BINARY_CRC     // Binary Protocol, with checksum, easy to loose syc and therefore unstable
 //#define OUTPUT_PROTOCOL       // Binary Protocol, very powerful but still Alpha
 //#define OUTPUT_ESPNOW         // Relay PWM and Steer through ESPnow to Slave
+  //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
 
 #define MOTORINPUT_PERIOD   10  // Update Motor each xx milliseconds
 
@@ -77,6 +78,7 @@
 /*************************** Input Method ******************************/
 
 //#define INPUT_ESPNOW
+  //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
 //#define INPUT_BLE
 //#define INPUT_PADDELEC                    // look at Paddelec.h for paddelec specific config options!
 //#define INPUT_PADDELECIMU
@@ -115,6 +117,9 @@
   #define HALL_INTERRUPTS
 #endif
 
+#ifndef ESPNOW_PREFIX
+  #define ESPNOW_PREFIX "ESPNOW"
+#endif
 
 // ############################### VALIDATE SETTINGS ###############################
 
