@@ -136,6 +136,8 @@ void mainloop( void *pvparameters ) {
   #if defined(INPUT_NUNCHUK)
     ++nunchukTimeout;
     ++nunchukReinitCount;
+    double tempPWM = motor.setpoint.pwm;
+    double tempSteer = motor.setpoint.steer;
 
     if(debug) nunchuk.debug(*COM[DEBUG_COM]);
 
@@ -195,6 +197,11 @@ void mainloop( void *pvparameters ) {
 
     // Do not allow other inputs to override when Nunchuk has sent data
     if(motor.setpoint.pwm != 0.0 && motor.setpoint.steer != 0.0 ) break;
+    else {
+      // TODO: dangerous, no defined state when joystick suddenly sends zero
+      motor.setpoint.pwm = tempPWM;
+      motor.setpoint.steer = tempSteer;
+    }
   #endif
 
   #ifdef INPUT_PADDELEC
@@ -211,7 +218,7 @@ void mainloop( void *pvparameters ) {
   #endif
 
   } while(false);
-  
+
   #if defined(DEBUG_PLOTTER) && (defined(INPUT_IMU) || defined(INPUT_PADDELECIMU))
     plot.Plot();
   #endif

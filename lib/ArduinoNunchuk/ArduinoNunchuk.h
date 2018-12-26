@@ -55,7 +55,7 @@ class ArduinoNunchuk
     int accelZ, accelZ_start;
     int zButton, zButton_last;
     int cButton, cButton_last;
-    int yaw_zero=0, pitch_zero=0, roll_zero=0;
+    double yaw_zero=0, pitch_zero=0, roll_zero=0;
 
     void init();
     int  update();

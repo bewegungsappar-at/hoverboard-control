@@ -16,6 +16,7 @@
 #include <Wire.h>
 #include "ArduinoNunchuk.h"
 #include "protocol.h"
+#include "serialbridge.h"
 
 #define ADDRESS 0x52
 
@@ -288,6 +289,11 @@ int ArduinoNunchuk::update(double &pwm, double &steer) {
     Buzzer.buzzerFreq = 4;
     Buzzer.buzzerPattern = 0;
     Buzzer.buzzerLen = 100;
+
+  } else if(cButton_last && !cButton) {
+    // When Button is released, set to very low value, other than 0.0. TODO: Just a hack, for paddelec + nunchuck
+    steer = 1.0;
+    pwm = 1.0;
 
   } else {
   /* use Joystick as Input */
