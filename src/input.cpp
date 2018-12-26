@@ -59,8 +59,10 @@ void setupInput() {
     #ifdef INPUT_IMU
       imu.init();
       #ifdef DEBUG_PLOTTER
-        plot.AddTimeGraph( "IMU acceleration", 500, "ax", imu.ax, "ay", imu.ay, "az", imu.az);
-        plot.AddTimeGraph( "IMU gyro", 500, "ax", imu.gx, "gy", imu.gy, "gz", imu.gz);
+//        plot.AddTimeGraph( "IMU acceleration", 1000, "ax", imu.ax, "ay", imu.ay, "az", imu.az);
+//        plot.AddTimeGraph( "IMU gyro", 1000, "gx", imu.gx, "gy", imu.gy, "gz", imu.gz);
+        plot.AddTimeGraph( "IMU acceleration", 500, "ax", imu.ax);
+        plot.AddTimeGraph( "IMU gyro", 500, "gz", imu.gz);
       #endif
     #endif
 
@@ -92,12 +94,14 @@ void mainloop( void *pvparameters ) {
 
   // Process all Inputs
   do {
+  #if !defined(INPUT_PADDELEC) || !defined(INPUT_PADDELECIMU) // TODO: Find better way?
     slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
+  #endif
 
   #ifdef INPUT_ESPNOW
     // Disable all other Input Methods as soon as data from ESPnow was received
-    if(espnowTimeout < 10) {
+    if(espnowTimeout < 100) {
       espnowTimeout++;
       break;
     }
@@ -207,7 +211,8 @@ void mainloop( void *pvparameters ) {
   #endif
 
   } while(false);
-  #if defined(DEBUG_PLOTTER) && defined(INPUT_IMU)
+  
+  #if defined(DEBUG_PLOTTER) && (defined(INPUT_IMU) || defined(INPUT_PADDELECIMU))
     plot.Plot();
   #endif
 
@@ -234,7 +239,7 @@ void mainloop( void *pvparameters ) {
     pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
     pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
 
-    double pitchangle = paddelec.imu.pitchangle();
+    double pitchangle = paddelec.imu.pitchangle() - paddelec.imu.pitch_zero;
 
   #endif
 

@@ -7,7 +7,7 @@
 #include "Wire.h"
 #include "config.h"
 
-#define IMU_DEBUG true
+#define IMU_DEBUG false
 
 #ifdef DEBUG_PLOTTER
   #include <Plotter.h>

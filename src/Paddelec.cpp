@@ -1,6 +1,7 @@
 
 #include "Paddelec.h"
 #include "serialbridge.h"
+#include "main.h"
 
 #if defined(INPUT_PADDELECIMU) || defined(INPUT_PADDELEC)
 
@@ -21,6 +22,17 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
   steerToRL(steer,           pwm,             pwmR,       pwmL);
   steerToRL(actualSteer_kmh, actualSpeed_kmh, speedR_kmh, speedL_kmh);
 
+
+  #define PADDELEC_INERTIA_THRESHOLD  10.0
+  #define PADDELEC_INERTIA_OFFSET    150.0
+
+  /* Remove Offset added to overcome intial inertia */
+  if(pwmL >  PADDELEC_INERTIA_OFFSET) pwmL -= PADDELEC_INERTIA_OFFSET;
+  if(pwmR >  PADDELEC_INERTIA_OFFSET) pwmR -= PADDELEC_INERTIA_OFFSET;
+  if(pwmL < -PADDELEC_INERTIA_OFFSET) pwmL += PADDELEC_INERTIA_OFFSET;
+  if(pwmR < -PADDELEC_INERTIA_OFFSET) pwmR += PADDELEC_INERTIA_OFFSET;
+
+
   /* simulate drag */
   /* decrease pwm by a factor each time function is called */
   pwmL *= 1.0 - (cfgPaddle.drag * deltaMillis);
@@ -34,8 +46,10 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
 #ifdef INPUT_PADDELEC
   double paddleAngle = gametrak1.getTheta_deg() - gametrak2.getTheta_deg();
 #elif INPUT_PADDELECIMU
-  double paddleAngle = -imu.pitchangle();
+  double paddleAngle = cfgPaddle.flipControl * (imu.pitchangle() - imu.pitch_zero);
 #endif
+//  plotterTempDouble[2] = paddleAngle;
+//  plotterTempDouble[3] = imu.az;
 
   if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("PD: ");
 
@@ -46,7 +60,7 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
 #ifdef INPUT_PADDELEC
     double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed) - speedL_kmh;
 #elif INPUT_PADDELECIMU
-    double speedDelta = (imu.gz * cfgPaddle.deltaRtoSpeed) - speedL_kmh;
+    double speedDelta = (-imu.gz * cfgPaddle.deltaRtoSpeed) - (speedL_kmh * 10);
 #endif
 
     /* update speed and apply crosstalk */
@@ -66,7 +80,7 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
 #ifdef INPUT_PADDELEC
     double speedDelta = ((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed) - speedR_kmh;
 #elif INPUT_PADDELECIMU
-    double speedDelta = (-imu.gz * cfgPaddle.deltaRtoSpeed) - speedR_kmh;
+    double speedDelta = (imu.gz * cfgPaddle.deltaRtoSpeed) - (speedR_kmh * 10);
 #endif
 
     /* update speed and apply crosstalk */
@@ -83,11 +97,40 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
   }
 
-  // TODO: calculate paddle engagement by angle, not only difference of adc values
-  // TODO: use paddle angle as strength multiplier
+
+  /* Add Offset to overcome intial inertia */
+  if(pwmL >  PADDELEC_INERTIA_THRESHOLD) pwmL += PADDELEC_INERTIA_OFFSET;
+  if(pwmR >  PADDELEC_INERTIA_THRESHOLD) pwmR += PADDELEC_INERTIA_OFFSET;
+  if(pwmL < -PADDELEC_INERTIA_THRESHOLD) pwmL -= PADDELEC_INERTIA_OFFSET;
+  if(pwmR < -PADDELEC_INERTIA_THRESHOLD) pwmR -= PADDELEC_INERTIA_OFFSET;
+
+
+
+
+
+
+/* Limit Maximum Output */
+  #define PADDELEC_LIMIT 1500
+
+  if(pwmL >  PADDELEC_LIMIT) pwmL =  PADDELEC_LIMIT;
+  if(pwmL < -PADDELEC_LIMIT) pwmL = -PADDELEC_LIMIT;
+  if(pwmR >  PADDELEC_LIMIT) pwmR =  PADDELEC_LIMIT;
+  if(pwmR < -PADDELEC_LIMIT) pwmR = -PADDELEC_LIMIT;
+
+
 
   /* convert from left and right wheel speed to speed and steering */
   RLpwmToSteer(steer, pwm, pwmR, pwmL);
+//  plotterTempDouble[0] = imu.ax;
+//  plotterTempDouble[1] = imu.ay;
+
+  if(imu.az > 100) {
+    slowReset(steer, 0, 20);
+    slowReset(pwm, 0, 20);
+    return;
+  }
+
+//  plotterTempDouble[1] = imu.gz *0.1;
 }
 
 void Paddelec::debug(Stream &port)
@@ -112,6 +155,13 @@ void Paddelec::steerToRL(double &steer, double &pwm, double &pwmR, double &pwmL)
 {
   pwmR = pwm - steer;
   pwmL = pwm + steer;
+}
+
+// Incrementally decrease variable
+void Paddelec::slowReset(double &variable, double goal, double step) {
+  if      ((variable - goal) > step) variable -= step;
+  else if ((goal - variable) > step) variable += step;
+  else                               variable  = goal;
 }
 
 #endif

@@ -21,3 +21,4 @@ struct motorControl {
 
 extern motorControl motor;
 extern bool debug;
+extern double plotterTempDouble[4];
