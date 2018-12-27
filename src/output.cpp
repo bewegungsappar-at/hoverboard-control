@@ -7,6 +7,12 @@
 #include <protocol.h>
 
 
+volatile BUZZER sendBuzzer = {
+    .buzzerFreq = 0,
+    .buzzerPattern = 0,
+    .buzzerLen = 0,
+};
+
 #ifdef OUTPUT_PROTOCOL
 
   size_t send_serial_data( const uint8_t *data, size_t len ) {
@@ -119,7 +125,7 @@ void motorCommunication( void * pvparameters) {
 
     /* Send Buzzer Data */
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
-    if( (Buzzer.buzzerFreq != 0) || (Buzzer.buzzerLen != 0) || (Buzzer.buzzerPattern != 0) ) {
+    if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
       memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
       PROTOCOL_MSG *msg = &newMsg;
       PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
@@ -130,16 +136,16 @@ void motorCommunication( void * pvparameters) {
       writevals->cmd  = PROTOCOL_CMD_WRITEVAL;  // Write value
       writevals->code = 0x08; // buzzer from params array
 
-      writebuzzer->buzzerFreq = Buzzer.buzzerFreq;
-      writebuzzer->buzzerPattern = Buzzer.buzzerPattern;
-      writebuzzer->buzzerLen = Buzzer.buzzerLen;
+      writebuzzer->buzzerFreq = sendBuzzer.buzzerFreq;
+      writebuzzer->buzzerPattern = sendBuzzer.buzzerPattern;
+      writebuzzer->buzzerLen = sendBuzzer.buzzerLen;
 
       msg->len = sizeof(writevals->cmd) + sizeof(writevals->code) + sizeof(writebuzzer) + 1; // 1 for Checksum
       protocol_send(msg);
 
-      Buzzer.buzzerFreq = 0;
-      Buzzer.buzzerLen = 0;
-      Buzzer.buzzerPattern = 0;
+      sendBuzzer.buzzerFreq = 0;
+      sendBuzzer.buzzerLen = 0;
+      sendBuzzer.buzzerPattern = 0;
     }
 #endif
 #ifdef OUTPUT_BINARY

@@ -27,6 +27,8 @@
   int avg_diff[5];
 #endif
 
+extern volatile BUZZER sendBuzzer;
+
 void ArduinoNunchuk::init()
 {
   /* Power Cycle Nunchuk */
@@ -285,17 +287,18 @@ int ArduinoNunchuk::update(double &pwm, double &steer) {
       COM[MOTOR_COM]->print("1234567"); // Insert padding byte into serial stream to realign serial buffer
     #endif
 
-  } else if(!cButton && zButton) {
-    Buzzer.buzzerFreq = 4;
-    Buzzer.buzzerPattern = 0;
-    Buzzer.buzzerLen = 100;
-
   } else if(cButton_last && !cButton) {
     // When Button is released, set to very low value, other than 0.0. TODO: Just a hack, for paddelec + nunchuck
     steer = 1.0;
     pwm = 1.0;
 
   } else {
+    if(!cButton && zButton) {
+      sendBuzzer.buzzerFreq = 4;
+      sendBuzzer.buzzerPattern = 0;
+      sendBuzzer.buzzerLen = 10;
+    }
+
   /* use Joystick as Input */
     // check if calib is plausible
     if(analogX_min  < NUNCHUK_JOYSTICK_THRESHOLD_LOW  && analogX_max  > NUNCHUK_JOYSTICK_THRESHOLD_HIGH
