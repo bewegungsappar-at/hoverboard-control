@@ -22,7 +22,7 @@
 
 #ifdef INPUT_ESPNOW
   #include "ESP32_espnow_MasterSlave.h"
-  int espnowTimeout = 10000;
+  volatile int espnowTimeout = 10000;
 #endif
 
 #ifdef INPUT_PLATOONING
@@ -94,7 +94,7 @@ void mainloop( void *pvparameters ) {
 
   // Process all Inputs
   do {
-  #if !defined(INPUT_PADDELEC) || !defined(INPUT_PADDELECIMU) // TODO: Find better way?
+  #if !defined(INPUT_PADDELEC) && !defined(INPUT_PADDELECIMU) // TODO: Find better way?
     slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
   #endif
@@ -106,7 +106,6 @@ void mainloop( void *pvparameters ) {
       break;
     }
   #endif
-
   #ifdef INPUT_BLE
     //  loopBLE();
     motor.setpoint.pwm = ble_pitch;
