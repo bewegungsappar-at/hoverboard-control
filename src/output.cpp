@@ -81,6 +81,8 @@ void motorCommunication( void * pvparameters) {
 #endif
 
 #ifdef OUTPUT_PROTOCOL
+    updateSpeed();
+
     PROTOCOL_MSG newMsg;
 
     /* Send pwm and steer via protocol */
@@ -206,16 +208,17 @@ void updateSpeed() {
 
 
 #ifdef INPUT_ESPNOW
-  if(espnowTimeout > 100) {
+//  if(espnowTimeout > 100) {
+  if(true) {
     if (SlaveCnt > 0) { // check if slave channel is defined
       // `slave` is defined
       sendData((const void *) &motor.measured, sizeof(motor.measured));
     } else if(scanCounter % 10000) {
-      ScanForSlave();
+//      ScanForSlave();
       if (SlaveCnt > 0) { // check if slave channel is defined
         // `slave` is defined
         // Add slave as peer if it has not been added already
-        manageSlave();
+//        manageSlave();
         // pair success or already paired
         scanCounter++;
       }

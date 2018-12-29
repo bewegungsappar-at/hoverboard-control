@@ -25,6 +25,21 @@
 //#define OUTPUT_PROTOCOL       // Binary Protocol, very powerful but still Alpha
 //#define OUTPUT_ESPNOW         // Relay PWM and Steer through ESPnow to Slave
   //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
+//  #define ESPNOW_PEERMAC {0x30, 0xAE, 0xA4, 0x02, 0x7E, 0x98} // Paddelec WROOM
+  #define ESPNOW_PEERMAC {0xB4, 0xE6, 0x2D, 0xB2, 0x79, 0x3D} // Paddel TTGO
+
+/*
+TTGO1 Paddel
+AP Config Success. Broadcasting with AP: PADDELEC:B4:E6:2D:B2:79:3D
+STA MAC: B4:E6:2D:B2:79:3D
+AP MAC: B4:E6:2D:B2:79:3E
+
+Paddelec
+AP Config Success. Broadcasting with AP: PADDELEC:30:AE:A4:02:7E:98
+STA MAC: 30:AE:A4:02:7E:98
+AP MAC: 30:AE:A4:02:7E:99
+*/
+
 
 #define MOTORINPUT_PERIOD   10  // Update Motor each xx milliseconds
 

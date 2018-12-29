@@ -59,11 +59,11 @@
 #define NUMSLAVES 1
 esp_now_peer_info_t slaves[NUMSLAVES] = {};
 int SlaveCnt = 0;
-bool debug_espnow = false;
+bool debug_espnow = true;
 int hideAP = 0;
 
 #define CHANNEL_MASTER 3
-#define CHANNEL_SLAVE 1
+#define CHANNEL_SLAVE 3
 #define PRINTSCANRESULTS 0
 
 void configDeviceAP();
@@ -189,6 +189,13 @@ void sendData(const void *data, size_t n_bytes) {
       if(debug_espnow) COM[DEBUG_COM]->print("Sending: ");
       if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
     }
+
+    char macStr[18];
+    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+    peer_addr[0], peer_addr[1], peer_addr[2], peer_addr[3], peer_addr[4], peer_addr[5]);
+    if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Sent to: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
+
+
     esp_err_t result = esp_now_send(peer_addr, (uint8_t*)data, n_bytes);
     if(debug_espnow) COM[DEBUG_COM]->print("Send Status: ");
     if (result == ESP_OK) {
@@ -232,6 +239,31 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     configDeviceAP();
   }
 
+  /* validate MAC Address
+  * In ESPnow a different MAC Adress is used to send or receive packets.
+  * Fortunately, the MAC Adresses are only one bit apart.
+  */
+  int foundSlave = 0;
+  for(int i = 0; i< SlaveCnt; i++) {
+    if( slaves[i].peer_addr[0] == mac_addr[0] &&
+        slaves[i].peer_addr[1] == mac_addr[1] &&
+        slaves[i].peer_addr[2] == mac_addr[2] &&
+        slaves[i].peer_addr[3] == mac_addr[3] &&
+        slaves[i].peer_addr[4] == mac_addr[4] &&
+        slaves[i].peer_addr[5] == mac_addr[5] )
+    {
+      foundSlave++;
+    }
+  }
+  #ifdef DEBUG_OLED
+    extern volatile int oledTemp[3];
+    oledTemp[0] = foundSlave;
+    oledTemp[1] = SlaveCnt;
+  #endif
+  if(foundSlave == 0) return;
+
+
+
 #ifdef INPUT_ESPNOW
   if(sizeof(motorMeasured) == data_len) {
     espnowTimeout = 0;
@@ -262,7 +294,7 @@ void configDeviceAP() {
   String Mac = WiFi.macAddress();
   String SSID = Prefix1 + Prefix2 + Mac;
   String Password = "123456789";
-  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), CHANNEL_SLAVE, hideAP);
+  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), CHANNEL_SLAVE, 0);
   if (!result) {
     if(debug_espnow) COM[DEBUG_COM]->println("AP Config failed.");
   } else {
@@ -271,6 +303,20 @@ void configDeviceAP() {
 }
 
 void setupEspNow() {
+  delay(1000);
+
+  #ifdef ESPNOW_PEERMAC
+    memset(slaves, 0, sizeof(slaves));
+    uint8_t preset_peer_addr[6] = ESPNOW_PEERMAC;
+    for(int i=0; i<6; i++) {
+      slaves[0].peer_addr[i] = preset_peer_addr[i];
+    }
+    slaves[0].channel= CHANNEL_MASTER;
+    slaves[0].encrypt= 0;
+    SlaveCnt = 1;
+    hideAP = 1;
+  #endif
+
   //Set device in STA mode to begin with
   WiFi.mode(WIFI_MODE_APSTA);
   if(debug_espnow) COM[DEBUG_COM]->println("ESPNow/Multi-Slave/Master Example");
@@ -285,6 +331,10 @@ void setupEspNow() {
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
+  #ifdef ESPNOW_PEERMAC
+      manageSlave();
+  #endif
+
 }
 /*
 void loopEspNow() {
