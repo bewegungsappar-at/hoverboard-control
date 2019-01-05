@@ -6,4 +6,4 @@
 void setupInput();
 void mainloop( void *pvparameters );
 
-extern int espnowTimeout;
+extern volatile int espnowTimeout;

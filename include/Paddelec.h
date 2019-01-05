@@ -57,13 +57,13 @@ class Paddelec
 #endif
       return(true);
     }
-    void update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer, uint32_t deltaMillis);
+    void update(volatile double &pwm, volatile double &steer, volatile double &actualSpeed_kmh, volatile double &actualSteer, volatile uint32_t deltaMillis);
     void debug(Stream &port);
-    void RLpwmToSteer(double &steer, double &pwm, double &pwmR, double &pwmL);
-    void steerToRL(double  &steer, double  &pwm, double  &pwmR, double  &pwmL);
+    void RLpwmToSteer(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL);
+    void steerToRL(volatile double  &steer, volatile double  &pwm, double  &pwmR, double  &pwmL);
 
   private:
-    void slowReset(double &variable, double goal, double step);
+    void slowReset(volatile double &variable, double goal, double step);
 #ifdef INPUT_PADDELEC
     void switchOn()  // TODO Integrate into Gametrak class
     {

@@ -51,7 +51,7 @@ void ArduinoNunchuk::init()
   #endif
 
   // initialize array used for sliding average
-  for(int i; i<7; i++) {
+  for(int i=0; i<7; i++) {
     for(int j; j<NUNCHUK_HISTORY; j++) {
       avg_history[i][j] = 0;
     }
@@ -72,14 +72,14 @@ void ArduinoNunchuk::init()
 #ifdef DEBUG_PLOTTER
 //  plot.AddTimeGraph( "Nunchuk Acceleration + diff", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
 //  plot.AddTimeGraph( "Nunchuk Acceleration", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ);
-  plot.AddTimeGraph( "Nunchuk Acceleration diff", 500, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
+//  plot.AddTimeGraph( "Nunchuk Acceleration diff", 500, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
 
 //  plot.AddTimeGraph( "Nunchuk Joy + diff", 500, "X", analogX, "Y", analogY, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
 //  plot.AddTimeGraph( "Nunchuk Joy", 500, "X", analogX, "Y", analogY);
-  plot.AddTimeGraph( "Nunchuk Joy diff", 500, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
+//  plot.AddTimeGraph( "Nunchuk Joy diff", 500, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
 
 //  plot.AddTimeGraph( "Nunchuk Buttons", 500, "Button C", cButton, "Button Z", zButton );
-  plot.AddTimeGraph( "Nunchuk Buttons Sum", 500, "Sum C", avg_sum[6], "Sum Z", avg_sum[5] );
+//  plot.AddTimeGraph( "Nunchuk Buttons Sum", 500, "Sum C", avg_sum[6], "Sum Z", avg_sum[5] );
 
 #endif
 
@@ -240,7 +240,7 @@ void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
   else                               variable  = goal;
 }
 
-int ArduinoNunchuk::update(double &pwm, double &steer) {
+int ArduinoNunchuk::update(volatile double &pwm, volatile double &steer) {
   int error = update();
   if(error != NUNCHUK_ERR_NOERR && error != NUNCHUK_ERR_DEV1 && error != NUNCHUK_ERR_DEV1 ) return error;
 

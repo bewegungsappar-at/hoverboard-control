@@ -8,7 +8,7 @@
 #define INPUT_PADDELEC_DEBUG false
 
 
-void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, double &actualSteer_kmh, uint32_t deltaMillis) {
+void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  double &actualSpeed_kmh, volatile  double &actualSteer_kmh, volatile  uint32_t deltaMillis) {
   double pwmR      =0, pwmL      =0;
   double speedR_kmh=0, speedL_kmh=0;
 #ifdef INPUT_PADDELEC
@@ -145,20 +145,20 @@ void Paddelec::debug(Stream &port)
 #endif
 }
 
-void Paddelec::RLpwmToSteer(double &steer, double &pwm, double &pwmR, double &pwmL)
+void Paddelec::RLpwmToSteer(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL)
 {
   pwm = (pwmR + pwmL) / 2;
   steer = pwmL - pwm;
 }
 
-void Paddelec::steerToRL(double &steer, double &pwm, double &pwmR, double &pwmL)
+void Paddelec::steerToRL(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL)
 {
   pwmR = pwm - steer;
   pwmL = pwm + steer;
 }
 
 // Incrementally decrease variable
-void Paddelec::slowReset(double &variable, double goal, double step) {
+void Paddelec::slowReset(volatile double &variable, double goal, double step) {
   if      ((variable - goal) > step) variable -= step;
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;

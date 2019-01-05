@@ -49,7 +49,7 @@ void setupOutput() {
 
 void motorCommunication( void * pvparameters) {
 #ifdef MULTITASKING
-  int taskno = (int)pvparameters;
+//  int taskno = (int)pvparameters;
   while(1) {
 #endif //MULTITASKING
 

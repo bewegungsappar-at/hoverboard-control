@@ -22,7 +22,7 @@
 
 #ifdef INPUT_ESPNOW
   #include "ESP32_espnow_MasterSlave.h"
-  int espnowTimeout = 10000;
+  volatile int espnowTimeout = 10000;
 #endif
 
 #ifdef INPUT_PLATOONING
@@ -76,7 +76,7 @@ void setupInput() {
 
 
 // Incrementally decrease variable
-void slowReset(double &variable, double goal, double step) {
+void slowReset(volatile double &variable, double goal, double step) {
   if      ((variable - goal) > step) variable -= step;
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;
@@ -85,7 +85,7 @@ void slowReset(double &variable, double goal, double step) {
 
 void mainloop( void *pvparameters ) {
 #ifdef MULTITASKING
-  int taskno = (int)pvparameters;
+//  int taskno = (int)pvparameters;
   while(1) {
 #endif //MULTITASKING
 

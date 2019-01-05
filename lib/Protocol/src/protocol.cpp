@@ -452,19 +452,19 @@ void protocol_byte( unsigned char byte ){
 // functions in support of the operation of the machine protocol
 //
 void protocol_send_nack(){
-    char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_NACK, 0 };
+//    char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_NACK, 0 };
 //    protocol_send((PROTOCOL_MSG *)tmp);
     if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Will gerne NACK schicken");
 }
 
 void protocol_send_ack(){
-    char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_ACK, 0 };
+//    char tmp[] = { PROTOCOL_SOM, 2, PROTOCOL_CMD_ACK, 0 };
 //    protocol_send((PROTOCOL_MSG *)tmp);
     if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Will gerne ACK schicken");
 }
 
 void protocol_send_test(){
-    char tmp[] = { PROTOCOL_SOM, 6, PROTOCOL_CMD_TEST, 'T', 'e', 's', 't', 0 };
+//    char tmp[] = { PROTOCOL_SOM, 6, PROTOCOL_CMD_TEST, 'T', 'e', 's', 't', 0 };
 //    protocol_send((PROTOCOL_MSG *)tmp);
     if(DEBUG_PROTOCOL) COM[DEBUG_COM]->println("Will gerne TEST schicken");
 }
