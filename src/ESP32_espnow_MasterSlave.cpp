@@ -59,8 +59,18 @@
 #define NUMSLAVES 1
 esp_now_peer_info_t slaves[NUMSLAVES] = {};
 int SlaveCnt = 0;
-bool debug_espnow = true;
+
+#define debugESPNOW
+
+#ifdef debugESPNOW
+  bool debug_espnow = true;
+#else
+  bool debug_espnow = false;
+#endif
+
 int hideAP = 0;
+volatile int sendTimeout;
+volatile bool sendReady = true;
 
 #define CHANNEL_MASTER 3
 #define CHANNEL_SLAVE 3
@@ -183,6 +193,9 @@ void manageSlave() {
 
 // send data
 void sendData(const void *data, size_t n_bytes) {
+  sendTimeout++;
+  if(!sendReady) return;    // Do not send new data, when now feedback was received.
+
   for (int i = 0; i < SlaveCnt; i++) {
     const uint8_t *peer_addr = slaves[i].peer_addr;
     if (i == 0) { // print only for first slave
@@ -195,8 +208,9 @@ void sendData(const void *data, size_t n_bytes) {
     peer_addr[0], peer_addr[1], peer_addr[2], peer_addr[3], peer_addr[4], peer_addr[5]);
     if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Sent to: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
 
-
+    sendReady = false;
     esp_err_t result = esp_now_send(peer_addr, (uint8_t*)data, n_bytes);
+
     if(debug_espnow) COM[DEBUG_COM]->print("Send Status: ");
     if (result == ESP_OK) {
       if(debug_espnow) COM[DEBUG_COM]->println("Success");
@@ -219,21 +233,27 @@ void sendData(const void *data, size_t n_bytes) {
 
 // callback when data is sent from Master to Slave
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+#ifdef debugESPNOW
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
   if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Sent to: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
   if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Send Status: "); if(debug_espnow) COM[DEBUG_COM]->println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+#endif
+  sendTimeout = 0;
+  sendReady = true;
 }
 
 // callback when data is recv from Master
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
+#ifdef debugESPNOW
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
   if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
   if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
   if(debug_espnow) COM[DEBUG_COM]->println("");
+#endif
   if(!hideAP) {
     hideAP = 1;
     configDeviceAP();
@@ -260,6 +280,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     oledTemp[0] = foundSlave;
     oledTemp[1] = SlaveCnt;
   #endif
+
   if(foundSlave == 0) return;
 
 
@@ -268,19 +289,28 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   if(sizeof(motorMeasured) == data_len) {
     espnowTimeout = 0;
     memcpy((void*)&motor.setpoint, data, sizeof(motorSetpoint));  //TODO: dangerous..
-    if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
+    #ifdef debugESPNOW
+      if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
+    #endif
+
   #ifdef OUTPUT_PROTOCOL
   } else if(sizeof(Buzzer) == data_len) {
 //    espnowTimeout = 0;
     memcpy((void*)&Buzzer, data, sizeof(Buzzer));  //TODO: dangerous..
-    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", Buzzer.buzzerFreq, Buzzer.buzzerPattern, Buzzer.buzzerLen);
+    #ifdef debugESPNOW
+      if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", Buzzer.buzzerFreq, Buzzer.buzzerPattern, Buzzer.buzzerLen);
+    #endif
   #endif
+
   }
 #endif
+
 #ifdef OUTPUT_ESPNOW
   if(sizeof(motorMeasured) == data_len) {
     memcpy((void*)&motor.measured, data, sizeof(motorMeasured));  //TODO: dangerous..
-    if(debug_espnow) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
+    #ifdef debugESPNOW
+      if(debug_espnow) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
+    #endif
   }
 #endif
 
@@ -303,8 +333,6 @@ void configDeviceAP() {
 }
 
 void setupEspNow() {
-  delay(1000);
-
   #ifdef ESPNOW_PEERMAC
     memset(slaves, 0, sizeof(slaves));
     uint8_t preset_peer_addr[6] = ESPNOW_PEERMAC;

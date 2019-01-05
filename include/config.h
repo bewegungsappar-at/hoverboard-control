@@ -26,7 +26,10 @@
 //#define OUTPUT_ESPNOW         // Relay PWM and Steer through ESPnow to Slave
   //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
 //  #define ESPNOW_PEERMAC {0x30, 0xAE, 0xA4, 0x02, 0x7E, 0x98} // Paddelec WROOM
-  #define ESPNOW_PEERMAC {0xB4, 0xE6, 0x2D, 0xB2, 0x79, 0x3D} // Paddel TTGO
+//  #define ESPNOW_PEERMAC {0xB4, 0xE6, 0x2D, 0xB2, 0x79, 0x3D} // Paddel TTGO
+//  #define ESPNOW_PEERMAC {0x30, 0xAE, 0xA4, 0x26, 0x86, 0x68} // Psycho Board
+  #define ESPNOW_PEERMAC {0x30, 0xAE, 0xA4, 0x26, 0x6A, 0xD4} // Psycho Remote
+
 
 /*
 TTGO1 Paddel
@@ -38,6 +41,16 @@ Paddelec
 AP Config Success. Broadcasting with AP: PADDELEC:30:AE:A4:02:7E:98
 STA MAC: 30:AE:A4:02:7E:98
 AP MAC: 30:AE:A4:02:7E:99
+
+psycho featherboard Lastenwagen
+AP Config Success. Broadcasting with AP: PSYCHO:30:AE:A4:26:86:68
+STA MAC: 30:AE:A4:26:86:68
+AP MAC: 30:AE:A4:26:86:69
+
+psycho feather remote
+AP Config Success. Broadcasting with AP: PSYCHO:30:AE:A4:26:6A:D4
+STA MAC: 30:AE:A4:26:6A:D4
+AP MAC: 30:AE:A4:26:6A:D5
 */
 
 

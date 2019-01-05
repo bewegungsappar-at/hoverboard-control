@@ -78,6 +78,9 @@ void motorCommunication( void * pvparameters) {
   } else {
     scanCounter--;
   }
+  extern volatile int sendTimeout;
+  extern volatile bool sendReady;
+  if(sendTimeout > 100) sendReady = true;
 #endif
 
 #ifdef OUTPUT_PROTOCOL
@@ -187,7 +190,7 @@ void motorCommunication( void * pvparameters) {
     if(debug) COM[DEBUG_COM]->printf("%7.2f %7.2f ", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
 #endif
 #ifdef MULTITASKING
-    delay(MOTORINPUT_PERIOD);
+    delay(10);
   }
 #endif //MULTITASKING
 }
@@ -226,7 +229,10 @@ void updateSpeed() {
       scanCounter++;
     }
   }
-  Serial.print(scanCounter);
+//  Serial.print(scanCounter);
+  extern volatile int sendTimeout;
+  extern volatile bool sendReady;
+  if(sendTimeout > 100) sendReady = true;
 #endif
 
 }

@@ -95,10 +95,6 @@ void mainloop( void *pvparameters ) {
 
   // Process all Inputs
   do {
-  #if !defined(INPUT_PADDELEC) && !defined(INPUT_PADDELECIMU) // TODO: Find better way?
-    slowReset(motor.setpoint.pwm,   0.0, 10.0);
-    slowReset(motor.setpoint.steer, 0.0, 10.0);
-  #endif
 
   #ifdef INPUT_ESPNOW
     // Disable all other Input Methods as soon as data from ESPnow was received
@@ -107,6 +103,12 @@ void mainloop( void *pvparameters ) {
       break;
     }
   #endif
+
+  #if !defined(INPUT_PADDELEC) && !defined(INPUT_PADDELECIMU) // TODO: Find better way?
+    slowReset(motor.setpoint.pwm,   0.0, 10.0);
+    slowReset(motor.setpoint.steer, 0.0, 10.0);
+  #endif
+
   #ifdef INPUT_BLE
     //  loopBLE();
     motor.setpoint.pwm = ble_pitch;
@@ -297,6 +299,8 @@ void mainloop( void *pvparameters ) {
 
   } while( u8g2.nextPage() );
 #endif
+//motor.setpoint.pwm = 200.0;
+//motor.setpoint.steer = 0.0;
 
 #ifdef MULTITASKING
     vTaskDelay(10);
