@@ -330,6 +330,18 @@ void configDeviceAP() {
 }
 
 void setupEspNow() {
+  #ifdef ESPNOW_PEERMAC
+    memset(slaves, 0, sizeof(slaves));
+    uint8_t preset_peer_addr[6] = ESPNOW_PEERMAC;
+    for(int i=0; i<6; i++) {
+      slaves[0].peer_addr[i] = preset_peer_addr[i];
+    }
+    slaves[0].channel= CHANNEL_MASTER;
+    slaves[0].encrypt= 0;
+    SlaveCnt = 1;
+    hideAP = 1;
+  #endif
+
   //Set device in STA mode to begin with
   WiFi.mode(WIFI_MODE_APSTA);
   if(debug_espnow) COM[DEBUG_COM]->println("ESPNow/Multi-Slave/Master Example");
@@ -344,6 +356,10 @@ void setupEspNow() {
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
+  #ifdef ESPNOW_PEERMAC
+      manageSlave();
+  #endif
+
 }
 /*
 void loopEspNow() {
