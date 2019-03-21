@@ -124,9 +124,9 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 //  plotterTempDouble[0] = imu.ax;
 //  plotterTempDouble[1] = imu.ay;
 
-  if(imu.az > 80) {
-    slowReset(steer, 0, 40);
-    slowReset(pwm, 0, 40);
+  if(imu.az > 100) {
+    slowReset(steer, 0, 20);
+    slowReset(pwm, 0, 20);
     return;
   }
 
