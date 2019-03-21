@@ -97,6 +97,11 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
   }
 
+  if(imu.az > 80) {
+    slowReset(steer, 0, 300);
+    slowReset(pwm, 0, 300);
+    return;
+  }
 
   /* Add Offset to overcome intial inertia */
   if(pwmL >  PADDELEC_INERTIA_THRESHOLD) pwmL += PADDELEC_INERTIA_OFFSET;
@@ -124,11 +129,6 @@ void Paddelec::update(double &pwm, double &steer, double &actualSpeed_kmh, doubl
 //  plotterTempDouble[0] = imu.ax;
 //  plotterTempDouble[1] = imu.ay;
 
-  if(imu.az > 80) {
-    slowReset(steer, 0, 40);
-    slowReset(pwm, 0, 40);
-    return;
-  }
 
 //  plotterTempDouble[1] = imu.gz *0.1;
 }
