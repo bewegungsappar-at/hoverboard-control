@@ -203,6 +203,13 @@ void sendData(const void *data, size_t n_bytes) {
       if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
     }
 
+#ifdef debugESPNOW
+    char macStr[18];
+    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+    peer_addr[0], peer_addr[1], peer_addr[2], peer_addr[3], peer_addr[4], peer_addr[5]);
+    if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Sent to: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
+#endif
+
     sendReady = false;
     esp_err_t result = esp_now_send(peer_addr, (uint8_t*)data, n_bytes);
 
