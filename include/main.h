@@ -1,8 +1,6 @@
 #pragma once
 #include <Arduino.h>
 
-extern int32_t deltaMillis;
-
 struct motorSetpoint {
   double steer;
   double pwm;     // called "speed" in hoverboard firmware, but is only pwm duty cycle in promille
@@ -19,6 +17,6 @@ struct motorControl {
   motorMeasured measured;
 };
 
-extern motorControl motor;
+extern volatile motorControl motor;
 extern bool debug;
-extern double plotterTempDouble[4];
+extern volatile int32_t deltaMillis;

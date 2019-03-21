@@ -163,7 +163,7 @@ class Imu : public ArduinoNunchuk
     }
 
 
-    int update(double &speed, double &steer) {
+    int update(volatile double &speed, volatile double &steer) {
 //        update();
 //        return ArduinoNunchuk::update(speed, steer);
 

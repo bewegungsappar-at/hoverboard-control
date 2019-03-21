@@ -29,8 +29,8 @@ void motorCommunication(void *pvParameters);
   double plotterTempDouble[4] = {0.0, 0.0, 0.0, 0.0};
 #endif
 
-motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
-int32_t deltaMillis;
+volatile motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
+volatile int32_t deltaMillis;
 
 void setup() {
 

@@ -76,7 +76,7 @@ void setupInput() {
 
 
 // Incrementally decrease variable
-void slowReset(double &variable, double goal, double step) {
+void slowReset(volatile double &variable, double goal, double step) {
   if      ((variable - goal) > step) variable -= step;
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;

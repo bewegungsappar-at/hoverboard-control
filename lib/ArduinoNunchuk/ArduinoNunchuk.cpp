@@ -240,7 +240,7 @@ void ArduinoNunchuk::slowReset(int &variable, int goal, int step) {
   else                               variable  = goal;
 }
 
-int ArduinoNunchuk::update(double &pwm, double &steer) {
+int ArduinoNunchuk::update(volatile double &pwm, volatile double &steer) {
   int error = update();
   if(error != NUNCHUK_ERR_NOERR && error != NUNCHUK_ERR_DEV1 && error != NUNCHUK_ERR_DEV1 ) return error;
 
