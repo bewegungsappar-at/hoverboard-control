@@ -73,7 +73,7 @@ volatile int sendTimeout;
 volatile bool sendReady = true;
 
 #define CHANNEL_MASTER 3
-#define CHANNEL_SLAVE 1
+#define CHANNEL_SLAVE 3
 #define PRINTSCANRESULTS 0
 
 void configDeviceAP();
