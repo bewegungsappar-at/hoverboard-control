@@ -210,20 +210,19 @@ void updateSpeed() {
     if (SlaveCnt > 0) { // check if slave channel is defined
       // `slave` is defined
       sendData((const void *) &motor.measured, sizeof(motor.measured));
-    } else if(scanCounter % 10000) {
+    } else if(scanCounter == 0) {
       ScanForSlave();
       if (SlaveCnt > 0) { // check if slave channel is defined
         // `slave` is defined
         // Add slave as peer if it has not been added already
         manageSlave();
         // pair success or already paired
-        scanCounter++;
       }
-    } else if(scanCounter < 60000) {
-      scanCounter++;
+      scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
+    } else {
+      scanCounter--;
     }
   }
-  Serial.print(scanCounter);
 #endif
 
 }
