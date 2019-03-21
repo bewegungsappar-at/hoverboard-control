@@ -244,6 +244,27 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     configDeviceAP();
   }
 
+  /* validate MAC Address
+  * In ESPnow a different MAC Adress is used to send or receive packets.
+  * Fortunately, the MAC Adresses are only one bit apart.
+  */
+  int foundSlave = 0;
+  for(int i = 0; i< SlaveCnt; i++) {
+    if( slaves[i].peer_addr[0] == mac_addr[0] &&
+        slaves[i].peer_addr[1] == mac_addr[1] &&
+        slaves[i].peer_addr[2] == mac_addr[2] &&
+        slaves[i].peer_addr[3] == mac_addr[3] &&
+        slaves[i].peer_addr[4] == mac_addr[4] &&
+        slaves[i].peer_addr[5] == mac_addr[5] )
+    {
+      foundSlave++;
+    }
+  }
+
+  if(foundSlave == 0) return;
+
+
+
 #ifdef INPUT_ESPNOW
   if(sizeof(motorMeasured) == data_len) {
     espnowTimeout = 0;
