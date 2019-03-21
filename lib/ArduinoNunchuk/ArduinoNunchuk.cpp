@@ -51,7 +51,7 @@ void ArduinoNunchuk::init()
   #endif
 
   // initialize array used for sliding average
-  for(int i; i<7; i++) {
+  for(int i=0; i<7; i++) {
     for(int j; j<NUNCHUK_HISTORY; j++) {
       avg_history[i][j] = 0;
     }

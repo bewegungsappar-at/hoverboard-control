@@ -7,9 +7,7 @@
 #include "ArduinoNunchuk.h"
 
 #ifdef MULTITASKING
-TaskHandle_t TaskMainloop, TaskMotorcommunication;
-void mainloop(void *pvParameters);
-void motorCommunication(void *pvParameters);
+  TaskHandle_t TaskMainloop, TaskMotorcommunication;
 #endif //MULTITASKING
 
 

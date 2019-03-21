@@ -85,7 +85,7 @@ void slowReset(volatile double &variable, double goal, double step) {
 
 void mainloop( void *pvparameters ) {
 #ifdef MULTITASKING
-  int taskno = (int)pvparameters;
+//  int taskno = (int)pvparameters;
   while(1) {
 #endif //MULTITASKING
 
@@ -94,7 +94,7 @@ void mainloop( void *pvparameters ) {
 
   // Process all Inputs
   do {
-  #if !defined(INPUT_PADDELEC) && !defined(INPUT_PADDELECIMU) // TODO: Find better way?
+  #if !defined(INPUT_PADDELEC) || !defined(INPUT_PADDELECIMU) // TODO: Find better way?
     slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
   #endif
@@ -106,6 +106,7 @@ void mainloop( void *pvparameters ) {
       break;
     }
   #endif
+
   #ifdef INPUT_BLE
     //  loopBLE();
     motor.setpoint.pwm = ble_pitch;
