@@ -65,7 +65,7 @@ int SlaveCnt = 0;
 #ifdef debugESPNOW
   bool debug_espnow = true;
 #else
-  bool debug_espnow = false;
+bool debug_espnow = false;
 #endif
 
 int hideAP = 0;
@@ -194,7 +194,7 @@ void manageSlave() {
 // send data
 void sendData(const void *data, size_t n_bytes) {
   sendTimeout++;
-  if(!sendReady) return;    // Do not send new data, when now feedback was received.
+  if(!sendReady) return;    // Do not send new data, when no feedback was received.
 
   for (int i = 0; i < SlaveCnt; i++) {
     const uint8_t *peer_addr = slaves[i].peer_addr;
@@ -203,10 +203,12 @@ void sendData(const void *data, size_t n_bytes) {
       if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
     }
 
+#ifdef debugESPNOW
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
     peer_addr[0], peer_addr[1], peer_addr[2], peer_addr[3], peer_addr[4], peer_addr[5]);
     if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Sent to: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
+#endif
 
     sendReady = false;
     esp_err_t result = esp_now_send(peer_addr, (uint8_t*)data, n_bytes);
@@ -275,11 +277,6 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
       foundSlave++;
     }
   }
-  #ifdef DEBUG_OLED
-    extern volatile int oledTemp[3];
-    oledTemp[0] = foundSlave;
-    oledTemp[1] = SlaveCnt;
-  #endif
 
   if(foundSlave == 0) return;
 
@@ -290,7 +287,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     espnowTimeout = 0;
     memcpy((void*)&motor.setpoint, data, sizeof(motorSetpoint));  //TODO: dangerous..
     #ifdef debugESPNOW
-      if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
+    if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
     #endif
 
   #ifdef OUTPUT_PROTOCOL
@@ -298,8 +295,8 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
 //    espnowTimeout = 0;
     memcpy((void*)&Buzzer, data, sizeof(Buzzer));  //TODO: dangerous..
     #ifdef debugESPNOW
-      if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", Buzzer.buzzerFreq, Buzzer.buzzerPattern, Buzzer.buzzerLen);
-    #endif
+    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", Buzzer.buzzerFreq, Buzzer.buzzerPattern, Buzzer.buzzerLen);
+  #endif
   #endif
 
   }
@@ -309,7 +306,7 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   if(sizeof(motorMeasured) == data_len) {
     memcpy((void*)&motor.measured, data, sizeof(motorMeasured));  //TODO: dangerous..
     #ifdef debugESPNOW
-      if(debug_espnow) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
+    if(debug_espnow) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
     #endif
   }
 #endif
@@ -324,7 +321,7 @@ void configDeviceAP() {
   String Mac = WiFi.macAddress();
   String SSID = Prefix1 + Prefix2 + Mac;
   String Password = "123456789";
-  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), CHANNEL_SLAVE, 0);
+  bool result = WiFi.softAP(SSID.c_str(), Password.c_str(), CHANNEL_SLAVE, hideAP);
   if (!result) {
     if(debug_espnow) COM[DEBUG_COM]->println("AP Config failed.");
   } else {

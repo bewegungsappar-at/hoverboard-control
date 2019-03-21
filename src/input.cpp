@@ -6,7 +6,6 @@
 
 #ifdef DEBUG_OLED
   #include "oled.h"
-  volatile int oledTemp[3] = {0, 0, 0};
 #endif
 
 #if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
@@ -289,9 +288,6 @@ void mainloop( void *pvparameters ) {
 
   #endif
 
-    u8g2.setCursor(0,mY+40);
-    u8g2.printf("%3i %3i %2i", oledTemp[0], oledTemp[1], oledTemp[2] );
-
     u8g2.setCursor(5,5);
     u8g2.printf("%4.0f %4.0f", motor.setpoint.pwm, motor.setpoint.steer);
 
@@ -299,8 +295,6 @@ void mainloop( void *pvparameters ) {
 
   } while( u8g2.nextPage() );
 #endif
-//motor.setpoint.pwm = 200.0;
-//motor.setpoint.steer = 0.0;
 
 #ifdef MULTITASKING
     vTaskDelay(10);
