@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "config.h"
 
 struct motorSetpoint {
   double steer;
@@ -20,3 +21,7 @@ struct motorControl {
 extern volatile motorControl motor;
 extern bool debug;
 extern volatile int32_t deltaMillis;
+
+#ifdef DEBUG_PLOTTER
+  extern double plotterTempDouble[6];
+#endif
