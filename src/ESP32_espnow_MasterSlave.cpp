@@ -69,6 +69,8 @@ bool debug_espnow = false;
 #endif
 
 int hideAP = 0;
+volatile int sendTimeout;
+volatile bool sendReady = true;
 
 #define CHANNEL_MASTER 3
 #define CHANNEL_SLAVE 1
@@ -191,13 +193,19 @@ void manageSlave() {
 
 // send data
 void sendData(const void *data, size_t n_bytes) {
+  sendTimeout++;
+  if(!sendReady) return;    // Do not send new data, when no feedback was received.
+
   for (int i = 0; i < SlaveCnt; i++) {
     const uint8_t *peer_addr = slaves[i].peer_addr;
     if (i == 0) { // print only for first slave
       if(debug_espnow) COM[DEBUG_COM]->print("Sending: ");
       if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
     }
+
+    sendReady = false;
     esp_err_t result = esp_now_send(peer_addr, (uint8_t*)data, n_bytes);
+
     if(debug_espnow) COM[DEBUG_COM]->print("Send Status: ");
     if (result == ESP_OK) {
       if(debug_espnow) COM[DEBUG_COM]->println("Success");
@@ -227,6 +235,8 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Sent to: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
   if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Send Status: "); if(debug_espnow) COM[DEBUG_COM]->println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 #endif
+  sendTimeout = 0;
+  sendReady = true;
 }
 
 // callback when data is recv from Master

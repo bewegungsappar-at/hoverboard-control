@@ -78,6 +78,9 @@ void motorCommunication( void * pvparameters) {
   } else {
     scanCounter--;
   }
+  extern volatile int sendTimeout;
+  extern volatile bool sendReady;
+  if(sendTimeout > 100) sendReady = true;
 #endif
 
 #ifdef OUTPUT_PROTOCOL
@@ -223,7 +226,9 @@ void updateSpeed() {
       scanCounter++;
     }
   }
-  Serial.print(scanCounter);
+  extern volatile int sendTimeout;
+  extern volatile bool sendReady;
+  if(sendTimeout > 100) sendReady = true;
 #endif
 
 }
