@@ -84,6 +84,8 @@ void motorCommunication( void * pvparameters) {
 #endif
 
 #ifdef OUTPUT_PROTOCOL
+    updateSpeed();
+
     PROTOCOL_MSG newMsg;
 
     /* Send pwm and steer via protocol */
