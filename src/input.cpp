@@ -76,7 +76,7 @@ void setupInput() {
 
 
 // Incrementally decrease variable
-void slowReset(double &variable, double goal, double step) {
+void slowReset(volatile double &variable, double goal, double step) {
   if      ((variable - goal) > step) variable -= step;
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;
@@ -85,7 +85,7 @@ void slowReset(double &variable, double goal, double step) {
 
 void mainloop( void *pvparameters ) {
 #ifdef MULTITASKING
-  int taskno = (int)pvparameters;
+//  int taskno = (int)pvparameters;
   while(1) {
 #endif //MULTITASKING
 
@@ -103,7 +103,7 @@ void mainloop( void *pvparameters ) {
     }
   #endif
 
-  #if !defined(INPUT_PADDELEC) && !defined(INPUT_PADDELECIMU) // TODO: Find better way?
+  #if !defined(INPUT_PADDELEC) || !defined(INPUT_PADDELECIMU) // TODO: Find better way?
     slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
   #endif

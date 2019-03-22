@@ -60,7 +60,7 @@ class ArduinoNunchuk
     void init();
     int  update();
     void debug(Stream &port);
-    int  update(double &speed, double &steer);
+    int  update(volatile double &speed, volatile double &steer);
     bool checkID();
     bool reInit();
 

@@ -7,9 +7,7 @@
 #include "ArduinoNunchuk.h"
 
 #ifdef MULTITASKING
-TaskHandle_t TaskMainloop, TaskMotorcommunication;
-void mainloop(void *pvParameters);
-void motorCommunication(void *pvParameters);
+  TaskHandle_t TaskMainloop, TaskMotorcommunication;
 #endif //MULTITASKING
 
 
@@ -26,11 +24,11 @@ void motorCommunication(void *pvParameters);
 #ifdef DEBUG_PLOTTER
   #include <Plotter.h>
   Plotter plot;
-  double plotterTempDouble[4] = {0.0, 0.0, 0.0, 0.0};
+  double plotterTempDouble[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 #endif
 
-motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
-int32_t deltaMillis;
+volatile motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
+volatile int32_t deltaMillis;
 
 void setup() {
 
@@ -48,11 +46,9 @@ void setup() {
 #endif
 
 #ifdef DEBUG_PLOTTER
-  plot.AddTimeGraph( "Motor Set Point", 500, "PWM", motor.setpoint.pwm, "Steer", motor.setpoint.steer );
-  plot.AddTimeGraph( "Motor Speed", 500, "vehicle Speed", motor.measured.actualSpeed_kmh, "vehicle Steer", motor.measured.actualSteer_kmh );
   plot.AddTimeGraph( "Temp1", 500, "0", plotterTempDouble[0], "1", plotterTempDouble[1] );
   plot.AddTimeGraph( "Temp2", 500, "2", plotterTempDouble[2], "3", plotterTempDouble[3] );
-
+  plot.AddTimeGraph( "Temp3", 500, "4", plotterTempDouble[4], "5", plotterTempDouble[5] );
 #endif
 
 #ifdef OTA_HANDLER
