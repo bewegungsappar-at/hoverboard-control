@@ -4,8 +4,12 @@
 #include "config.h"
 #include <crc.h>
 #include "serialbridge.h"
-#include <protocol.h>
 
+typedef struct {
+    uint8_t buzzerFreq;
+    uint8_t buzzerPattern;
+    uint16_t buzzerLen;
+} BUZZER;
 
 volatile BUZZER sendBuzzer = {
     .buzzerFreq = 0,
@@ -15,11 +19,8 @@ volatile BUZZER sendBuzzer = {
 
 #ifdef OUTPUT_PROTOCOL
 
-  size_t send_serial_data( const uint8_t *data, size_t len ) {
-//    COM[DEBUG_COM]->write(data,len);
-//    COM[DEBUG_COM]->println();
-    return COM[MOTOR_COM]->write(data,len);
-  }
+#include <HoverboardAPI.h>
+  HoverboardAPI hoverboard = HoverboardAPI(COM[MOTOR_COM]);
 #endif
 
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
@@ -85,73 +86,33 @@ void motorCommunication( void * pvparameters) {
 
 #ifdef OUTPUT_PROTOCOL
     updateSpeed();
-
-    PROTOCOL_MSG newMsg;
-
-    /* Send pwm and steer via protocol */
-    memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
-    PROTOCOL_MSG *msg = &newMsg;
-    PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
-    PWM_STEER_CMD *writespeed = (PWM_STEER_CMD *) writevals->content;
-
-    msg->SOM = PROTOCOL_SOM; //Start of Message;
-
-    writevals->cmd  = PROTOCOL_CMD_WRITEVAL;  // Write value
-    writevals->code = 0x07; // speed data from params array
-
-    writespeed->base_pwm = (int16_t)motor.setpoint.pwm;
-    writespeed->steer = (int16_t) motor.setpoint.steer;
-
-    msg->len = sizeof(writevals->cmd) + sizeof(writevals->code) + sizeof(writespeed) + 1; // 1 for Checksum
-    protocol_send(msg);
+    hoverboard.sendSpeed(motor.setpoint.pwm, motor.setpoint.steer);
 
     /* Read and Process Incoming data */
     while(COM[MOTOR_COM]->available()) {
-      protocol_byte( COM[MOTOR_COM]->read() );
+      hoverboard.protocolPush( COM[MOTOR_COM]->read() );
     }
 
-    /* Request Hall data via protocol */
-    memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
-    PROTOCOL_BYTES_READVALS *readvals = (PROTOCOL_BYTES_READVALS *) msg->bytes;
-
-    msg->SOM = PROTOCOL_SOM; //Start of Message;
-
-    readvals->cmd  = PROTOCOL_CMD_READVAL;  // Read value
-    readvals->code = 0x02; // hall data from params array
-
-    msg->len = sizeof(readvals->cmd) + sizeof(readvals->code) + 1; // 1 for Checksum
-
-    protocol_send(msg);
+    hoverboard.requestHall();
 
     /* Read and Process Incoming data */
     while(COM[MOTOR_COM]->available()) {
-      protocol_byte( COM[MOTOR_COM]->read() );
+      hoverboard.protocolPush( COM[MOTOR_COM]->read() );
     }
 
     /* Send Buzzer Data */
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
     if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
-      memset((void*)&newMsg,0x00,sizeof(PROTOCOL_MSG));
-      PROTOCOL_MSG *msg = &newMsg;
-      PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
-      BUZZER *writebuzzer = (BUZZER *) writevals->content;
+      hoverboard.sendBuzzer(sendBuzzer.buzzerFreq, sendBuzzer.buzzerLen, sendBuzzer.buzzerPattern);
 
-      msg->SOM = PROTOCOL_SOM; //Start of Message;
-
-      writevals->cmd  = PROTOCOL_CMD_WRITEVAL;  // Write value
-      writevals->code = 0x08; // buzzer from params array
-
-      writebuzzer->buzzerFreq = sendBuzzer.buzzerFreq;
-      writebuzzer->buzzerPattern = sendBuzzer.buzzerPattern;
-      writebuzzer->buzzerLen = sendBuzzer.buzzerLen;
-
-      msg->len = sizeof(writevals->cmd) + sizeof(writevals->code) + sizeof(writebuzzer) + 1; // 1 for Checksum
-      protocol_send(msg);
 
       sendBuzzer.buzzerFreq = 0;
       sendBuzzer.buzzerLen = 0;
       sendBuzzer.buzzerPattern = 0;
     }
+
+
+
 #endif
 #ifdef OUTPUT_BINARY
     /* cast & limit values to a valid range */
