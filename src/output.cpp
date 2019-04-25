@@ -59,12 +59,12 @@ void motorCommunication( void * pvparameters) {
     // `slave` is defined
     sendData((const void *) &motor.setpoint, sizeof(motor.setpoint));
 
-    if( (Buzzer.buzzerFreq != 0) || (Buzzer.buzzerLen != 0) || (Buzzer.buzzerPattern != 0) ) {
-      sendData((const void *) &Buzzer, sizeof(Buzzer));
+    if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
+      sendData((const void *) &sendBuzzer, sizeof(sendBuzzer));
 
-      Buzzer.buzzerFreq = 0;
-      Buzzer.buzzerLen = 0;
-      Buzzer.buzzerPattern = 0;
+      sendBuzzer.buzzerFreq = 0;
+      sendBuzzer.buzzerLen = 0;
+      sendBuzzer.buzzerPattern = 0;
     }
 
   } else if(scanCounter == 0) {
