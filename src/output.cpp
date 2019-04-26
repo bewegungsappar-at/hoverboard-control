@@ -41,11 +41,41 @@ double limit(double min, double value, double max) {
   return value;
 }
 
+#ifdef OUTPUT_PROTOCOL
+
+void processHalldata() {
+  motor.measured.actualSpeed_kmh = hoverboard.getSpeed_kmh();
+  motor.measured.actualSteer_kmh = hoverboard.getSteer_kmh();
+
+#ifdef INPUT_ESPNOW
+    if(espnowTimeout < 10) {
+        if (SlaveCnt > 0) { // check if slave channel is defined
+            // `slave` is defined
+            sendData((const void *) &motor.measured, sizeof(motor.measured));
+        } else {
+            ScanForSlave();
+            if (SlaveCnt > 0) { // check if slave channel is defined
+            // `slave` is defined
+            // Add slave as peer if it has not been added already
+            manageSlave();
+            // pair success or already paired
+            }
+        }
+    }
+#endif
+}
+#endif
+
 void setupOutput() {
 
     #ifdef OUTPUT_ESPNOW
     setupEspNow();
     #endif
+
+  #ifdef OUTPUT_PROTOCOL
+    hoverboard.setPostread(0x02, processHalldata);
+  #endif
+
 }
 
 void motorCommunication( void * pvparameters) {
