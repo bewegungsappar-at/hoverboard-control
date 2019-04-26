@@ -5,11 +5,9 @@
 #include <crc.h>
 #include "serialbridge.h"
 
-typedef struct {
-    uint8_t buzzerFreq;
-    uint8_t buzzerPattern;
-    uint16_t buzzerLen;
-} BUZZER;
+
+#include <HoverboardAPI.h>
+
 
 volatile BUZZER sendBuzzer = {
     .buzzerFreq = 0,
@@ -18,9 +16,11 @@ volatile BUZZER sendBuzzer = {
 };
 
 #ifdef OUTPUT_PROTOCOL
+  int serialWrapper(unsigned char *data, int len) {
+      return (int) COM[MOTOR_COM]->write(data,len);
+  }
 
-#include <HoverboardAPI.h>
-  HoverboardAPI hoverboard = HoverboardAPI(COM[MOTOR_COM]);
+  HoverboardAPI hoverboard = HoverboardAPI(serialWrapper);
 #endif
 
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
@@ -68,9 +68,9 @@ void processHalldata() {
 
 void setupOutput() {
 
-    #ifdef OUTPUT_ESPNOW
+  #ifdef OUTPUT_ESPNOW
     setupEspNow();
-    #endif
+  #endif
 
   #ifdef OUTPUT_PROTOCOL
     hoverboard.setPostread(0x02, processHalldata);
