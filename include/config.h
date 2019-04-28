@@ -140,11 +140,6 @@ AP MAC: 30:AE:A4:26:6A:D5
   #define OUTPUT_BINARY
 #endif
 
-#ifdef OUTPUT_PROTOCOL
-  #define INCLUDE_PROTOCOL
-  #define HALL_INTERRUPTS
-#endif
-
 #ifndef ESPNOW_PREFIX
   #define ESPNOW_PREFIX "ESPNOW"
 #endif

@@ -118,12 +118,16 @@ void motorCommunication( void * pvparameters) {
     updateSpeed();
     hoverboard.sendSpeed(motor.setpoint.pwm, motor.setpoint.steer);
 
+    hoverboard.protocolTick();
+
     /* Read and Process Incoming data */
     while(COM[MOTOR_COM]->available()) {
       hoverboard.protocolPush( COM[MOTOR_COM]->read() );
     }
 
     hoverboard.requestHall();
+    hoverboard.protocolTick();
+
 
     /* Read and Process Incoming data */
     while(COM[MOTOR_COM]->available()) {
