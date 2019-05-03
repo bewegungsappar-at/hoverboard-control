@@ -9,7 +9,7 @@
 #include <HoverboardAPI.h>
 
 
-volatile BUZZER sendBuzzer = {
+volatile BUZZER_DATA sendBuzzer = {
     .buzzerFreq = 0,
     .buzzerPattern = 0,
     .buzzerLen = 0,
@@ -73,9 +73,21 @@ void setupOutput() {
   #endif
 
   #ifdef OUTPUT_PROTOCOL
-    hoverboard.setPostread(0x02, processHalldata);
+    hoverboard.setReceivedread(0x02, processHalldata);
   #endif
 
+}
+
+void pollUART() {
+  #ifdef OUTPUT_PROTOCOL
+    // Read and Process Incoming data
+    int i=0;
+    while(COM[MOTOR_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
+      hoverboard.protocolPush( COM[MOTOR_COM]->read() );
+    }
+
+    hoverboard.protocolTick();
+  #endif
 }
 
 void motorCommunication( void * pvparameters) {
@@ -116,36 +128,20 @@ void motorCommunication( void * pvparameters) {
 
 #ifdef OUTPUT_PROTOCOL
     updateSpeed();
-    hoverboard.sendSpeed(motor.setpoint.pwm, motor.setpoint.steer);
 
-    hoverboard.protocolTick();
-
-    /* Read and Process Incoming data */
-    while(COM[MOTOR_COM]->available()) {
-      hoverboard.protocolPush( COM[MOTOR_COM]->read() );
-    }
-
+    hoverboard.sendPWM(motor.setpoint.pwm, motor.setpoint.steer);
     hoverboard.requestHall();
-    hoverboard.protocolTick();
 
 
-    /* Read and Process Incoming data */
-    while(COM[MOTOR_COM]->available()) {
-      hoverboard.protocolPush( COM[MOTOR_COM]->read() );
-    }
-
-    /* Send Buzzer Data */
+    // Send Buzzer Data
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
     if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
-      hoverboard.sendBuzzer(sendBuzzer.buzzerFreq, sendBuzzer.buzzerLen, sendBuzzer.buzzerPattern);
-
+      hoverboard.sendBuzzer(sendBuzzer.buzzerFreq, sendBuzzer.buzzerPattern, sendBuzzer.buzzerLen);
 
       sendBuzzer.buzzerFreq = 0;
       sendBuzzer.buzzerLen = 0;
       sendBuzzer.buzzerPattern = 0;
     }
-
-
 
 #endif
 #ifdef OUTPUT_BINARY
@@ -184,8 +180,17 @@ void motorCommunication( void * pvparameters) {
     if(debug) COM[DEBUG_COM]->printf("%6i %6i ", pwm, steer);
     if(debug) COM[DEBUG_COM]->printf("%7.2f %7.2f ", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
 #endif
+#ifdef OUTPUT_PROTOCOL
+    pollUART();
+#endif
+
 #ifdef MULTITASKING
-    delay(MOTORINPUT_PERIOD);
+
+    unsigned long start = millis();
+    while (millis() < start + MOTORINPUT_PERIOD){
+      pollUART();
+      delayMicroseconds(100);
+    }
   }
 #endif //MULTITASKING
 }

@@ -291,11 +291,11 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     #endif
 
   #ifdef OUTPUT_PROTOCOL
-  } else if(sizeof(Buzzer) == data_len) {
+  } else if(sizeof(BuzzerData) == data_len) {
 //    espnowTimeout = 0;
-    memcpy((void*)&Buzzer, data, sizeof(Buzzer));  //TODO: dangerous..
+    memcpy((void*)&BuzzerData, data, sizeof(BuzzerData));  //TODO: dangerous..
     #ifdef debugESPNOW
-    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", Buzzer.buzzerFreq, Buzzer.buzzerPattern, Buzzer.buzzerLen);
+    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", BuzzerData.buzzerFreq, BuzzerData.buzzerPattern, BuzzerData.buzzerLen);
   #endif
   #endif
 

@@ -1,3 +1,3 @@
-[submodule "lib/hoverboardProtocol"]
+[submodule "src/hoverboardAPI"]
 	path = src/hoverboardAPI
-	url = git@github.com:p-h-a-i-l/HoverboardAPI.git
+	url = https://github.com/p-h-a-i-l/HoverboardAPI.git

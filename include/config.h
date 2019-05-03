@@ -54,7 +54,7 @@ AP MAC: 30:AE:A4:26:6A:D5
 */
 
 
-#define MOTORINPUT_PERIOD   10  // Update Motor each xx milliseconds
+#define MOTORINPUT_PERIOD   30  // Update Motor each xx milliseconds
 
 /******************************* Wifi **********************************/
 

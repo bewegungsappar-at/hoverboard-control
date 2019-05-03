@@ -72,7 +72,7 @@ void setup() {
     (void *)1,                // parameter of the task
     1,                        // priority of the task
     &TaskMotorcommunication,  // Task handle to keep track of created task
-    0);                       // Core (0 is used by ESP32 connectivity)
+    1);                       // Core (0 is used by ESP32 connectivity)
 #endif //MULTITASKING
 }
 
