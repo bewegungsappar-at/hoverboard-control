@@ -17,6 +17,7 @@ volatile BUZZER_DATA sendBuzzer = {
 
 #ifdef OUTPUT_PROTOCOL
   int serialWrapper(unsigned char *data, int len) {
+//      Serial.write(data,len);
       return (int) COM[MOTOR_COM]->write(data,len);
   }
 
@@ -43,7 +44,7 @@ double limit(double min, double value, double max) {
 
 #ifdef OUTPUT_PROTOCOL
 
-void processHalldata() {
+void processHalldata(PROTOCOL_STAT *s) {
   motor.measured.actualSpeed_kmh = hoverboard.getSpeed_kmh();
   motor.measured.actualSteer_kmh = hoverboard.getSteer_kmh();
 
@@ -74,6 +75,8 @@ void setupOutput() {
 
   #ifdef OUTPUT_PROTOCOL
     hoverboard.setReceivedread(0x02, processHalldata);
+    hoverboard.schedulePWM();
+    hoverboard.scheduleScheduling();
   #endif
 
 }
@@ -129,8 +132,13 @@ void motorCommunication( void * pvparameters) {
 #ifdef OUTPUT_PROTOCOL
     updateSpeed();
 
-    hoverboard.sendPWM(motor.setpoint.pwm, motor.setpoint.steer);
-    hoverboard.requestHall();
+//    hoverboard.sendPWM(motor.setpoint.pwm, motor.setpoint.steer);
+//    hoverboard.requestHall();
+
+    extern PWM_DATA PWMData;
+
+    PWMData.pwm[0] = motor.setpoint.pwm - motor.setpoint.steer;
+    PWMData.pwm[1] = motor.setpoint.pwm + motor.setpoint.steer;
 
 
     // Send Buzzer Data
@@ -182,6 +190,9 @@ void motorCommunication( void * pvparameters) {
 #endif
 #ifdef OUTPUT_PROTOCOL
     pollUART();
+//    Serial.print(" ");
+//    Serial.print(hoverboard.getTxBufferLevel());
+//    Serial.print(" ");
 #endif
 
 #ifdef MULTITASKING
