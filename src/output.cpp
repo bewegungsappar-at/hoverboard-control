@@ -44,26 +44,33 @@ double limit(double min, double value, double max) {
 
 #ifdef OUTPUT_PROTOCOL
 
-void processHalldata(PROTOCOL_STAT *s) {
-  motor.measured.actualSpeed_kmh = hoverboard.getSpeed_kmh();
-  motor.measured.actualSteer_kmh = hoverboard.getSteer_kmh();
 
-#ifdef INPUT_ESPNOW
-    if(espnowTimeout < 10) {
-        if (SlaveCnt > 0) { // check if slave channel is defined
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type ) {
+  switch (fn_type) {
+    case FN_TYPE_POST_READRESPONSE:
+    case FN_TYPE_POST_WRITE:
+      motor.measured.actualSpeed_kmh = hoverboard.getSpeed_kmh();
+      motor.measured.actualSteer_kmh = hoverboard.getSteer_kmh();
+
+      #ifdef INPUT_ESPNOW
+        if(espnowTimeout < 10) {
+          if (SlaveCnt > 0) { // check if slave channel is defined
             // `slave` is defined
             sendData((const void *) &motor.measured, sizeof(motor.measured));
-        } else {
+          } else {
             ScanForSlave();
             if (SlaveCnt > 0) { // check if slave channel is defined
-            // `slave` is defined
-            // Add slave as peer if it has not been added already
-            manageSlave();
-            // pair success or already paired
+              // `slave` is defined
+              // Add slave as peer if it has not been added already
+              manageSlave();
+              // pair success or already paired
             }
+          }
         }
-    }
-#endif
+      #endif
+
+      break;
+  }
 }
 #endif
 
@@ -74,7 +81,7 @@ void setupOutput() {
   #endif
 
   #ifdef OUTPUT_PROTOCOL
-    hoverboard.setReceivedread(0x02, processHalldata);
+    hoverboard.setParamHandler(0x02, processHalldata);
     hoverboard.schedulePWM();
     hoverboard.scheduleScheduling();
   #endif
