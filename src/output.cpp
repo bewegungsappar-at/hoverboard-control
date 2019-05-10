@@ -18,6 +18,53 @@ volatile BUZZER_DATA sendBuzzer = {
 #ifdef OUTPUT_PROTOCOL
   int serialWrapper(unsigned char *data, int len) {
 //      Serial.write(data,len);
+      for(int i = 0; i< len; i++) {
+        switch (i) {
+        case 0:
+          Serial.printf("SOM:%01i ", data[i]);
+          break;
+
+        case 1:
+          Serial.printf("CI:%03i ", data[i]);
+          break;
+
+        case 2:
+          Serial.printf("len:%03i ", data[i]);
+          break;
+
+        case 3:
+          Serial.printf("CMD:%c ", data[i]);
+          break;
+
+        case 4:
+          if(data[i] == 0x0E) {
+            Serial.print("PWM       ");
+          } else if(data[i] == 0x22) {
+            Serial.print("Subscript ");
+          } else if(data[i] == 0x02) {
+            Serial.print("Hall      ");
+          } else if(data[i] == 0x23) {
+            Serial.print("CounterS  ");
+          } else if(data[i] == 0x21) {
+            Serial.print("Buzzer    ");
+          } else {
+            Serial.printf("Code:0x%02X ", data[i]);
+          }
+          break;
+
+        default:
+          if(i==len-1) {
+            Serial.printf("CS:0x%02X ", data[i]);
+          } else {
+            Serial.printf("%02X ", data[i]);
+          }
+          break;
+        }
+
+//        Serial.print(data[i]); Serial.print(" ");
+      }
+      Serial.println();
+
       return (int) COM[MOTOR_COM]->write(data,len);
   }
 
@@ -146,6 +193,8 @@ void motorCommunication( void * pvparameters) {
 
     PWMData.pwm[0] = motor.setpoint.pwm - motor.setpoint.steer;
     PWMData.pwm[1] = motor.setpoint.pwm + motor.setpoint.steer;
+    hoverboard.requestCounters();
+//    hoverboard.printStats(*COM[DEBUG_COM]);
 
 
     // Send Buzzer Data
