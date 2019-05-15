@@ -128,9 +128,12 @@ void setupOutput() {
   #endif
 
   #ifdef OUTPUT_PROTOCOL
-    hoverboard.setParamHandler(0x02, processHalldata);
-    hoverboard.schedulePWM();
-    hoverboard.scheduleScheduling();
+    hoverboard.setParamHandler(hoverboardCodes::sensHall, processHalldata);
+    hoverboard.scheduleTransmission(hoverboardCodes::setPointPWM, -1, 30);
+
+    // schudule a scheduling request for Hall Data:
+    // 100 Messages for 30 msec = 3s. Repeat each 1000ms, indefinetly (-1)
+    hoverboard.scheduleScheduling(hoverboardCodes::sensHall, 100, 30, 1000, -1);
   #endif
 
 }
@@ -187,13 +190,16 @@ void motorCommunication( void * pvparameters) {
     updateSpeed();
 
 //    hoverboard.sendPWM(motor.setpoint.pwm, motor.setpoint.steer);
-//    hoverboard.requestHall();
+//    hoverboard.requestRead(hoverboardCodes::sensHall);
+    hoverboard.requestRead(hoverboardCodes::sensElectrical);
+    Serial.println(hoverboard.getBatteryVoltage());
+    Serial.print(hoverboard.getMotorAmpsAvg(0));
 
     extern PWM_DATA PWMData;
 
     PWMData.pwm[0] = motor.setpoint.pwm - motor.setpoint.steer;
     PWMData.pwm[1] = motor.setpoint.pwm + motor.setpoint.steer;
-    hoverboard.requestCounters();
+    hoverboard.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
 //    hoverboard.printStats(*COM[DEBUG_COM]);
 
 
