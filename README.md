@@ -1,3 +1,7 @@
+# Cloning and build environment
+This repo uses submodules, make sure to clone with `git clone --recurse-submodules ...` or initialize the submodules afterwards with `git submodule update --init --recursive`
+
+
 # Paddelec control
 ESP32 based control board to read Gametraks attached to a paddle. Provide input via serial to control a hoverboard with custom firmware.
 See https://git.hacknology.de/projekte/bewegungsappar.at (mirrored on https://github.com/p-h-a-i-l/hoverboard-firmware-hack).
