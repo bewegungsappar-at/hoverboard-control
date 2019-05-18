@@ -17,7 +17,8 @@ volatile BUZZER_DATA sendBuzzer = {
 
 #ifdef OUTPUT_PROTOCOL
   int serialWrapper(unsigned char *data, int len) {
-//      Serial.write(data,len);
+//#define DEBUG_PROTOCOL_OUTGOING_MARKUP
+#ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
       for(int i = 0; i< len; i++) {
         switch (i) {
         case 0:
@@ -37,16 +38,20 @@ volatile BUZZER_DATA sendBuzzer = {
           break;
 
         case 4:
-          if(data[i] == 0x0E) {
+          if(i==len-1) {
+            Serial.printf("CS:0x%02X ", data[i]);
+          } else if(data[i] == hoverboardCodes::setPointPWM) {
             Serial.print("PWM       ");
-          } else if(data[i] == 0x22) {
-            Serial.print("Subscript ");
-          } else if(data[i] == 0x02) {
+          } else if(data[i] == hoverboardCodes::protocolSubscriptions) {
+            Serial.print("Subscribe ");
+          } else if(data[i] == hoverboardCodes::sensHall) {
             Serial.print("Hall      ");
-          } else if(data[i] == 0x23) {
+          } else if(data[i] == hoverboardCodes::protocolCountSum) {
             Serial.print("CounterS  ");
-          } else if(data[i] == 0x21) {
+          } else if(data[i] == hoverboardCodes::setBuzzer) {
             Serial.print("Buzzer    ");
+          } else if(data[i] == hoverboardCodes::sensElectrical) {
+            Serial.print("El. Meas  ");
           } else {
             Serial.printf("Code:0x%02X ", data[i]);
           }
@@ -60,11 +65,9 @@ volatile BUZZER_DATA sendBuzzer = {
           }
           break;
         }
-
-//        Serial.print(data[i]); Serial.print(" ");
       }
       Serial.println();
-
+#endif
       return (int) COM[MOTOR_COM]->write(data,len);
   }
 
@@ -121,6 +124,9 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type ) {
 }
 #endif
 
+//#define DEBUG_PROTOCOL_PASSTHROUGH
+
+
 void setupOutput() {
 
   #ifdef OUTPUT_ESPNOW
@@ -129,23 +135,38 @@ void setupOutput() {
 
   #ifdef OUTPUT_PROTOCOL
     hoverboard.setParamHandler(hoverboardCodes::sensHall, processHalldata);
-    hoverboard.scheduleTransmission(hoverboardCodes::setPointPWM, -1, 30);
 
-    // schudule a scheduling request for Hall Data:
-    // 100 Messages for 30 msec = 3s. Repeat each 1000ms, indefinetly (-1)
-    hoverboard.scheduleScheduling(hoverboardCodes::sensHall, 100, 30, 1000, -1);
+    #ifndef DEBUG_PROTOCOL_PASSTHROUGH
+      hoverboard.scheduleTransmission(hoverboardCodes::setPointPWM, -1, 30);
+
+      // schudule a scheduling request for Hall Data:
+      // 100 Messages for 30 msec = 3s. Repeat each 1000ms, indefinetly (-1)
+      hoverboard.scheduleScheduling(hoverboardCodes::sensHall, 100, 30, 1000, -1);
+      hoverboard.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
+
+    #endif
   #endif
 
 }
+
 
 void pollUART() {
   #ifdef OUTPUT_PROTOCOL
     // Read and Process Incoming data
     int i=0;
     while(COM[MOTOR_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
-      hoverboard.protocolPush( COM[MOTOR_COM]->read() );
+      unsigned char readChar = COM[MOTOR_COM]->read();
+      hoverboard.protocolPush( readChar );
+      #ifdef DEBUG_PROTOCOL_PASSTHROUGH
+        COM[DEBUG_COM]->write( readChar );
+      #endif
     }
 
+    #ifdef DEBUG_PROTOCOL_PASSTHROUGH
+      while(COM[DEBUG_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
+        COM[MOTOR_COM]->write( COM[DEBUG_COM]->read() );
+      }
+    #endif
     hoverboard.protocolTick();
   #endif
 }
@@ -191,15 +212,29 @@ void motorCommunication( void * pvparameters) {
 
 //    hoverboard.sendPWM(motor.setpoint.pwm, motor.setpoint.steer);
 //    hoverboard.requestRead(hoverboardCodes::sensHall);
+
+  #ifndef DEBUG_PROTOCOL_PASSTHROUGH
     hoverboard.requestRead(hoverboardCodes::sensElectrical);
-    Serial.println(hoverboard.getBatteryVoltage());
+//    hoverboard.requestRead(hoverboardCodes::sensHall);
+    Serial.print("V: ");
+    Serial.print(hoverboard.getBatteryVoltage());
+    Serial.print(" Current0: ");
     Serial.print(hoverboard.getMotorAmpsAvg(0));
+    Serial.print(" Current1: ");
+    Serial.print(hoverboard.getMotorAmpsAvg(1));
+    Serial.print(" Speed: ");
+    Serial.print(hoverboard.getSpeed_kmh());
+    Serial.print(" Steer: ");
+    Serial.print(hoverboard.getSteer_kmh());
+    Serial.println();
+
+  #endif
 
     extern PWM_DATA PWMData;
 
     PWMData.pwm[0] = motor.setpoint.pwm - motor.setpoint.steer;
     PWMData.pwm[1] = motor.setpoint.pwm + motor.setpoint.steer;
-    hoverboard.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
+//    hoverboard.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
 //    hoverboard.printStats(*COM[DEBUG_COM]);
 
 
