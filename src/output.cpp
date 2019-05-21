@@ -74,6 +74,25 @@ volatile BUZZER_DATA sendBuzzer = {
   HoverboardAPI hoverboard = HoverboardAPI(serialWrapper);
 #endif
 
+#ifdef PROTOCOL_ESPNOW
+  #include "ESP32_espnow_MasterSlave.h"
+  #include <esp_now.h>
+
+  int espSendDataWrapper(unsigned char *data, int len) {
+    sendData(data, (size_t) len);
+    return len;
+  }
+
+  HoverboardAPI hbpEspnow = HoverboardAPI(espSendDataWrapper);
+
+  void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
+    for(int i=0; i < data_len; i++) {
+        hbpEspnow.protocolPush(data[i]);
+    }
+  }
+
+#endif
+
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
   #include "ESP32_espnow_MasterSlave.h"
   #include "input.h"
@@ -95,7 +114,7 @@ double limit(double min, double value, double max) {
 #ifdef OUTPUT_PROTOCOL
 
 
-void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type ) {
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, int len ) {
   switch (fn_type) {
     case FN_TYPE_POST_READRESPONSE:
     case FN_TYPE_POST_WRITE:
@@ -145,6 +164,12 @@ void setupOutput() {
       hoverboard.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
 
     #endif
+  #endif
+
+
+
+  #ifdef PROTOCOL_ESPNOW
+    esp_now_register_recv_cb(espReceiveDataWrapper);
   #endif
 
 }

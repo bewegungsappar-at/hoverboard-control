@@ -163,7 +163,7 @@ AP MAC: 30:AE:A4:26:6A:D5
     !defined(INPUT_PADDELEC) && \
     !defined(INPUT_PADDELECIMU) && \
     !defined(INPUT_PLATOONING)
-  #error no Input Method defined. What should I do?
+ // #error no Input Method defined. What should I do?
 #endif
 
 #if defined(WIFI) && (defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW))
