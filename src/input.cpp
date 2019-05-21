@@ -30,10 +30,6 @@
   Platooning platooning = Platooning();
 #endif
 
-#ifdef INPUT_BLE
-  #include "BLE.h"
-#endif
-
 #ifdef INPUT_IMU
   #include <IMU.h>
   Imu imu = Imu();
@@ -50,10 +46,6 @@ void setupInput() {
 
     #ifdef INPUT_NUNCHUK
     nunchuk.init();
-    #endif
-
-    #ifdef INPUT_BLE
-    setupBLE();
     #endif
 
     #ifdef INPUT_IMU
@@ -106,15 +98,6 @@ void mainloop( void *pvparameters ) {
   #if !defined(INPUT_PADDELEC) || !defined(INPUT_PADDELECIMU) // TODO: Find better way?
     slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
-  #endif
-
-  #ifdef INPUT_BLE
-    //  loopBLE();
-    motor.setpoint.pwm = ble_pitch;
-    motor.setpoint.steer = ble_roll;
-    slowReset(ble_pitch, 0.0, 0.1);
-    slowReset(ble_roll, 0.0, 0.1);
-    break;
   #endif
 
   #ifdef INPUT_IMU

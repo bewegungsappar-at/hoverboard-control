@@ -107,7 +107,6 @@ AP MAC: 30:AE:A4:26:6A:D5
 
 //#define INPUT_ESPNOW
   //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
-//#define INPUT_BLE
 //#define INPUT_PADDELEC                    // look at Paddelec.h for paddelec specific config options!
 //#define INPUT_PADDELECIMU
 //#define INPUT_NUNCHUK                     // look at ArduinoNunchuk.h for Nunchuk specific config options!
@@ -158,18 +157,13 @@ AP MAC: 30:AE:A4:26:6A:D5
   #error INPUT_PADDELEC and INPUT_PADDELECIMU cannot be used simultaneously.
 #endif
 
-#if !defined(INPUT_BLE) && \
-    !defined(INPUT_ESPNOW) && \
+#if !defined(INPUT_ESPNOW) && \
     !defined(INPUT_IMU) && \
     !defined(INPUT_NUNCHUK) && \
     !defined(INPUT_PADDELEC) && \
     !defined(INPUT_PADDELECIMU) && \
     !defined(INPUT_PLATOONING)
   #error no Input Method defined. What should I do?
-#endif
-
-#if defined(INPUT_BLE)
-  #error INPUT_BLE not yet implmented. Also set define guard here.
 #endif
 
 #if defined(WIFI) && (defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW))
