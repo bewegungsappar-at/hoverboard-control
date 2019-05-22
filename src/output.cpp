@@ -8,6 +8,12 @@
 
 #include <HoverboardAPI.h>
 
+#if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
+  #include "ESP32_espnow_MasterSlave.h"
+  #include "input.h"
+  #include <esp_now.h>
+  int scanCounter = 0;
+#endif
 
 volatile BUZZER_DATA sendBuzzer = {
     .buzzerFreq = 0,
@@ -15,7 +21,7 @@ volatile BUZZER_DATA sendBuzzer = {
     .buzzerLen = 0,
 };
 
-#ifdef OUTPUT_PROTOCOL
+#ifdef OUTPUT_PROTOCOL_UART
   int serialWrapper(unsigned char *data, int len) {
 //#define DEBUG_PROTOCOL_OUTGOING_MARKUP
 #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
@@ -74,13 +80,28 @@ volatile BUZZER_DATA sendBuzzer = {
   HoverboardAPI hoverboard = HoverboardAPI(serialWrapper);
 #endif
 
-#ifdef PROTOCOL_ESPNOW
-  #include "ESP32_espnow_MasterSlave.h"
-  #include <esp_now.h>
+#ifdef OUTPUT_PROTOCOL_ESPNOW
 
   int espSendDataWrapper(unsigned char *data, int len) {
-    sendData(data, (size_t) len);
-    return len;
+    if(espnowTimeout > 100) {
+      if (SlaveCnt > 0) { // check if slave channel is defined
+        // `slave` is defined
+        sendData(data, (size_t) len);
+        return len;
+      } else if(scanCounter == 0) {
+        ScanForSlave();
+        if (SlaveCnt > 0) { // check if slave channel is defined
+          // `slave` is defined
+          // Add slave as peer if it has not been added already
+          manageSlave();
+          // pair success or already paired
+        }
+        scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
+      } else {
+        scanCounter--;
+      }
+    }
+    return -1;
   }
 
   HoverboardAPI hbpEspnow = HoverboardAPI(espSendDataWrapper);
@@ -91,12 +112,6 @@ volatile BUZZER_DATA sendBuzzer = {
     }
   }
 
-#endif
-
-#if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
-  #include "ESP32_espnow_MasterSlave.h"
-  #include "input.h"
-  int scanCounter = 0;
 #endif
 
 #ifdef WIFI
@@ -111,9 +126,7 @@ double limit(double min, double value, double max) {
   return value;
 }
 
-#ifdef OUTPUT_PROTOCOL
-
-
+#ifdef OUTPUT_PROTOCOL_UART
 void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, int len ) {
   switch (fn_type) {
     case FN_TYPE_POST_READRESPONSE:
@@ -152,7 +165,7 @@ void setupOutput() {
     setupEspNow();
   #endif
 
-  #ifdef OUTPUT_PROTOCOL
+  #ifdef OUTPUT_PROTOCOL_UART
     hoverboard.setParamHandler(hoverboardCodes::sensHall, processHalldata);
 
     #ifndef DEBUG_PROTOCOL_PASSTHROUGH
@@ -168,33 +181,35 @@ void setupOutput() {
 
 
 
-  #ifdef PROTOCOL_ESPNOW
+  #ifdef OUTPUT_PROTOCOL_ESPNOW
     esp_now_register_recv_cb(espReceiveDataWrapper);
+    hbpEspnow.setParamHandler(hoverboardCodes::sensHall, processHalldata);
+    hbpEspnow.scheduleTransmission(hoverboardCodes::setPointPWM, -1, 30);
+    hbpEspnow.scheduleScheduling(hoverboardCodes::sensHall, 100, 30, 1000, -1);
+    hbpEspnow.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
   #endif
 
 }
 
-
+#ifdef OUTPUT_PROTOCOL_UART
 void pollUART() {
-  #ifdef OUTPUT_PROTOCOL
-    // Read and Process Incoming data
-    int i=0;
-    while(COM[MOTOR_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
-      unsigned char readChar = COM[MOTOR_COM]->read();
-      hoverboard.protocolPush( readChar );
-      #ifdef DEBUG_PROTOCOL_PASSTHROUGH
-        COM[DEBUG_COM]->write( readChar );
-      #endif
-    }
-
+  // Read and Process Incoming data
+  int i=0;
+  while(COM[MOTOR_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
+    unsigned char readChar = COM[MOTOR_COM]->read();
+    hoverboard.protocolPush( readChar );
     #ifdef DEBUG_PROTOCOL_PASSTHROUGH
-      while(COM[DEBUG_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
-        COM[MOTOR_COM]->write( COM[DEBUG_COM]->read() );
-      }
+      COM[DEBUG_COM]->write( readChar );
     #endif
-    hoverboard.protocolTick();
+  }
+
+  #ifdef DEBUG_PROTOCOL_PASSTHROUGH
+    while(COM[DEBUG_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
+      COM[MOTOR_COM]->write( COM[DEBUG_COM]->read() );
+    }
   #endif
 }
+#endif
 
 void motorCommunication( void * pvparameters) {
 #ifdef MULTITASKING
@@ -232,7 +247,7 @@ void motorCommunication( void * pvparameters) {
   if(sendTimeout > 100) sendReady = true;
 #endif
 
-#ifdef OUTPUT_PROTOCOL
+#ifdef OUTPUT_PROTOCOL_UART
     updateSpeed();
 
 //    hoverboard.sendPWM(motor.setpoint.pwm, motor.setpoint.steer);
@@ -310,18 +325,28 @@ void motorCommunication( void * pvparameters) {
     if(debug) COM[DEBUG_COM]->printf("%6i %6i ", pwm, steer);
     if(debug) COM[DEBUG_COM]->printf("%7.2f %7.2f ", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
 #endif
-#ifdef OUTPUT_PROTOCOL
+
+#ifdef OUTPUT_PROTOCOL_UART
     pollUART();
-//    Serial.print(" ");
-//    Serial.print(hoverboard.getTxBufferLevel());
-//    Serial.print(" ");
+    hoverboard.protocolTick();
+#endif
+
+#ifdef OUTPUT_PROTOCOL_ESPNOW
+    hbpEspnow.protocolTick();
 #endif
 
 #ifdef MULTITASKING
-
     unsigned long start = millis();
     while (millis() < start + MOTORINPUT_PERIOD){
-      pollUART();
+      #ifdef OUTPUT_PROTOCOL_UART
+        pollUART();
+        hoverboard.protocolTick();
+      #endif
+
+      #ifdef OUTPUT_PROTOCOL_ESPNOW
+        hbpEspnow.protocolTick();
+      #endif
+
       delayMicroseconds(100);
     }
   }
@@ -337,33 +362,33 @@ void motorCommunication( void * pvparameters) {
 #define SPEED_FILTER                 0.015  // Low pass Filter Value. 1 means no filter at all, 0 no value update.
 void updateSpeed() {
 
-#if !defined(OUTPUT_PROTOCOL) && !defined (OUTPUT_ESPNOW)
-  motor.measured.actualSpeed_kmh = motor.measured.actualSpeed_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.pwm   * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
-  motor.measured.actualSteer_kmh = motor.measured.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
-#endif
+  #if !defined(OUTPUT_PROTOCOL_UART) && !defined (OUTPUT_ESPNOW)
+    motor.measured.actualSpeed_kmh = motor.measured.actualSpeed_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.pwm   * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
+    motor.measured.actualSteer_kmh = motor.measured.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
+  #endif
 
 
-#ifdef INPUT_ESPNOW
-  if(espnowTimeout > 100) {
-    if (SlaveCnt > 0) { // check if slave channel is defined
-      // `slave` is defined
-      sendData((const void *) &motor.measured, sizeof(motor.measured));
-    } else if(scanCounter == 0) {
-      ScanForSlave();
+  #ifdef INPUT_ESPNOW
+    if(espnowTimeout > 100) {
       if (SlaveCnt > 0) { // check if slave channel is defined
         // `slave` is defined
-        // Add slave as peer if it has not been added already
-        manageSlave();
-        // pair success or already paired
+        sendData((const void *) &motor.measured, sizeof(motor.measured));
+      } else if(scanCounter == 0) {
+        ScanForSlave();
+        if (SlaveCnt > 0) { // check if slave channel is defined
+          // `slave` is defined
+          // Add slave as peer if it has not been added already
+          manageSlave();
+          // pair success or already paired
+        }
+        scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
+      } else {
+        scanCounter--;
       }
-      scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
-    } else {
-      scanCounter--;
     }
-  }
-  extern volatile int sendTimeout;
-  extern volatile bool sendReady;
-  if(sendTimeout > 100) sendReady = true;
-#endif
+    extern volatile int sendTimeout;
+    extern volatile bool sendReady;
+    if(sendTimeout > 100) sendReady = true;
+  #endif
 
 }

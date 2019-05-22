@@ -22,7 +22,8 @@
 
 //#define OUTPUT_BINARY         // Binary Protocol, no checksum, easy to loose syc, very dangerous and unstable
 //#define OUTPUT_BINARY_CRC     // Binary Protocol, with checksum, easy to loose syc and therefore unstable
-//#define OUTPUT_PROTOCOL       // Binary Protocol, very powerful but still Alpha
+//#define OUTPUT_PROTOCOL_UART       // Binary Protocol over UART
+//#define OUTPUT_PROTOCOL_ESPNOW     // Binary Protocol over ESPNOW
 //#define OUTPUT_ESPNOW         // Relay PWM and Steer through ESPnow to Slave
   //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
 //  #define ESPNOW_PEERMAC {0x30, 0xAE, 0xA4, 0x02, 0x7E, 0x98} // Paddelec WROOM
@@ -145,11 +146,11 @@ AP MAC: 30:AE:A4:26:6A:D5
 
 // ############################### VALIDATE SETTINGS ###############################
 
-#if defined(OUTPUT_PROTOCOL) && defined(OUTPUT_BINARY)
-  #error OUTPUT_PROTOCOL and OUTPUT_BINARY not allowed, both on same serial.
+#if defined(OUTPUT_PROTOCOL_UART) && defined(OUTPUT_BINARY)
+  #error OUTPUT_PROTOCOL_UART and OUTPUT_BINARY not allowed, both on same serial.
 #endif
 
-#if !defined(OUTPUT_PROTOCOL) && !defined(OUTPUT_BINARY) && !defined(OUTPUT_ESPNOW)
+#if !defined(OUTPUT_PROTOCOL_UART) && !defined(OUTPUT_BINARY) && !defined(OUTPUT_ESPNOW)
   #error no Output Method defined. Nothing will be done..
 #endif
 

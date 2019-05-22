@@ -20,9 +20,14 @@
   int nunchukTimeout=0;
 #endif // INPUT_NUNCHUK
 
-#ifdef INPUT_ESPNOW
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
   #include "ESP32_espnow_MasterSlave.h"
   volatile int espnowTimeout = 10000;
+#endif
+
+#ifdef INPUT_TESTRUN
+  #include "testrun.h"
+  Testrun testrun;
 #endif
 
 #ifdef INPUT_PLATOONING
@@ -87,7 +92,16 @@ void mainloop( void *pvparameters ) {
   // Process all Inputs
   do {
 
-  #ifdef INPUT_ESPNOW
+  #ifdef INPUT_TESTRUN
+    if(testrun.getState() == Testrun::State::testDone) {
+      testrun.setState(Testrun::State::disabled);
+    }
+    bool enable=false;
+    motor.setpoint.pwm = testrun.update(deltaMillis, enable);
+    break;
+  #endif
+
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
     // Disable all other Input Methods as soon as data from ESPnow was received
     if(espnowTimeout < 100) {
       espnowTimeout++;
