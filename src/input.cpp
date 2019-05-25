@@ -20,9 +20,18 @@
   int nunchukTimeout=0;
 #endif // INPUT_NUNCHUK
 
-#ifdef INPUT_ESPNOW
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
   #include "ESP32_espnow_MasterSlave.h"
   volatile int espnowTimeout = 10000;
+#endif
+
+#ifdef INPUT_TESTRUN
+  #include "testrun.h"
+  #include "HoverboardAPI.h"
+  Testrun testrun;
+  extern uint8_t enable; // global variable for motor enable used in protocol.c
+  extern HoverboardAPI hoverboard;
+  Testrun::State oldState = Testrun::State::testDone;
 #endif
 
 #ifdef INPUT_PLATOONING
@@ -87,7 +96,33 @@ void mainloop( void *pvparameters ) {
   // Process all Inputs
   do {
 
-  #ifdef INPUT_ESPNOW
+  #ifdef INPUT_TESTRUN
+    if(testrun.getState() != oldState) {
+      hoverboard.requestRead(hoverboard.Codes::protocolCountSum, PROTOCOL_SOM_ACK);
+
+      COM[DEBUG_COM]->print(testrun.getState());
+      hoverboard.printStats(*COM[DEBUG_COM]);
+      oldState = testrun.getState();
+    }
+
+    if(testrun.getState() == Testrun::State::testDone) {
+      testrun.setState(Testrun::State::disabled);
+      hoverboard.sendCounterReset();
+      hoverboard.resetCounters();
+    }
+//    Serial.print(testrun.time);
+//    Serial.print(" ");
+//    Serial.println(testrun.getState());
+ //   testrun.state = Testrun::State::sinus;
+
+
+
+
+    motor.setpoint.pwm = testrun.update(deltaMillis, enable);
+    break;
+  #endif
+
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
     // Disable all other Input Methods as soon as data from ESPnow was received
     if(espnowTimeout < 100) {
       espnowTimeout++;
