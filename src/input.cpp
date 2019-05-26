@@ -98,17 +98,15 @@ void mainloop( void *pvparameters ) {
 
   #ifdef INPUT_TESTRUN
     if(testrun.getState() != oldState) {
-      hoverboard.requestRead(hoverboard.Codes::protocolCountSum, PROTOCOL_SOM_ACK);
-
       COM[DEBUG_COM]->print(testrun.getState());
       hoverboard.printStats(*COM[DEBUG_COM]);
       oldState = testrun.getState();
     }
 
     if(testrun.getState() == Testrun::State::testDone) {
-      testrun.setState(Testrun::State::disabled);
-      hoverboard.sendCounterReset();
       hoverboard.resetCounters();
+      hoverboard.sendCounterReset();
+      testrun.setState(Testrun::State::pwmZero);
     }
 //    Serial.print(testrun.time);
 //    Serial.print(" ");

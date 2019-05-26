@@ -21,7 +21,7 @@ double Testrun::update(int deltaMillis, uint8_t &enable) {
         else if (state == sinus)      state = staticLow;
         else if (state == staticLow)  state = staticHigh;
         else if (state == staticHigh) state = disabled;
-        else if (state == disabled)   state = pwmZero;
+        else if (state == disabled)   state = testDone;
         else state = testDone;
     }
     switch (state)

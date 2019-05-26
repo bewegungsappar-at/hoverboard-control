@@ -45,17 +45,21 @@ volatile BUZZER_DATA sendBuzzer = {
         case 4:
           if(i==len-1) {
             COM[DEBUG_COM]->printf("CS:0x%02X ", data[i]);
-          } else if(data[i] == hoverboard::Codes::setPointPWM) {
+          } else if(data[i] == HoverboardAPI::Codes::setPointPWM) {
             COM[DEBUG_COM]->print("PWM       ");
-          } else if(data[i] == hoverboard::Codes::protocolSubscriptions) {
+          } else if(data[i] == HoverboardAPI::Codes::setPointPWMData) {
+            COM[DEBUG_COM]->print("PWM Data  ");
+          } else if(data[i] == HoverboardAPI::Codes::protocolSubscriptions) {
             COM[DEBUG_COM]->print("Subscribe ");
-          } else if(data[i] == hoverboard::Codes::sensHall) {
+          } else if(data[i] == HoverboardAPI::Codes::sensHall) {
             COM[DEBUG_COM]->print("Hall      ");
-          } else if(data[i] == hoverboard::Codes::protocolCountSum) {
+          } else if(data[i] == HoverboardAPI::Codes::protocolCountSum) {
             COM[DEBUG_COM]->print("CounterS  ");
-          } else if(data[i] == hoverboard::Codes::setBuzzer) {
+          } else if(data[i] == HoverboardAPI::Codes::setBuzzer) {
             COM[DEBUG_COM]->print("Buzzer    ");
-          } else if(data[i] == hoverboard::Codes::sensElectrical) {
+          } else if(data[i] == HoverboardAPI::Codes::enableMotors) {
+            COM[DEBUG_COM]->print("Enable    ");
+          } else if(data[i] == HoverboardAPI::Codes::sensElectrical) {
             COM[DEBUG_COM]->print("El. Meas  ");
           } else {
             COM[DEBUG_COM]->printf("Code:0x%02X ", data[i]);
@@ -188,16 +192,16 @@ void setupOutput() {
     hoverboard.scheduleRead(hoverboard.Codes::sensElectrical, -1, 100);
 
     // Send PWM values periodically
-    hoverboard.scheduleTransmission(hoverboard.Codes::setPointPWMData, -1, 30);
+    hoverboard.scheduleTransmission(hoverboard.Codes::setPointPWM, -1, 30);
   #endif
 
 
 
   #ifdef OUTPUT_PROTOCOL_ESPNOW
     esp_now_register_recv_cb(espReceiveDataWrapper);
-    hbpEspnow.setParamHandler(hoverboard::Codes::sensHall, processHalldata);
-    hbpEspnow.scheduleTransmission(hoverboard::Codes::setPointPWM, -1, 30);
-    hbpEspnow.scheduleRead(hoverboard::Codes::protocolCountSum, -1, 30);
+    hbpEspnow.setParamHandler(hoverboard.Codes::sensHall, processHalldata);
+    hbpEspnow.scheduleTransmission(hoverboard.Codes::setPointPWM, -1, 30);
+    hbpEspnow.scheduleRead(hoverboard.Codes::protocolCountSum, -1, 30);
   #endif
 
 }
