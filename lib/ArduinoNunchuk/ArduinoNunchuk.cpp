@@ -27,7 +27,7 @@
   int avg_diff[5];
 #endif
 
-extern volatile BUZZER_DATA sendBuzzer;
+extern volatile PROTOCOL_BUZZER_DATA sendBuzzer;
 
 void ArduinoNunchuk::init()
 {

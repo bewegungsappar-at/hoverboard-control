@@ -9,10 +9,17 @@
 #include <HoverboardAPI.h>
 
 
-volatile BUZZER_DATA sendBuzzer = {
+volatile PROTOCOL_BUZZER_DATA sendBuzzer = {
     .buzzerFreq = 0,
     .buzzerPattern = 0,
     .buzzerLen = 0,
+};
+
+PROTOCOL_PWM_DATA PWMData = {
+    .pwm = {0,0},
+    .speed_max_power =  600,
+    .speed_min_power = -600,
+    .speed_minimum_pwm = 40 // guard value, below this set to zero
 };
 
 #ifdef OUTPUT_PROTOCOL
@@ -95,7 +102,7 @@ double limit(double min, double value, double max) {
 #ifdef OUTPUT_PROTOCOL
 
 
-void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type ) {
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsigned char *content, int len ) {
   switch (fn_type) {
     case FN_TYPE_POST_READRESPONSE:
     case FN_TYPE_POST_WRITE:
@@ -134,15 +141,14 @@ void setupOutput() {
   #endif
 
   #ifdef OUTPUT_PROTOCOL
-    hoverboard.setParamHandler(hoverboardCodes::sensHall, processHalldata);
+    hoverboard.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
 
     #ifndef DEBUG_PROTOCOL_PASSTHROUGH
-      hoverboard.scheduleTransmission(hoverboardCodes::setPointPWM, -1, 30);
+      hoverboard.updateParamVariable(HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
+      hoverboard.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
 
-      // schudule a scheduling request for Hall Data:
-      // 100 Messages for 30 msec = 3s. Repeat each 1000ms, indefinetly (-1)
-      hoverboard.scheduleScheduling(hoverboardCodes::sensHall, 100, 30, 1000, -1);
-      hoverboard.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
+      hoverboard.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 30);
+      hoverboard.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 30);
 
     #endif
   #endif
@@ -214,7 +220,7 @@ void motorCommunication( void * pvparameters) {
 //    hoverboard.requestRead(hoverboardCodes::sensHall);
 
   #ifndef DEBUG_PROTOCOL_PASSTHROUGH
-    hoverboard.requestRead(hoverboardCodes::sensElectrical);
+    hoverboard.requestRead(HoverboardAPI::Codes::sensElectrical);
 //    hoverboard.requestRead(hoverboardCodes::sensHall);
     Serial.print("V: ");
     Serial.print(hoverboard.getBatteryVoltage());
@@ -230,10 +236,8 @@ void motorCommunication( void * pvparameters) {
 
   #endif
 
-    extern PWM_DATA PWMData;
-
-    PWMData.pwm[0] = motor.setpoint.pwm - motor.setpoint.steer;
-    PWMData.pwm[1] = motor.setpoint.pwm + motor.setpoint.steer;
+    PWMData.pwm[0] = motor.setpoint.pwm + motor.setpoint.steer;
+    PWMData.pwm[1] = motor.setpoint.pwm - motor.setpoint.steer;
 //    hoverboard.scheduleRead(hoverboardCodes::protocolCountSum, -1, 30);
 //    hoverboard.printStats(*COM[DEBUG_COM]);
 
