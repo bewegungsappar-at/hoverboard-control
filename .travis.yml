@@ -16,29 +16,5 @@ matrix:
   fast_finish: true
   include:
 
-    - name: pio featheresp32_ESPSLAVE
-      script: platformio run -e featheresp32_ESPSLAVE
-
-    - name: pio TTGO_ESPMASTER
-      script: platformio run -e TTGO_ESPMASTER
-
-    - name: pio TTGO_ESPMASTER_PADDELEC
-      script: platformio run -e TTGO_ESPMASTER_PADDELEC
-
-    - name: pio nodemcu-32s_WIFI
-      script: platformio run -e nodemcu-32s_WIFI
-
-    - name: pio nodemcu-32s_ESPSLAVE
-      script: platformio run -e nodemcu-32s_ESPSLAVE
-
-    - name: pio featheresp32_psycho
-      script: platformio run -e featheresp32_psycho
-
-    - name: pio nodemcu-woodenboard
-      script: platformio run -e nodemcu-woodenboard
-
-    - name: pio featheresp32_psychoremote
-      script: platformio run -e featheresp32_psychoremote
-
-    - name: pio nodemcu-32s_ESPPROTOCOL
-      script: platformio run -e nodemcu-32s_ESPPROTOCOL
+    - name: pio
+      script: platformio run -e featheresp32_psychoremote -e nodemcu-woodenboard -e nodemcu-32s_ESPPROTOCOL -e featheresp32_ESPSLAVE -e TTGO_ESPMASTER -e TTGO_ESPMASTER_PADDELEC -e nodemcu-32s_WIFI -e nodemcu-32s_ESPSLAVE -e featheresp32_psycho -e nodemcu-testrun

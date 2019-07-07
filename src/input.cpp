@@ -29,7 +29,7 @@
   #include "testrun.h"
   #include "HoverboardAPI.h"
   Testrun testrun;
-  extern uint8_t enable; // global variable for motor enable used in protocol.c
+  extern uint8_t enableHoverboardMotors;
   extern HoverboardAPI hoverboard;
   Testrun::State oldState = Testrun::State::testDone;
 #endif
@@ -115,8 +115,7 @@ void mainloop( void *pvparameters ) {
 
 
 
-
-    motor.setpoint.pwm = testrun.update(deltaMillis, enable);
+    motor.setpoint.pwm = testrun.update(deltaMillis, enableHoverboardMotors);
     break;
   #endif
 

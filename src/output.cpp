@@ -15,11 +15,20 @@
   int scanCounter = 0;
 #endif
 
-volatile BUZZER_DATA sendBuzzer = {
+volatile PROTOCOL_BUZZER_DATA sendBuzzer = {
     .buzzerFreq = 0,
     .buzzerPattern = 0,
     .buzzerLen = 0,
 };
+
+PROTOCOL_PWM_DATA PWMData = {
+    .pwm = {0,0},
+    .speed_max_power =  600,
+    .speed_min_power = -600,
+    .speed_minimum_pwm = 40 // guard value, below this set to zero
+};
+
+uint8_t enableHoverboardMotors = 0;
 
 #ifdef OUTPUT_PROTOCOL_UART
   int serialWrapper(unsigned char *data, int len) {
@@ -130,7 +139,7 @@ double limit(double min, double value, double max) {
 }
 
 #ifdef OUTPUT_PROTOCOL_UART
-void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, int len ) {
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsigned char *content, int len ) {
   switch (fn_type) {
     case FN_TYPE_POST_READRESPONSE:
     case FN_TYPE_POST_WRITE:
@@ -172,6 +181,7 @@ void setupOutput() {
       hoverboard.sendPWMData(0, 0, 1000, -1000, 1, PROTOCOL_SOM_ACK);
 
       // send enable periodically
+      hoverboard.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
       hoverboard.scheduleTransmission(hoverboard.Codes::enableMotors, -1, 30);
 
       // Get Protocol statistics periodically
@@ -185,21 +195,23 @@ void setupOutput() {
     #endif
 
     // Set up hall data readout (=hoverboard measured speed)
-    hoverboard.setParamHandler(hoverboard.Codes::sensHall, processHalldata);
-    hoverboard.scheduleRead(hoverboard.Codes::sensHall, -1, 30);
+    hoverboard.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
+
+    hoverboard.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 30);
 
     // Set up electrical measurements readout
     hoverboard.scheduleRead(hoverboard.Codes::sensElectrical, -1, 100);
 
     // Send PWM values periodically
-    hoverboard.scheduleTransmission(hoverboard.Codes::setPointPWM, -1, 30);
+    hoverboard.updateParamVariable(HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
+    hoverboard.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
   #endif
 
 
 
   #ifdef OUTPUT_PROTOCOL_ESPNOW
     esp_now_register_recv_cb(espReceiveDataWrapper);
-    hbpEspnow.setParamHandler(hoverboard.Codes::sensHall, processHalldata);
+    hbpEspnow.updateParamHandler(hoverboard.Codes::sensHall, processHalldata);
     hbpEspnow.scheduleTransmission(hoverboard.Codes::setPointPWM, -1, 30);
     hbpEspnow.scheduleRead(hoverboard.Codes::protocolCountSum, -1, 30);
   #endif
@@ -279,10 +291,9 @@ void motorCommunication( void * pvparameters) {
     COM[DEBUG_COM]->println();
   #endif
 
-    extern PWM_DATA PWMData;
 
-    PWMData.pwm[0] = motor.setpoint.pwm - motor.setpoint.steer;
-    PWMData.pwm[1] = motor.setpoint.pwm + motor.setpoint.steer;
+    PWMData.pwm[0] = motor.setpoint.pwm + motor.setpoint.steer;
+    PWMData.pwm[1] = motor.setpoint.pwm - motor.setpoint.steer;
 
     // Send Buzzer Data
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
