@@ -290,12 +290,12 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
     #endif
 
-  #ifdef OUTPUT_PROTOCOL
-  } else if(sizeof(BuzzerData) == data_len) {
+  #ifdef OUTPUT_PROTOCOL_UART
+  } else if(sizeof(PROTOCOL_BUZZER_DATA) == data_len) {
 //    espnowTimeout = 0;
-    memcpy((void*)&BuzzerData, data, sizeof(BuzzerData));  //TODO: dangerous..
+  //  memcpy((void*)&BuzzerData, data, sizeof(PROTOCOL_BUZZER_DATA));  //TODO: dangerous..
     #ifdef debugESPNOW
-    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", BuzzerData.buzzerFreq, BuzzerData.buzzerPattern, BuzzerData.buzzerLen);
+//    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", BuzzerData.buzzerFreq, BuzzerData.buzzerPattern, BuzzerData.buzzerLen);
   #endif
   #endif
 

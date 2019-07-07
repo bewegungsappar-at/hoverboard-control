@@ -8,7 +8,7 @@
   #include "oled.h"
 #endif
 
-#if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
+#if defined(INPUT_PADDELECIMU)
   #include "Paddelec.h"
   Paddelec paddelec = Paddelec();
 #endif // INPUT_PADDELEC
@@ -20,18 +20,23 @@
   int nunchukTimeout=0;
 #endif // INPUT_NUNCHUK
 
-#ifdef INPUT_ESPNOW
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
   #include "ESP32_espnow_MasterSlave.h"
   volatile int espnowTimeout = 10000;
+#endif
+
+#ifdef INPUT_TESTRUN
+  #include "testrun.h"
+  #include "HoverboardAPI.h"
+  Testrun testrun;
+  extern uint8_t enableHoverboardMotors;
+  extern HoverboardAPI hoverboard;
+  Testrun::State oldState = Testrun::State::testDone;
 #endif
 
 #ifdef INPUT_PLATOONING
   #include "Platooning.h"
   Platooning platooning = Platooning();
-#endif
-
-#ifdef INPUT_BLE
-  #include "BLE.h"
 #endif
 
 #ifdef INPUT_IMU
@@ -52,10 +57,6 @@ void setupInput() {
     nunchuk.init();
     #endif
 
-    #ifdef INPUT_BLE
-    setupBLE();
-    #endif
-
     #ifdef INPUT_IMU
       imu.init();
       #ifdef DEBUG_PLOTTER
@@ -66,7 +67,7 @@ void setupInput() {
       #endif
     #endif
 
-    #if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
+    #if defined(INPUT_PADDELECIMU)
     paddelec.init();
     #endif //INPUT_PADDELEC
 
@@ -95,7 +96,30 @@ void mainloop( void *pvparameters ) {
   // Process all Inputs
   do {
 
-  #ifdef INPUT_ESPNOW
+  #ifdef INPUT_TESTRUN
+    if(testrun.getState() != oldState) {
+      COM[DEBUG_COM]->print(testrun.getState());
+      hoverboard.printStats(*COM[DEBUG_COM]);
+      oldState = testrun.getState();
+    }
+
+    if(testrun.getState() == Testrun::State::testDone) {
+      hoverboard.resetCounters();
+      hoverboard.sendCounterReset();
+      testrun.setState(Testrun::State::pwmZero);
+    }
+//    Serial.print(testrun.time);
+//    Serial.print(" ");
+//    Serial.println(testrun.getState());
+ //   testrun.state = Testrun::State::sinus;
+
+
+
+    motor.setpoint.pwm = testrun.update(deltaMillis, enableHoverboardMotors);
+    break;
+  #endif
+
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
     // Disable all other Input Methods as soon as data from ESPnow was received
     if(espnowTimeout < 100) {
       espnowTimeout++;
@@ -103,18 +127,9 @@ void mainloop( void *pvparameters ) {
     }
   #endif
 
-  #if !defined(INPUT_PADDELEC) || !defined(INPUT_PADDELECIMU) // TODO: Find better way?
+  #if !defined(INPUT_PADDELECIMU) // TODO: Find better way?
     slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
-  #endif
-
-  #ifdef INPUT_BLE
-    //  loopBLE();
-    motor.setpoint.pwm = ble_pitch;
-    motor.setpoint.steer = ble_roll;
-    slowReset(ble_pitch, 0.0, 0.1);
-    slowReset(ble_roll, 0.0, 0.1);
-    break;
   #endif
 
   #ifdef INPUT_IMU
@@ -205,14 +220,6 @@ void mainloop( void *pvparameters ) {
     }
   #endif
 
-  #ifdef INPUT_PADDELEC
-    paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
-    if(debug) paddelec.debug(*COM[DEBUG_COM]);
-
-    // Allow other Inputs when Gametraks are not pulled out
-    if(paddelec.gametrak1.r > 500 || paddelec.gametrak2.r > 500) break;
-  #endif
-
   #ifdef INPUT_PADDELECIMU
     paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
@@ -220,7 +227,7 @@ void mainloop( void *pvparameters ) {
 
   } while(false);
 
-  #if defined(DEBUG_PLOTTER) && (defined(INPUT_IMU) || defined(INPUT_PADDELECIMU))
+  #if defined(DEBUG_PLOTTER) && defined(INPUT_PADDELECIMU)
     plot.Plot();
   #endif
 
