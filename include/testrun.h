@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 class Testrun {
     public:
@@ -12,14 +13,14 @@ class Testrun {
             testDone,
         };
 
-        double update(int deltaMillis, bool &enable);
+        double update(int deltaMillis, uint8_t &enable);
         State getState();
         void setState(State newstate);
 
-    private:
+
         State state=testDone;
         long duration = 10000; // Duration per state
         long time = 0;
         double maxPWM = 1000.0;
-
+    private:
 };

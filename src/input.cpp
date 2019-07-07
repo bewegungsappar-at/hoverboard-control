@@ -27,7 +27,11 @@
 
 #ifdef INPUT_TESTRUN
   #include "testrun.h"
+  #include "HoverboardAPI.h"
   Testrun testrun;
+  extern uint8_t enable; // global variable for motor enable used in protocol.c
+  extern HoverboardAPI hoverboard;
+  Testrun::State oldState = Testrun::State::testDone;
 #endif
 
 #ifdef INPUT_PLATOONING
@@ -93,10 +97,25 @@ void mainloop( void *pvparameters ) {
   do {
 
   #ifdef INPUT_TESTRUN
-    if(testrun.getState() == Testrun::State::testDone) {
-      testrun.setState(Testrun::State::disabled);
+    if(testrun.getState() != oldState) {
+      COM[DEBUG_COM]->print(testrun.getState());
+      hoverboard.printStats(*COM[DEBUG_COM]);
+      oldState = testrun.getState();
     }
-    bool enable=false;
+
+    if(testrun.getState() == Testrun::State::testDone) {
+      hoverboard.resetCounters();
+      hoverboard.sendCounterReset();
+      testrun.setState(Testrun::State::pwmZero);
+    }
+//    Serial.print(testrun.time);
+//    Serial.print(" ");
+//    Serial.println(testrun.getState());
+ //   testrun.state = Testrun::State::sinus;
+
+
+
+
     motor.setpoint.pwm = testrun.update(deltaMillis, enable);
     break;
   #endif
