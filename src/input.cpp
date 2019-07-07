@@ -8,7 +8,7 @@
   #include "oled.h"
 #endif
 
-#if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
+#if defined(INPUT_PADDELECIMU)
   #include "Paddelec.h"
   Paddelec paddelec = Paddelec();
 #endif // INPUT_PADDELEC
@@ -67,7 +67,7 @@ void setupInput() {
       #endif
     #endif
 
-    #if defined(INPUT_PADDELEC) || defined(INPUT_PADDELECIMU)
+    #if defined(INPUT_PADDELECIMU)
     paddelec.init();
     #endif //INPUT_PADDELEC
 
@@ -127,7 +127,7 @@ void mainloop( void *pvparameters ) {
     }
   #endif
 
-  #if !defined(INPUT_PADDELEC) || !defined(INPUT_PADDELECIMU) // TODO: Find better way?
+  #if !defined(INPUT_PADDELECIMU) // TODO: Find better way?
     slowReset(motor.setpoint.pwm,   0.0, 10.0);
     slowReset(motor.setpoint.steer, 0.0, 10.0);
   #endif
@@ -220,14 +220,6 @@ void mainloop( void *pvparameters ) {
     }
   #endif
 
-  #ifdef INPUT_PADDELEC
-    paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
-    if(debug) paddelec.debug(*COM[DEBUG_COM]);
-
-    // Allow other Inputs when Gametraks are not pulled out
-    if(paddelec.gametrak1.r > 500 || paddelec.gametrak2.r > 500) break;
-  #endif
-
   #ifdef INPUT_PADDELECIMU
     paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
@@ -235,7 +227,7 @@ void mainloop( void *pvparameters ) {
 
   } while(false);
 
-  #if defined(DEBUG_PLOTTER) && (defined(INPUT_IMU) || defined(INPUT_PADDELECIMU))
+  #if defined(DEBUG_PLOTTER) && defined(INPUT_PADDELECIMU)
     plot.Plot();
   #endif
 

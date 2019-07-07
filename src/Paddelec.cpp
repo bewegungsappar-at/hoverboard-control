@@ -3,7 +3,7 @@
 #include "serialbridge.h"
 #include "main.h"
 
-#if defined(INPUT_PADDELECIMU) || defined(INPUT_PADDELEC)
+#if defined(INPUT_PADDELECIMU)
 
 #define INPUT_PADDELEC_DEBUG false
 
@@ -11,12 +11,7 @@
 void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  double &actualSpeed_kmh, volatile  double &actualSteer_kmh, volatile  uint32_t deltaMillis) {
   double pwmR      =0, pwmL      =0;
   double speedR_kmh=0, speedL_kmh=0;
-#ifdef INPUT_PADDELEC
-  gametrak1.update();
-  gametrak2.update();
-#elif INPUT_PADDELECIMU
   imu.update();
-#endif
 
   /* convert from speed and steering to left and right wheel speed */
   steerToRL(steer,           pwm,             pwmR,       pwmL);
@@ -43,11 +38,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   pwmR += (pwmL - pwmR) * (cfgPaddle.realign * deltaMillis);
 
 
-#ifdef INPUT_PADDELEC
-  double paddleAngle = gametrak1.getTheta_deg() - gametrak2.getTheta_deg();
-#elif INPUT_PADDELECIMU
   double paddleAngle = cfgPaddle.flipControl * (imu.pitchangle() - imu.pitch_zero);
-#endif
 //  plotterTempDouble[2] = paddleAngle;
 //  plotterTempDouble[3] = imu.az;
 
@@ -57,41 +48,25 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   if       (paddleAngle > cfgPaddle.paddleAngleThreshold) {    // gametrak2 side of paddle is down
 
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-#ifdef INPUT_PADDELEC
-    double speedDelta = ((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed) - speedL_kmh;
-#elif INPUT_PADDELECIMU
     double speedDelta = (-imu.gz * cfgPaddle.deltaRtoSpeed) - (speedL_kmh * 10);
-#endif
 
     /* update speed and apply crosstalk */
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("g2L ");
-#ifdef INPUT_PADDELEC
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)((gametrak2.r - gametrak2.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
-#elif INPUT_PADDELECIMU
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
-#endif
 
 
   } else if(paddleAngle <  -cfgPaddle.paddleAngleThreshold) {    // gametrak1 side of paddle is down
 
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-#ifdef INPUT_PADDELEC
-    double speedDelta = ((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed) - speedR_kmh;
-#elif INPUT_PADDELECIMU
     double speedDelta = (imu.gz * cfgPaddle.deltaRtoSpeed) - (speedR_kmh * 10);
-#endif
 
     /* update speed and apply crosstalk */
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("g1R ");
-#ifdef INPUT_PADDELEC
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)((gametrak1.r - gametrak1.r_last) * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
-#elif INPUT_PADDELECIMU
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
-#endif
   } else  {
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("___ ");
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
@@ -135,14 +110,8 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 
 void Paddelec::debug(Stream &port)
 {
-#ifdef INPUT_PADDELEC
-  gametrak1.debug(port);
-  gametrak2.debug(port);
-  port.printf("P %5i %5i %6.2f ", gametrak1.r - gametrak1.r_last, gametrak2.r - gametrak2.r_last, gametrak1.getTheta_deg() - gametrak2.getTheta_deg());
-#elif INPUT_PADDELECIMU
   imu.debug(port);//
 //  port.printf("P %5i %5i %6.2f ", imu.gz, -imu.gz, gametrak1.getTheta_deg() - gametrak2.getTheta_deg());
-#endif
 }
 
 void Paddelec::RLpwmToSteer(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL)

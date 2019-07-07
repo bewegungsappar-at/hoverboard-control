@@ -108,8 +108,7 @@ AP MAC: 30:AE:A4:26:6A:D5
 
 //#define INPUT_ESPNOW
   //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
-//#define INPUT_PADDELEC                    // look at Paddelec.h for paddelec specific config options!
-//#define INPUT_PADDELECIMU
+//#define INPUT_PADDELECIMU                 // look at Paddelec.h for paddelec specific config options!
 //#define INPUT_NUNCHUK                     // look at ArduinoNunchuk.h for Nunchuk specific config options!
 //#define INPUT_PLATOONING
 //#define INPUT_IMU
@@ -154,14 +153,9 @@ AP MAC: 30:AE:A4:26:6A:D5
   #error no Output Method defined. Nothing will be done..
 #endif
 
-#if defined(INPUT_PADDELEC) && defined(INPUT_PADDELECIMU)
-  #error INPUT_PADDELEC and INPUT_PADDELECIMU cannot be used simultaneously.
-#endif
-
 #if !defined(INPUT_ESPNOW) && \
     !defined(INPUT_IMU) && \
     !defined(INPUT_NUNCHUK) && \
-    !defined(INPUT_PADDELEC) && \
     !defined(INPUT_PADDELECIMU) && \
     !defined(INPUT_PLATOONING)
  // #error no Input Method defined. What should I do?
