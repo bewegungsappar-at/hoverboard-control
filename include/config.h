@@ -3,10 +3,6 @@
 // ############################### Settings ###############################
 // Whenever possible, settings should be managed in platformio.ini!
 
-/****************************** System *********************************/
-
-#define MULTITASKING
-
 /****************************** Debug *********************************/
 
 //#define DEBUG_OLED

@@ -239,10 +239,8 @@ void pollUART() {
 #endif
 
 void motorCommunication( void * pvparameters) {
-#ifdef MULTITASKING
 //  int taskno = (int)pvparameters;
   while(1) {
-#endif //MULTITASKING
 
 #ifdef OUTPUT_ESPNOW
   if (SlaveCnt > 0) { // check if slave channel is defined
@@ -352,7 +350,6 @@ void motorCommunication( void * pvparameters) {
     hbpEspnow.protocolTick();
 #endif
 
-#ifdef MULTITASKING
     unsigned long start = millis();
     while (millis() < start + MOTORINPUT_PERIOD){
       #ifdef OUTPUT_PROTOCOL_UART
@@ -367,7 +364,6 @@ void motorCommunication( void * pvparameters) {
       delayMicroseconds(100);
     }
   }
-#endif //MULTITASKING
 }
 
 /*

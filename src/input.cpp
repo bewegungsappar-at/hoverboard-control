@@ -85,11 +85,8 @@ void slowReset(volatile double &variable, double goal, double step) {
 
 
 void mainloop( void *pvparameters ) {
-#ifdef MULTITASKING
 //  int taskno = (int)pvparameters;
   while(1) {
-#endif //MULTITASKING
-
     deltaMillis = millis() - millisMotorcomm;
     millisMotorcomm = millis();
 
@@ -303,8 +300,6 @@ void mainloop( void *pvparameters ) {
   } while( u8g2.nextPage() );
 #endif
 
-#ifdef MULTITASKING
     vTaskDelay(10);
   }
-#endif //MULTITASKING
 }

@@ -6,9 +6,7 @@
 #include "serialbridge.h"
 #include "ArduinoNunchuk.h"
 
-#ifdef MULTITASKING
   TaskHandle_t TaskMainloop, TaskMotorcommunication;
-#endif //MULTITASKING
 
 
 #ifdef DEBUG_OLED
@@ -55,7 +53,6 @@ void setup() {
   setupOTA();
 #endif
 
-#ifdef MULTITASKING
   xTaskCreatePinnedToCore(
     mainloop,                 // Task function.
     "Main_loop",              // name of task.
@@ -73,7 +70,6 @@ void setup() {
     1,                        // priority of the task
     &TaskMotorcommunication,  // Task handle to keep track of created task
     1);                       // Core (0 is used by ESP32 connectivity)
-#endif //MULTITASKING
 }
 
 
@@ -92,16 +88,5 @@ void loop() {
   #endif
 
 
-  #ifdef MULTITASKING
-
-    delay(5);
-
-  #else
-
-    mainloop( (void *)1 );
-    motorCommunication( (void *)1 );
-    delay(MOTORINPUT_PERIOD);
-
-  #endif //MULTITASKING
-
+  delay(5);
 }
