@@ -29,7 +29,7 @@
   #include "HoverboardAPI.h"
   Testrun testrun;
   extern uint8_t enableHoverboardMotors;
-  extern HoverboardAPI hoverboard;
+  extern HoverboardAPI hbpUART;
   Testrun::State oldState = Testrun::State::testDone;
 #endif
 
@@ -87,16 +87,16 @@ void loopInput( void *pvparameters ) {
   // Process all Inputs
   do {
 
-  #ifdef INPUT_TESTRUN
+ #if defined(OUTPUT_PROTOCOL_UART) && defined(INPUT_TESTRUN)
     if(testrun.getState() != oldState) {
       COM[DEBUG_COM]->print(testrun.getState());
-      hoverboard.printStats(*COM[DEBUG_COM]);
+//      hbpUART.printStats(*COM[DEBUG_COM]);
       oldState = testrun.getState();
     }
 
     if(testrun.getState() == Testrun::State::testDone) {
-      hoverboard.resetCounters();
-      hoverboard.sendCounterReset();
+      hbpUART.resetCounters();
+      hbpUART.sendCounterReset();
       testrun.setState(Testrun::State::pwmZero);
     }
 //    Serial.print(testrun.time);

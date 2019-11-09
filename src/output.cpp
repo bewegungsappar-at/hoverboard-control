@@ -88,7 +88,7 @@ uint8_t enableHoverboardMotors = 0;
       return (int) COM[MOTOR_COM]->write(data,len);
   }
 
-  HoverboardAPI hoverboard = HoverboardAPI(serialWrapper);
+  HoverboardAPI hbpUART = HoverboardAPI(serialWrapper);
 #endif
 
 #ifdef OUTPUT_PROTOCOL_ESPNOW
@@ -137,13 +137,26 @@ double limit(double min, double value, double max) {
   return value;
 }
 
-#ifdef OUTPUT_PROTOCOL_UART
+#if defined(OUTPUT_PROTOCOL_ESPNOW)
 void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsigned char *content, int len ) {
   switch (fn_type) {
     case FN_TYPE_POST_READRESPONSE:
     case FN_TYPE_POST_WRITE:
-      motor.measured.actualSpeed_kmh = hoverboard.getSpeed_kmh();
-      motor.measured.actualSteer_kmh = hoverboard.getSteer_kmh();
+      motor.measured.actualSpeed_kmh = hbpEspnow.getSpeed_kmh();
+      motor.measured.actualSteer_kmh = hbpEspnow.getSteer_kmh();
+
+      break;
+  }
+}
+#endif
+
+#if defined(OUTPUT_PROTOCOL_UART)
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsigned char *content, int len ) {
+  switch (fn_type) {
+    case FN_TYPE_POST_READRESPONSE:
+    case FN_TYPE_POST_WRITE:
+      motor.measured.actualSpeed_kmh = hbpUART.getSpeed_kmh();
+      motor.measured.actualSteer_kmh = hbpUART.getSteer_kmh();
 
       #ifdef INPUT_ESPNOW
         if(espnowTimeout < 10) {
@@ -170,49 +183,49 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsi
 void setupCommunication() {
 
     #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
-    setupEspNow();
+      setupEspNow();
   #endif
 
   #if defined(OUTPUT_PROTOCOL_UART) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
 
     #ifdef INPUT_TESTRUN
       // Remove PWM limits
-      hoverboard.sendPWMData(0, 0, 1000, -1000, 1, PROTOCOL_SOM_ACK);
+      hbpUART.sendPWMData(0, 0, 1000, -1000, 1, PROTOCOL_SOM_ACK);
 
       // send enable periodically
-      hoverboard.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
-      hoverboard.scheduleTransmission(hoverboard.Codes::enableMotors, -1, 30);
+      hbpUART.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
+      hbpUART.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 30);
 
       // Get Protocol statistics periodically
-      hoverboard.scheduleRead(hoverboard.Codes::protocolCountSum, -1, 100);
+      hbpUART.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 100);
     #else
       // Set PWM limits
-      hoverboard.sendPWMData(0, 0, 400, -400, 30, PROTOCOL_SOM_ACK);
+      hbpUART.sendPWMData(0, 0, 400, -400, 30, PROTOCOL_SOM_ACK);
 
       // enable motors
-      hoverboard.sendEnable(1, PROTOCOL_SOM_ACK);
+      hbpUART.sendEnable(1, PROTOCOL_SOM_ACK);
     #endif
 
     // Set up hall data readout (=hoverboard measured speed)
-    hoverboard.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
+    hbpUART.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
 
-    hoverboard.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 30);
+    hbpUART.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 30);
 
     // Set up electrical measurements readout
-    hoverboard.scheduleRead(hoverboard.Codes::sensElectrical, -1, 100);
+    hbpUART.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 100);
 
     // Send PWM values periodically
-    hoverboard.updateParamVariable(HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
-    hoverboard.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
+    hbpUART.updateParamVariable(HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
+    hbpUART.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
   #endif
 
 
 
   #ifdef OUTPUT_PROTOCOL_ESPNOW
     esp_now_register_recv_cb(espReceiveDataWrapper);
-    hbpEspnow.updateParamHandler(hoverboard.Codes::sensHall, processHalldata);
-    hbpEspnow.scheduleTransmission(hoverboard.Codes::setPointPWM, -1, 30);
-    hbpEspnow.scheduleRead(hoverboard.Codes::protocolCountSum, -1, 30);
+    hbpEspnow.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
+    hbpEspnow.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
+    hbpEspnow.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 30);
   #endif
 
 }
@@ -223,7 +236,7 @@ void pollUART() {
   int i=0;
   while(COM[MOTOR_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
     unsigned char readChar = COM[MOTOR_COM]->read();
-    hoverboard.protocolPush( readChar );
+    hbpUART.protocolPush( readChar );
     #ifdef DEBUG_PROTOCOL_PASSTHROUGH
       COM[DEBUG_COM]->write( readChar );
     #endif
@@ -276,15 +289,15 @@ void loopCommunication( void *pvparameters ) {
 
   #ifdef DEBUG_PROTOCOL_MEASUREMENTS
     COM[DEBUG_COM]->print("V: ");
-    COM[DEBUG_COM]->print(hoverboard.getBatteryVoltage());
+    COM[DEBUG_COM]->print(hbpUART.getBatteryVoltage());
     COM[DEBUG_COM]->print(" Current0: ");
-    COM[DEBUG_COM]->print(hoverboard.getMotorAmpsAvg(0));
+    COM[DEBUG_COM]->print(hbpUART.getMotorAmpsAvg(0));
     COM[DEBUG_COM]->print(" Current1: ");
-    COM[DEBUG_COM]->print(hoverboard.getMotorAmpsAvg(1));
+    COM[DEBUG_COM]->print(hbpUART.getMotorAmpsAvg(1));
     COM[DEBUG_COM]->print(" Speed: ");
-    COM[DEBUG_COM]->print(hoverboard.getSpeed_kmh());
+    COM[DEBUG_COM]->print(hbpUART.getSpeed_kmh());
     COM[DEBUG_COM]->print(" Steer: ");
-    COM[DEBUG_COM]->print(hoverboard.getSteer_kmh());
+    COM[DEBUG_COM]->print(hbpUART.getSteer_kmh());
     COM[DEBUG_COM]->println();
   #endif
 
@@ -295,7 +308,7 @@ void loopCommunication( void *pvparameters ) {
     // Send Buzzer Data
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
     if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
-      hoverboard.sendBuzzer(sendBuzzer.buzzerFreq, sendBuzzer.buzzerPattern, sendBuzzer.buzzerLen);
+      hbpUART.sendBuzzer(sendBuzzer.buzzerFreq, sendBuzzer.buzzerPattern, sendBuzzer.buzzerLen);
 
       sendBuzzer.buzzerFreq = 0;
       sendBuzzer.buzzerLen = 0;
@@ -306,7 +319,7 @@ void loopCommunication( void *pvparameters ) {
 
 #ifdef OUTPUT_PROTOCOL_UART
     pollUART();
-    hoverboard.protocolTick();
+    hbpUART.protocolTick();
 #endif
 
 #ifdef OUTPUT_PROTOCOL_ESPNOW
@@ -317,7 +330,7 @@ void loopCommunication( void *pvparameters ) {
     while (millis() < start + MOTORINPUT_PERIOD){
       #ifdef OUTPUT_PROTOCOL_UART
         pollUART();
-        hoverboard.protocolTick();
+        hbpUART.protocolTick();
       #endif
 
       #ifdef OUTPUT_PROTOCOL_ESPNOW
