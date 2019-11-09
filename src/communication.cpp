@@ -1,4 +1,4 @@
-#include "output.h"
+#include "communication.h"
 #include <Arduino.h>
 #include "main.h"
 #include "config.h"

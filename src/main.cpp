@@ -2,7 +2,7 @@
 #include "config.h"
 #include "main.h"
 #include "input.h"
-#include "output.h"
+#include "communication.h"
 #include "serialbridge.h"
 #include "ArduinoNunchuk.h"
 
