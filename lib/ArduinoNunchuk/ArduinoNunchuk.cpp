@@ -283,9 +283,6 @@ int ArduinoNunchuk::update(volatile double &pwm, volatile double &steer) {
     steer = 0.0;
     pwm = 0.0;
   } else if(!cButton && zButton && !zButton_last && (rollangle() > 90.0 || rollangle() < -90.0) ) {
-    #ifdef OUTPUT_BINARY
-      COM[MOTOR_COM]->print("1234567"); // Insert padding byte into serial stream to realign serial buffer
-    #endif
 
   } else if(cButton_last && !cButton) {
     // When Button is released, set to very low value, other than 0.0. TODO: Just a hack, for paddelec + nunchuck

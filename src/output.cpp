@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include "main.h"
 #include "config.h"
-#include <crc.h>
 #include "serialbridge.h"
 #include "protocol.h"
 
@@ -303,42 +302,6 @@ void loopCommunication( void *pvparameters ) {
       sendBuzzer.buzzerPattern = 0;
     }
 
-#endif
-#ifdef OUTPUT_BINARY
-    /* cast & limit values to a valid range */
-    int16_t steer = (int16_t) limit(-1000.0, motor.setpoint.steer, 1000.0);
-    int16_t pwm   = (int16_t) limit(-1000.0, motor.setpoint.pwm,   1000.0);
-
-
-    /* Send motor pwm values to motor control unit */
-    COM[MOTOR_COM]->write((uint8_t *) &steer, sizeof(steer));
-    COM[MOTOR_COM]->write((uint8_t *) &pwm,   sizeof(pwm));
-
-  #ifdef OUTPUT_BINARY_CRC
-    /* calc and send checksum */
-    uint32_t crc = 0;
-    crc32((const void *)&steer, sizeof(steer), &crc);
-    crc32((const void *)&pwm,   sizeof(pwm),   &crc);
-
-    COM[MOTOR_COM]->write((uint8_t *) &crc,   sizeof(crc));
-  #endif
-
-    /* refresh actual motor speed */
-    updateSpeed();
-
-    /* debug output */
-    #ifdef WIFI
-    for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++) {
-      if(TCPClient[1][cln]) {
-        if(debug) TCPClient[1][cln].print(" U: ");
-        if(debug) TCPClient[1][cln].printf("%8i %8i\n", pwm, steer);
-      }
-    }
-    #endif
-    if(debug) COM[DEBUG_COM]->printf("\nU: ");
-//    if(debug) COM[DEBUG_COM]->printf("%6i %6i %11u ", pwm, steer, crc);
-    if(debug) COM[DEBUG_COM]->printf("%6i %6i ", pwm, steer);
-    if(debug) COM[DEBUG_COM]->printf("%7.2f %7.2f ", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
 #endif
 
 #ifdef OUTPUT_PROTOCOL_UART
