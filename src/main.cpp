@@ -6,7 +6,7 @@
 #include "serialbridge.h"
 #include "ArduinoNunchuk.h"
 
-  TaskHandle_t TaskMainloop, TaskMotorcommunication;
+  TaskHandle_t TaskInput, TaskCommunication;
 
 
 #ifdef DEBUG_OLED
@@ -35,7 +35,7 @@ void setup() {
 #endif
 
   setupSerial();
-  setupOutput();
+  setupCommunication();
   setupInput();
 
 #ifdef WIFI
@@ -54,21 +54,21 @@ void setup() {
 #endif
 
   xTaskCreatePinnedToCore(
-    mainloop,                 // Task function.
-    "Main_loop",              // name of task.
+    loopInput,                 // Task function.
+    "loopInput",              // name of task.
     4000,                     // Stack size of task
     (void *)1,                // parameter of the task
     1,                        // priority of the task
-    &TaskMainloop,            // Task handle to keep track of created task
+    &TaskInput,            // Task handle to keep track of created task
     1);                       // Core (0 is used by ESP32 connectivity)
 
   xTaskCreatePinnedToCore(
-    motorCommunication,       // Task function.
-    "Motor_Comm",             // name of task.
+    loopCommunication,       // Task function.
+    "loopCommunication",             // name of task.
     4000,                     // Stack size of task
     (void *)1,                // parameter of the task
     1,                        // priority of the task
-    &TaskMotorcommunication,  // Task handle to keep track of created task
+    &TaskCommunication,  // Task handle to keep track of created task
     1);                       // Core (0 is used by ESP32 connectivity)
 }
 

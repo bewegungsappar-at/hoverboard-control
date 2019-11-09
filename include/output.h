@@ -3,6 +3,6 @@
 #include "config.h"
 #include <Arduino.h>
 
-void setupOutput();
-void motorCommunication( void * pvparameters);
+void setupCommunication();
+void loopCommunication( void *pvparameters );
 void updateSpeed();

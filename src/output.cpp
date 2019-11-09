@@ -168,9 +168,9 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsi
 }
 #endif
 
-void setupOutput() {
+void setupCommunication() {
 
-  #ifdef OUTPUT_ESPNOW
+    #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
     setupEspNow();
   #endif
 
@@ -238,7 +238,7 @@ void pollUART() {
 }
 #endif
 
-void motorCommunication( void * pvparameters) {
+void loopCommunication( void *pvparameters ) {
 //  int taskno = (int)pvparameters;
   while(1) {
 

@@ -4,6 +4,6 @@
 #include <Arduino.h>
 
 void setupInput();
-void mainloop( void *pvparameters );
+void loopInput( void *pvparameters );
 
 extern volatile int espnowTimeout;

@@ -21,7 +21,6 @@
 #endif // INPUT_NUNCHUK
 
 #if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
-  #include "ESP32_espnow_MasterSlave.h"
   volatile int espnowTimeout = 10000;
 #endif
 
@@ -47,11 +46,6 @@
 uint32_t millisMotorcomm = 0;      // virtual timer for motor update
 
 void setupInput() {
-
-    #ifdef INPUT_ESPNOW
-    setupEspNow();
-    #endif
-
 
     #ifdef INPUT_NUNCHUK
     nunchuk.init();
@@ -84,7 +78,7 @@ void slowReset(volatile double &variable, double goal, double step) {
 }
 
 
-void mainloop( void *pvparameters ) {
+void loopInput( void *pvparameters ) {
 //  int taskno = (int)pvparameters;
   while(1) {
     deltaMillis = millis() - millisMotorcomm;
