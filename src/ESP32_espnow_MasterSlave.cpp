@@ -332,7 +332,7 @@ void configDeviceAP() {
 void setupEspNow() {
   #ifdef ESPNOW_PEERMAC
     memset(slaves, 0, sizeof(slaves));
-    uint8_t preset_peer_addr[6] = ESPNOW_PEERMAC;
+    uint8_t preset_peer_addr[6] = {ESPNOW_PEERMAC};
     for(int i=0; i<6; i++) {
       slaves[0].peer_addr[i] = preset_peer_addr[i];
     }
