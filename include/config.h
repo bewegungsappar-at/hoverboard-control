@@ -17,7 +17,6 @@
 // Chose only one!
 
 //#define OUTPUT_PROTOCOL_UART       // Binary Protocol over UART
-//#define OUTPUT_PROTOCOL_ESPNOW     // Binary Protocol over ESPNOW
 //#define OUTPUT_ESPNOW         // Relay PWM and Steer through ESPnow to Slave
   //#define ESPNOW_PREFIX "CH1"   // ESPNOW "Channel" encoded in SSID
 //  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x02,0x7E,0x98 // Paddelec WROOM

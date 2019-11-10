@@ -56,8 +56,7 @@
 
 
 // Global copy of slave
-#define NUMSLAVES 1
-esp_now_peer_info_t slaves[NUMSLAVES] = {};
+esp_now_peer_info_t slaves[1] = {};
 int SlaveCnt = 0;
 
 #define debugESPNOW
@@ -246,74 +245,6 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   sendReady = true;
 }
 
-// callback when data is recv from Master
-void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-#ifdef debugESPNOW
-  char macStr[18];
-  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
-  if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
-  if(debug_espnow) COM[DEBUG_COM]->println("");
-#endif
-  if(!hideAP) {
-    hideAP = 1;
-    configDeviceAP();
-  }
-
-  /* validate MAC Address
-  * In ESPnow a different MAC Adress is used to send or receive packets.
-  * Fortunately, the MAC Adresses are only one bit apart.
-  */
-  int foundSlave = 0;
-  for(int i = 0; i< SlaveCnt; i++) {
-    if( slaves[i].peer_addr[0] == mac_addr[0] &&
-        slaves[i].peer_addr[1] == mac_addr[1] &&
-        slaves[i].peer_addr[2] == mac_addr[2] &&
-        slaves[i].peer_addr[3] == mac_addr[3] &&
-        slaves[i].peer_addr[4] == mac_addr[4] &&
-        slaves[i].peer_addr[5] == mac_addr[5] )
-    {
-      foundSlave++;
-    }
-  }
-
-  if(foundSlave == 0) return;
-
-
-
-#ifdef INPUT_ESPNOW
-  if(sizeof(motorMeasured) == data_len) {
-    espnowTimeout = 0;
-    memcpy((void*)&motor.setpoint, data, sizeof(motorSetpoint));  //TODO: dangerous..
-    #ifdef debugESPNOW
-    if(debug_espnow) COM[DEBUG_COM]->printf("PWM: %8.4f Steer: %8.4f\r\n", motor.setpoint.pwm, motor.setpoint.steer);
-    #endif
-
-  #ifdef OUTPUT_PROTOCOL_UART
-  } else if(sizeof(PROTOCOL_BUZZER_DATA) == data_len) {
-//    espnowTimeout = 0;
-  //  memcpy((void*)&BuzzerData, data, sizeof(PROTOCOL_BUZZER_DATA));  //TODO: dangerous..
-    #ifdef debugESPNOW
-//    if(debug_espnow) COM[DEBUG_COM]->printf("buzzerFreq: %4u buzzerPattern: %4u buzzerLen: %4u\r\n", BuzzerData.buzzerFreq, BuzzerData.buzzerPattern, BuzzerData.buzzerLen);
-  #endif
-  #endif
-
-  }
-#endif
-
-#ifdef OUTPUT_ESPNOW
-  if(sizeof(motorMeasured) == data_len) {
-    memcpy((void*)&motor.measured, data, sizeof(motorMeasured));  //TODO: dangerous..
-    #ifdef debugESPNOW
-    if(debug_espnow) COM[DEBUG_COM]->printf("Speed: %8.4f Steer: %8.4f\r\n", motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh);
-    #endif
-  }
-#endif
-
-}
-
-
 // config AP SSID
 void configDeviceAP() {
   String Prefix1 = ESPNOW_PREFIX;
@@ -355,7 +286,6 @@ void setupEspNow() {
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
-  esp_now_register_recv_cb(OnDataRecv);
   #ifdef ESPNOW_PEERMAC
       manageSlave();
   #endif

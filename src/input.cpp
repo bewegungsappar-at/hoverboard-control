@@ -20,7 +20,7 @@
   int nunchukTimeout=0;
 #endif // INPUT_NUNCHUK
 
-#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
   volatile int espnowTimeout = 10000;
 #endif
 
@@ -29,7 +29,7 @@
   #include "HoverboardAPI.h"
   Testrun testrun;
   extern uint8_t enableHoverboardMotors;
-  extern HoverboardAPI hbpUART;
+  extern HoverboardAPI hbpOut;
   Testrun::State oldState = Testrun::State::testDone;
 #endif
 
@@ -90,13 +90,13 @@ void loopInput( void *pvparameters ) {
  #if defined(OUTPUT_PROTOCOL_UART) && defined(INPUT_TESTRUN)
     if(testrun.getState() != oldState) {
       COM[DEBUG_COM]->print(testrun.getState());
-//      hbpUART.printStats(*COM[DEBUG_COM]);
+//      hbpOut.printStats(*COM[DEBUG_COM]);
       oldState = testrun.getState();
     }
 
     if(testrun.getState() == Testrun::State::testDone) {
-      hbpUART.resetCounters();
-      hbpUART.sendCounterReset();
+      hbpOut.resetCounters();
+      hbpOut.sendCounterReset();
       testrun.setState(Testrun::State::pwmZero);
     }
 //    Serial.print(testrun.time);
@@ -110,7 +110,7 @@ void loopInput( void *pvparameters ) {
     break;
   #endif
 
-#if defined(INPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_ESPNOW)
+#if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
     // Disable all other Input Methods as soon as data from ESPnow was received
     if(espnowTimeout < 100) {
       espnowTimeout++;
