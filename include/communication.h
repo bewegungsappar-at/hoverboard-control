@@ -5,4 +5,3 @@
 
 void setupCommunication();
 void loopCommunication( void *pvparameters );
-void updateSpeed();

@@ -78,6 +78,8 @@ void slowReset(volatile double &variable, double goal, double step) {
 }
 
 
+
+
 void loopInput( void *pvparameters ) {
 //  int taskno = (int)pvparameters;
   while(1) {
@@ -87,7 +89,7 @@ void loopInput( void *pvparameters ) {
   // Process all Inputs
   do {
 
- #if defined(OUTPUT_PROTOCOL_UART) && defined(INPUT_TESTRUN)
+ #if defined(INPUT_TESTRUN)
     if(testrun.getState() != oldState) {
       COM[DEBUG_COM]->print(testrun.getState());
 //      hbpOut.printStats(*COM[DEBUG_COM]);
@@ -103,8 +105,6 @@ void loopInput( void *pvparameters ) {
 //    Serial.print(" ");
 //    Serial.println(testrun.getState());
  //   testrun.state = Testrun::State::sinus;
-
-
 
     motor.setpoint.pwm = testrun.update(deltaMillis, enableHoverboardMotors);
     break;
@@ -124,7 +124,6 @@ void loopInput( void *pvparameters ) {
   #endif
 
   #ifdef INPUT_IMU
-    //  imu.loopIMU();
     imu.update(motor.setpoint.pwm, motor.setpoint.steer);
     if(debug) imu.debug(*COM[DEBUG_COM]);
 

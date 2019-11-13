@@ -214,48 +214,19 @@ double limit(double min, double value, double max) {
   return value;
 }
 
-#if defined(OUTPUT_ESPNOW)
-void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsigned char *content, int len ) {
-  switch (fn_type) {
-    case FN_TYPE_POST_READRESPONSE:
-    case FN_TYPE_POST_WRITE:
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+
+  fn_defaultProcessing(s, param, cmd, msg);
+
+  switch (cmd) {
+    case PROTOCOL_CMD_READVALRESPONSE:
+    case PROTOCOL_CMD_WRITEVAL:
       motor.measured.actualSpeed_kmh = hbpOut.getSpeed_kmh();
       motor.measured.actualSteer_kmh = hbpOut.getSteer_kmh();
-
       break;
   }
 }
-#endif
 
-#if defined(OUTPUT_PROTOCOL_UART)
-void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type, unsigned char *content, int len ) {
-  switch (fn_type) {
-    case FN_TYPE_POST_READRESPONSE:
-    case FN_TYPE_POST_WRITE:
-      motor.measured.actualSpeed_kmh = hbpOut.getSpeed_kmh();
-      motor.measured.actualSteer_kmh = hbpOut.getSteer_kmh();
-
-      #ifdef INPUT_ESPNOW
-        if(espnowTimeout < 10) {
-          if (SlaveCnt > 0) { // check if slave channel is defined
-            // `slave` is defined
-            sendData((const void *) &motor.measured, sizeof(motor.measured));
-          } else {
-            ScanForSlave();
-            if (SlaveCnt > 0) { // check if slave channel is defined
-              // `slave` is defined
-              // Add slave as peer if it has not been added already
-              manageSlave();
-              // pair success or already paired
-            }
-          }
-        }
-      #endif
-
-      break;
-  }
-}
-#endif
 
 #ifdef OUTPUT_PROTOCOL_UART
 void pollUART() {
@@ -278,6 +249,18 @@ void pollUART() {
 #endif
 
 
+
+void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+  hbpOut.protocolPost(msg);
+}
+
+#ifdef INPUT_ESPNOW
+void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+  hbpIn.protocolPost(msg);
+}
+#endif
+
+
 ///////////////////////////////////////////////////////////
 // Communication Init
 ///////////////////////////////////////////////////////////
@@ -285,8 +268,31 @@ void pollUART() {
 void setupCommunication() {
 
   #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
-    setupEspNow();
+  setupEspNow();
   #endif
+
+  #if !defined(INPUT_ESPNOW)
+    // Set PWM limits
+    hbpOut.sendPWMData(0, 0, 400, -400, 30, PROTOCOL_SOM_ACK);
+
+    // enable motors
+    hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
+  #endif
+
+  #if defined(INPUT_ESPNOW)
+
+    // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
+    for (int i = 0; i < sizeof(hbpOut.s.params)/sizeof(hbpOut.s.params[0]); i++) {
+      if(hbpOut.s.params[i]) hbpOut.updateParamHandler((HoverboardAPI::Codes) i ,relayDataIn);
+    }
+
+    // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
+    for (int i = 0; i < sizeof(hbpIn.s.params)/sizeof(hbpIn.s.params[0]); i++) {
+      if(hbpIn.s.params[i]) hbpIn.updateParamHandler((HoverboardAPI::Codes) i ,relayDataOut);
+    }
+
+  #endif
+
 
   #if defined(OUTPUT_PROTOCOL_UART) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
 
@@ -300,12 +306,7 @@ void setupCommunication() {
 
       // Get Protocol statistics periodically
       hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 100);
-    #else
-      // Set PWM limits
-      hbpOut.sendPWMData(0, 0, 400, -400, 30, PROTOCOL_SOM_ACK);
 
-      // enable motors
-      hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
     #endif
 
     // Set up hall data readout (=hoverboard measured speed)
@@ -364,14 +365,9 @@ void loopCommunication( void *pvparameters ) {
   } else {
     scanCounter--;
   }
-  extern volatile int sendTimeout;
-  extern volatile bool sendReady;
-  if(sendTimeout > 100) sendReady = true;
 #endif
 
 #ifdef OUTPUT_PROTOCOL_UART
-    updateSpeed();  // TODO will be obsolete soon
-
   #ifdef DEBUG_PROTOCOL_MEASUREMENTS
     COM[DEBUG_COM]->print("V: ");
     COM[DEBUG_COM]->print(hbpOut.getBatteryVoltage());
@@ -402,75 +398,22 @@ void loopCommunication( void *pvparameters ) {
 
 #endif
 
-#ifdef OUTPUT_PROTOCOL_UART
-    pollUART();
-    hbpOut.protocolTick();
-#endif
-
-#ifdef OUTPUT_ESPNOW
-    hbpOut.protocolTick();
-#endif
-
-#ifdef INPUT_ESPNOW
-    hbpIn.protocolTick();
-#endif
-
     unsigned long start = millis();
-    while (millis() < start + MOTORINPUT_PERIOD){
-    #ifdef OUTPUT_PROTOCOL_UART
-        pollUART();
-        hbpOut.protocolTick();
-    #endif
+    do {
 
-    #ifdef OUTPUT_ESPNOW
-        hbpOut.protocolTick();
-    #endif
+      #ifdef OUTPUT_PROTOCOL_UART
+      pollUART();
+      #endif
 
-    #ifdef INPUT_ESPNOW
-        hbpIn.protocolTick();
-    #endif
+      hbpOut.protocolTick();
+
+      #ifdef INPUT_ESPNOW
+      hbpIn.protocolTick();
+      #endif
 
       delayMicroseconds(100);
-    }
+
+    } while (millis() < start + MOTORINPUT_PERIOD);
+
   }
-}
-
-/*
-* Dummy function since no speed feedback from Motor control is implemented right now.
-* For now, we just use pwm, some conversion factor and low pass filter as a model.
-* Values are in m/h
-*/
-#define SPEED_PWM_CONVERSION_FACTOR  0.2   // Assume 100% PWM = 1000 = Full Speed = 20km/h = 20000 m/h. Therefore 20000 / 1000 = 20
-#define SPEED_FILTER                 0.015  // Low pass Filter Value. 1 means no filter at all, 0 no value update.
-void updateSpeed() {
-
-  #if !defined(OUTPUT_PROTOCOL_UART) && !defined (OUTPUT_ESPNOW)
-    motor.measured.actualSpeed_kmh = motor.measured.actualSpeed_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.pwm   * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
-    motor.measured.actualSteer_kmh = motor.measured.actualSteer_kmh * (1.0 - (SPEED_FILTER * deltaMillis)) + motor.setpoint.steer * (SPEED_FILTER * deltaMillis) * SPEED_PWM_CONVERSION_FACTOR;
-  #endif
-
-
-  #ifdef INPUT_ESPNOW
-    if(espnowTimeout > 100) {
-      if (SlaveCnt > 0) { // check if slave channel is defined
-        // `slave` is defined
-        sendData((const void *) &motor.measured, sizeof(motor.measured));
-      } else if(scanCounter == 0) {
-        ScanForSlave();
-        if (SlaveCnt > 0) { // check if slave channel is defined
-          // `slave` is defined
-          // Add slave as peer if it has not been added already
-          manageSlave();
-          // pair success or already paired
-        }
-        scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
-      } else {
-        scanCounter--;
-      }
-    }
-    extern volatile int sendTimeout;
-    extern volatile bool sendReady;
-    if(sendTimeout > 100) sendReady = true;
-  #endif
-
 }
