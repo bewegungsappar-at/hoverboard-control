@@ -3,8 +3,6 @@
 #include "main.h"
 #include "config.h"
 #include "serialbridge.h"
-#include "protocol.h"
-
 #include <HoverboardAPI.h>
 
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
@@ -24,10 +22,17 @@ volatile PROTOCOL_BUZZER_DATA sendBuzzer = {
 };
 
 PROTOCOL_PWM_DATA PWMData = {
+#ifdef INPUT_TESTRUN
     .pwm = {0,0},
-    .speed_max_power =  600,
-    .speed_min_power = -600,
-    .speed_minimum_pwm = 40 // guard value, below this set to zero
+    .speed_max_power =  1000,
+    .speed_min_power = -1000,
+    .speed_minimum_pwm = 1  // guard value, below this set to zero
+#else
+    .pwm = {0,0},
+    .speed_max_power =  400,
+    .speed_min_power = -400,
+    .speed_minimum_pwm = 30 // guard value, below this set to zero
+#endif
 };
 
 uint8_t enableHoverboardMotors = 0;
@@ -227,6 +232,16 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PR
   }
 }
 
+void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+  switch (cmd) {
+    case PROTOCOL_CMD_READVAL:
+      PWMData.pwm[0] = motor.setpoint.pwm + motor.setpoint.steer;
+      PWMData.pwm[1] = motor.setpoint.pwm - motor.setpoint.steer;
+      break;
+  }
+  fn_defaultProcessing(s, param, cmd, msg);
+}
+
 
 #ifdef OUTPUT_PROTOCOL_UART
 void pollUART() {
@@ -267,20 +282,14 @@ void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOC
 
 void setupCommunication() {
 
+  // Init ESPnow
   #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
   setupEspNow();
+    esp_now_register_recv_cb(espReceiveDataWrapper);
   #endif
 
-  #if !defined(INPUT_ESPNOW)
-    // Set PWM limits
-    hbpOut.sendPWMData(0, 0, 400, -400, 30, PROTOCOL_SOM_ACK);
-
-    // enable motors
-    hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
-  #endif
-
+  // ESPnow to UART Protocol Relay
   #if defined(INPUT_ESPNOW)
-
     // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
     for (int i = 0; i < sizeof(hbpOut.s.params)/sizeof(hbpOut.s.params[0]); i++) {
       if(hbpOut.s.params[i]) hbpOut.updateParamHandler((HoverboardAPI::Codes) i ,relayDataIn);
@@ -290,84 +299,43 @@ void setupCommunication() {
     for (int i = 0; i < sizeof(hbpIn.s.params)/sizeof(hbpIn.s.params[0]); i++) {
       if(hbpIn.s.params[i]) hbpIn.updateParamHandler((HoverboardAPI::Codes) i ,relayDataOut);
     }
-
   #endif
 
+  // Initialize and setup protocol values, setup all periodic messages.
+  #if !defined(INPUT_ESPNOW) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
+    // Initialize  PWM limits
+    hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
 
-  #if defined(OUTPUT_PROTOCOL_UART) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
+    // enable motors
+    hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
 
     #ifdef INPUT_TESTRUN
-      // Remove PWM limits
-      hbpOut.sendPWMData(0, 0, 1000, -1000, 1, PROTOCOL_SOM_ACK);
-
       // send enable periodically
       hbpOut.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
       hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 30);
+    #endif
 
       // Get Protocol statistics periodically
       hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 100);
 
-    #endif
-
-    // Set up hall data readout (=hoverboard measured speed)
+    // Set up hall data readout (=hoverboard measured speed) and periodically read Hall Data
     hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
-
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 30);
 
     // Set up electrical measurements readout
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 100);
 
     // Send PWM values periodically
-    hbpOut.updateParamVariable(HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
+    hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
+    hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
     hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
-  #endif
-
-
-
-  #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
-    esp_now_register_recv_cb(espReceiveDataWrapper);
-  #endif
-
-  #if defined(OUTPUT_ESPNOW) || defined(OUTPUT_PROTOCOL_UART)
-    hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
-    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
-    hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 30);
   #endif
 
 }
 
 void loopCommunication( void *pvparameters ) {
-//  int taskno = (int)pvparameters;
   while(1) {
 
-#ifdef OUTPUT_ESPNOW
-  if (SlaveCnt > 0) { // check if slave channel is defined
-    // `slave` is defined
-    sendData((const void *) &motor.setpoint, sizeof(motor.setpoint));
-
-    if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
-      sendData((const void *) &sendBuzzer, sizeof(sendBuzzer));
-
-      sendBuzzer.buzzerFreq = 0;
-      sendBuzzer.buzzerLen = 0;
-      sendBuzzer.buzzerPattern = 0;
-    }
-
-  } else if(scanCounter == 0) {
-    ScanForSlave();
-    if (SlaveCnt > 0) { // check if slave channel is defined
-      // `slave` is defined
-      // Add slave as peer if it has not been added already
-      manageSlave();
-      // pair success or already paired
-    }
-    scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
-  } else {
-    scanCounter--;
-  }
-#endif
-
-#ifdef OUTPUT_PROTOCOL_UART
   #ifdef DEBUG_PROTOCOL_MEASUREMENTS
     COM[DEBUG_COM]->print("V: ");
     COM[DEBUG_COM]->print(hbpOut.getBatteryVoltage());
@@ -382,10 +350,6 @@ void loopCommunication( void *pvparameters ) {
     COM[DEBUG_COM]->println();
   #endif
 
-
-    PWMData.pwm[0] = motor.setpoint.pwm + motor.setpoint.steer;
-    PWMData.pwm[1] = motor.setpoint.pwm - motor.setpoint.steer;
-
     // Send Buzzer Data
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
     if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
@@ -396,7 +360,6 @@ void loopCommunication( void *pvparameters ) {
       sendBuzzer.buzzerPattern = 0;
     }
 
-#endif
 
     unsigned long start = millis();
     do {

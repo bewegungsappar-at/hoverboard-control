@@ -52,7 +52,6 @@
 #include "main.h"
 #include "input.h"
 #include "serialbridge.h"
-#include "protocol.h"
 
 
 // Global copy of slave
