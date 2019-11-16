@@ -254,6 +254,7 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PR
 void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
   switch (cmd) {
     case PROTOCOL_CMD_READVAL:
+    case PROTOCOL_CMD_SILENTREAD:
       PWMData.pwm[0] = motor.setpoint.pwm + motor.setpoint.steer;
       PWMData.pwm[1] = motor.setpoint.pwm - motor.setpoint.steer;
       break;

@@ -17,4 +17,4 @@ matrix:
   include:
 
     - name: pio
-      script: platformio run -e featheresp32_psychoremote -e nodemcu-woodenboard -e nodemcu-32s_ESPPROTOCOL -e featheresp32_ESPSLAVE -e TTGO_ESPMASTER -e TTGO_ESPMASTER_PADDELEC -e nodemcu-32s_WIFI -e nodemcu-32s_ESPSLAVE -e featheresp32_psycho -e nodemcu-testrun
+      script: platformio run -e featheresp32_remote -e nodemcu-woodenboard -e nodemcu-32s_ESPPROTOCOL -e featheresp32_ESPSLAVE -e TTGO_ESPMASTER -e TTGO_ESPMASTER_PADDELEC -e nodemcu-32s_WIFI -e nodemcu-32s_ESPSLAVE -e featheresp32_relay -e nodemcu-testrun
