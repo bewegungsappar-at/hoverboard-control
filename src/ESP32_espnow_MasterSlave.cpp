@@ -58,7 +58,6 @@
 esp_now_peer_info_t slaves[1] = {};
 int SlaveCnt = 0;
 
-#define debugESPNOW
 
 #ifdef debugESPNOW
   bool debug_espnow = true;

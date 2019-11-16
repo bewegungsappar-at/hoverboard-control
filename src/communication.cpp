@@ -60,7 +60,22 @@ uint8_t enableHoverboardMotors = 0;
 // Support Functions
 ///////////////////////////////////////////////////////////
 
-void protocolMarkupOutgoing(unsigned char *data, int len) {
+void protocolMarkup(unsigned char *data, int len, int prefix) {
+  switch (prefix) {
+    case 0:
+      COM[DEBUG_COM]->print("Out UART   ");
+      break;
+    case 1:
+      COM[DEBUG_COM]->print("Out ESPnow ");
+      break;
+    case 2:
+      COM[DEBUG_COM]->print("In  ESPnow ");
+      break;
+    default:
+      COM[DEBUG_COM]->printf("if:%01i ", prefix);
+      break;
+  }
+
   for(int i = 0; i< len; i++) {
     switch (i) {
     case 0:
@@ -120,7 +135,7 @@ void protocolMarkupOutgoing(unsigned char *data, int len) {
 int serialWriteWrapper(unsigned char *data, int len) {
 
   #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
-  protocolMarkupOutgoing(data, len);
+  protocolMarkup(data, len, 0);
   #endif
 
   return (int) COM[MOTOR_COM]->write(data,len);
@@ -131,7 +146,7 @@ int serialWriteWrapper(unsigned char *data, int len) {
 int espSendDataWrapper(unsigned char *data, int len) {
 
   #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
-  protocolMarkupOutgoing(data, len);
+  protocolMarkup(data, len, 1);
   #endif
 
   if (SlaveCnt > 0) { // check if slave channel is defined
@@ -160,6 +175,7 @@ void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int dat
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
             mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+    extern bool debug_espnow;
     if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
     if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
     if(debug_espnow) COM[DEBUG_COM]->println("");
@@ -195,10 +211,13 @@ void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int dat
     configDeviceAP();
   }
 
+  #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
+    protocolMarkup((unsigned char *)data, data_len, 2);
+  #endif
+
   // Pass data to protocol
   for(int i=0; i < data_len; i++) {
     #if defined(OUTPUT_ESPNOW)
-
       hbpOut.protocolPush(data[i]);
     #elif defined(INPUT_ESPNOW)
       hbpIn.protocolPush(data[i]);
