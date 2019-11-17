@@ -295,6 +295,19 @@ void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOC
 }
 #endif
 
+void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+  switch (cmd) {
+    case PROTOCOL_CMD_WRITEVAL:
+    case PROTOCOL_CMD_READVALRESPONSE:
+
+      PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
+
+      if( (param) && (strlen((const char *)writevals->content) <= param->len ) )
+        COM[DEBUG_COM]->println( (char *) writevals->content);
+      break;
+  }
+}
+
 
 ///////////////////////////////////////////////////////////
 // Communication Init
@@ -323,6 +336,10 @@ void setupCommunication() {
 
   // Initialize and setup protocol values, setup all periodic messages.
   #if !defined(INPUT_ESPNOW) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
+
+    // Print all incoming Texts on console
+    hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
+
     // Initialize  PWM limits
     hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
 
