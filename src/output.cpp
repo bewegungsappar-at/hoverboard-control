@@ -9,6 +9,11 @@
 #include <HoverboardAPI.h>
 
 
+#ifdef PHAIL_MONITOR
+#include "go_display.h"
+#endif // PHAIL_MONITOR
+
+
 volatile BUZZER_DATA sendBuzzer = {
     .buzzerFreq = 0,
     .buzzerPattern = 0,
@@ -123,6 +128,11 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, uint8_t fn_type ) {
 
 void setupOutput() {
 
+  #ifdef PHAIL_MONITOR
+    // init display and show labels
+    GO_DISPLAY::setup();
+  #endif // PHAIL_MONITOR
+
   #ifdef OUTPUT_ESPNOW
     setupEspNow();
   #endif
@@ -155,6 +165,26 @@ void motorCommunication( void * pvparameters) {
 //  int taskno = (int)pvparameters;
   while(1) {
 #endif //MULTITASKING
+
+  #ifdef PHAIL_MONITOR
+    // TODO: assuming motor 0 is left and motor 1 is right
+    GO_DISPLAY::set(GO_DISPLAY::CURRENT_LEFT ,hoverboard.getMotorAmpsAvg(0));
+    GO_DISPLAY::set(GO_DISPLAY::CURRENT_RIGHT ,hoverboard.getMotorAmpsAvg(1));
+    GO_DISPLAY::set(GO_DISPLAY::SPEED, hoverboard.getSpeed_kmh());
+    GO_DISPLAY::set(GO_DISPLAY::STEER, hoverboard.getSteer_kmh());
+    GO.update();
+    // TODO: just to see if something happens
+    static uint8_t i;
+    static float value = 0.0f;
+    if(GO.BtnA.isPressed())
+    {
+      GO_DISPLAY::set((GO_DISPLAY::field_value_t)i, value);
+      i++;
+    }
+    i = i%9;
+    value += 0.5;
+    
+  #endif // PHAIL_MONITOR
 
 #ifdef OUTPUT_ESPNOW
   if (SlaveCnt > 0) { // check if slave channel is defined
