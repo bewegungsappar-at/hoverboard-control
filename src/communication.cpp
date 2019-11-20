@@ -66,6 +66,7 @@ uint8_t enableHoverboardMotors = 0;
 ///////////////////////////////////////////////////////////
 
 void protocolMarkup(unsigned char *data, int len, int prefix) {
+  bool charOut = false;
   switch (prefix) {
     case 0:
       COM[DEBUG_COM]->print("Out UART   ");
@@ -118,6 +119,11 @@ void protocolMarkup(unsigned char *data, int len, int prefix) {
         COM[DEBUG_COM]->print("Enable    ");
       } else if(data[i] == HoverboardAPI::Codes::sensElectrical) {
         COM[DEBUG_COM]->print("El. Meas  ");
+      } else if(data[i] == HoverboardAPI::Codes::protocolVersion) {
+        COM[DEBUG_COM]->print("Version   ");
+      } else if(data[i] == HoverboardAPI::Codes::text) {
+        COM[DEBUG_COM]->print("Text      ");
+        charOut = true;
       } else {
         COM[DEBUG_COM]->printf("Code:0x%02X ", data[i]);
       }
@@ -126,6 +132,9 @@ void protocolMarkup(unsigned char *data, int len, int prefix) {
     default:
       if(i==len-1) {
         COM[DEBUG_COM]->printf("CS:0x%02X ", data[i]);
+        charOut = false;
+      } else if (charOut) {
+        COM[DEBUG_COM]->printf("%c", data[i]);
       } else {
         COM[DEBUG_COM]->printf("%02X ", data[i]);
       }
@@ -324,6 +333,11 @@ void setupCommunication() {
   #ifdef PHAIL_MONITOR
     // init display and show labels
     GO_DISPLAY::setup();
+
+//    pinMode(25, INPUT);  // These mute the speaker.. Speaker is connected to pam8304a audio amplifier IN- Pin 25, IN+ Pin26
+    digitalWrite(25, LOW); // The library sets Pin 26 to HIGH. Pin 25 is also connected to SD, which
+                           // Activates Standby of the Audio Amplifier when Low.
+
   #endif // PHAIL_MONITOR
 
   // Init ESPnow
@@ -368,15 +382,15 @@ void setupCommunication() {
 
     // Set up hall data readout (=hoverboard measured speed) and periodically read Hall Data
     hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
-    hbpOut.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 30);
+    hbpOut.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 100);
 
     // Set up electrical measurements readout
-    hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 100);
+    hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
 
     // Send PWM values periodically
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
     hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
-    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
+    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 60);
   #endif
 
 }
