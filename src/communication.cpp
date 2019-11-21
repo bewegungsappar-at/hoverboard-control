@@ -16,6 +16,36 @@
 #endif // PHAIL_MONITOR
 
 
+#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
+
+  #include <WiFi.h>
+  #include <WiFiUdp.h>
+
+  const char *ssid = "paddelec";
+  const char *pass = "bewegungsappar.at";
+
+  unsigned int localPort = 1337; // local port to listen for UDP packets
+
+  IPAddress broadcast(192,168,0,255); //UDP Broadcast IP data sent to all devicess on same network
+
+
+  // A UDP instance to let us send and receive packets over UDP
+  WiFiUDP udp;
+
+  char packetBuffer[9];   //Where we get the UDP data
+  int udpSendDataWrapper(unsigned char *data, int len);
+
+  #ifdef INPUT_UDP
+    HoverboardAPI hbpIn = HoverboardAPI(udpSendDataWrapper);
+  #endif
+
+  #ifdef OUTPUT_UDP
+    HoverboardAPI hbpOut = HoverboardAPI(udpSendDataWrapper);
+  #endif
+
+#endif
+
+//======================================================================
 ///////////////////////////////////////////////////////////
 // Global Variables
 ///////////////////////////////////////////////////////////
@@ -76,6 +106,9 @@ void protocolMarkup(unsigned char *data, int len, int prefix) {
       break;
     case 2:
       COM[DEBUG_COM]->print("In  ESPnow ");
+      break;
+    case 3:
+      COM[DEBUG_COM]->print("Out UDP    ");
       break;
     default:
       COM[DEBUG_COM]->printf("if:%01i ", prefix);
@@ -154,6 +187,22 @@ int serialWriteWrapper(unsigned char *data, int len) {
 
   return (int) COM[MOTOR_COM]->write(data,len);
 }
+#endif
+
+#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
+int udpSendDataWrapper(unsigned char *data, int len) {
+
+  #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
+  protocolMarkup(data, len, 3);
+  #endif
+
+  udp.beginPacket(broadcast, localPort);
+  size_t result = udp.write((const uint8_t *) data,(size_t) len); //Send one byte to ESP8266
+  udp.endPacket();
+
+  return (int) result;
+}
+
 #endif
 
 #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
@@ -297,6 +346,22 @@ void pollUART() {
 }
 #endif
 
+#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
+void pollUDP() {
+  if (udp.parsePacket()) {
+    while( udp.available() ) {
+      unsigned char readChar = (unsigned char) udp.read();
+
+#if defined(INPUT_UDP)
+      hbpIn.protocolPush( readChar );
+#else // OUTPUT_UDP
+      hbpOut.protocolPush( readChar );
+#endif
+
+    }
+  }
+}
+#endif
 
 
 void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
@@ -329,6 +394,36 @@ void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCO
 
 void setupCommunication() {
 
+#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
+
+
+  #if defined(INPUT_UDP)
+      WiFi.softAP(ssid, pass);    //Create Access point
+  #else // OUTPUT_UDP
+      WiFi.begin(ssid, pass);   //Connect to access point
+
+    // Wait for connection
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      if(debug) COM[DEBUG_COM]->print(".");
+    }
+    if(debug) COM[DEBUG_COM]->println("");
+    if(debug) COM[DEBUG_COM]->print("Connected to ");
+    if(debug) COM[DEBUG_COM]->println(ssid);
+    if(debug) COM[DEBUG_COM]->print("IP address: ");
+    if(debug) COM[DEBUG_COM]->println(WiFi.localIP());
+  #endif
+
+    //Start UDP
+    if(debug) COM[DEBUG_COM]->println("Starting UDP");
+    udp.begin(localPort);
+    if(debug) COM[DEBUG_COM]->print("Local port: ");
+    if(debug) COM[DEBUG_COM]->println(localPort);
+
+    broadcast = WiFi.localIP();
+    broadcast[3] = 255;
+
+#endif
 
   #ifdef PHAIL_MONITOR
     // init display and show labels
@@ -449,13 +544,17 @@ void loopCommunication( void *pvparameters ) {
     do {
 
       #ifdef OUTPUT_PROTOCOL_UART
-      pollUART();
+        pollUART();
+      #endif
+
+      #if defined(INPUT_UDP) || defined (OUTPUT_UDP)
+        pollUDP();
       #endif
 
       hbpOut.protocolTick();
 
       #ifdef INPUT_ESPNOW
-      hbpIn.protocolTick();
+        hbpIn.protocolTick();
       #endif
 
       delayMicroseconds(100);
