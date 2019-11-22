@@ -368,7 +368,7 @@ void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTO
   hbpOut.protocolPost(msg);
 }
 
-#ifdef INPUT_ESPNOW
+#if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
 void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
   hbpIn.protocolPost(msg);
 }
@@ -399,6 +399,16 @@ void setupCommunication() {
 
   #if defined(INPUT_UDP)
       WiFi.softAP(ssid, pass);    //Create Access point
+
+    if(debug) COM[DEBUG_COM]->print("IP address: ");
+    if(debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
+
+    broadcast = WiFi.softAPIP();
+
+    broadcast[3] = 255;
+    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
+    if(debug) COM[DEBUG_COM]->println(broadcast);
+
   #else // OUTPUT_UDP
       WiFi.begin(ssid, pass);   //Connect to access point
 
@@ -412,6 +422,12 @@ void setupCommunication() {
     if(debug) COM[DEBUG_COM]->println(ssid);
     if(debug) COM[DEBUG_COM]->print("IP address: ");
     if(debug) COM[DEBUG_COM]->println(WiFi.localIP());
+
+    broadcast = WiFi.localIP();
+
+    broadcast[3] = 255;
+    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
+    if(debug) COM[DEBUG_COM]->println(broadcast);
   #endif
 
     //Start UDP
@@ -420,8 +436,12 @@ void setupCommunication() {
     if(debug) COM[DEBUG_COM]->print("Local port: ");
     if(debug) COM[DEBUG_COM]->println(localPort);
 
-    broadcast = WiFi.localIP();
+    broadcast = WiFi.softAPIP();
+
     broadcast[3] = 255;
+    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
+    if(debug) COM[DEBUG_COM]->println(broadcast);
+              delay(100);
 
 #endif
 
@@ -442,7 +462,7 @@ void setupCommunication() {
   #endif
 
   // ESPnow to UART Protocol Relay
-  #if defined(INPUT_ESPNOW)
+  #if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
     // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
     for (int i = 0; i < sizeof(hbpOut.s.params)/sizeof(hbpOut.s.params[0]); i++) {
       if(hbpOut.s.params[i]) hbpOut.updateParamHandler((HoverboardAPI::Codes) i ,relayDataIn);
@@ -455,7 +475,7 @@ void setupCommunication() {
   #endif
 
   // Initialize and setup protocol values, setup all periodic messages.
-  #if !defined(INPUT_ESPNOW) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
+  #if !defined(INPUT_ESPNOW) && !defined(INPUT_UDP) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
 
     // Print all incoming Texts on console
     hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
@@ -483,7 +503,8 @@ void setupCommunication() {
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
 
     // Send PWM values periodically
-    hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData));
+    hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
+    hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
     hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
     hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 60);
   #endif
@@ -500,17 +521,37 @@ void loopCommunication( void *pvparameters ) {
     GO_DISPLAY::set(GO_DISPLAY::CURRENT_RIGHT ,hbpOut.getMotorAmpsAvg(1));
     GO_DISPLAY::set(GO_DISPLAY::SPEED, hbpOut.getSpeed_kmh());
     GO_DISPLAY::set(GO_DISPLAY::STEER, hbpOut.getSteer_kmh());
+    GO_DISPLAY::set(GO_DISPLAY::PWM_LEFT, PWMData.pwm[0]);
+    GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
+    GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
     GO.update();
     // TODO: just to see if something happens
-    static uint8_t i;
-    static float value = 0.0f;
-    if(GO.BtnA.isPressed())
-    {
-      GO_DISPLAY::set((GO_DISPLAY::field_value_t)i, value);
-      i++;
+
+    double mult = 1;
+
+    if(GO.BtnA.isPressed()) {
+      mult += 0.8;
     }
-    i = i%9;
-    value += 0.5;
+
+    if(GO.BtnB.isPressed()) {
+      mult += 0.8;
+    }
+
+    if(GO.JOY_Y.isAxisPressed() == 2) {
+      motor.setpoint.pwm = 50.0 * mult;
+    }
+
+    if(GO.JOY_Y.isAxisPressed() == 1) {
+      motor.setpoint.pwm = -50.0 * mult;
+    }
+
+    if(GO.JOY_X.isAxisPressed() == 1) {
+      motor.setpoint.steer = 50.0;
+    }
+
+    if(GO.JOY_X.isAxisPressed() == 2) {
+      motor.setpoint.steer = -50.0;
+    }
 
   #endif // PHAIL_MONITOR
 
@@ -547,13 +588,13 @@ void loopCommunication( void *pvparameters ) {
         pollUART();
       #endif
 
-      #if defined(INPUT_UDP) || defined (OUTPUT_UDP)
+      #if defined(INPUT_UDP) || defined(OUTPUT_UDP)
         pollUDP();
       #endif
 
       hbpOut.protocolTick();
 
-      #ifdef INPUT_ESPNOW
+      #if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
         hbpIn.protocolTick();
       #endif
 
