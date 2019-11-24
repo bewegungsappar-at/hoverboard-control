@@ -241,7 +241,8 @@ void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int dat
             mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     extern bool debug_espnow;
     if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
-    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
+    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->write(data, data_len);
+    if(debug_espnow) COM[DEBUG_COM]->println("");
     if(debug_espnow) COM[DEBUG_COM]->println("");
   #endif
 
@@ -513,8 +514,19 @@ void setupCommunication() {
 }
 
 void loopCommunication( void *pvparameters ) {
+
+  int pingCounter = 0;
+
   while(1) {
 
+  #ifdef DEBUG_PING
+    if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
+      pingCounter = 0;
+      latency = 0;
+      hbpOut.sendPing();
+    }
+
+  #endif
 
   #ifdef PHAIL_MONITOR
     // TODO: assuming motor 0 is left and motor 1 is right
