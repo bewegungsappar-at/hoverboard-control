@@ -4,6 +4,7 @@
 #include "config.h"
 #include "serialbridge.h"
 #include <HoverboardAPI.h>
+#include "protocolFunctions.h"
 
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
   #include "ESP32_espnow_MasterSlave.h"
@@ -524,6 +525,8 @@ void loopCommunication( void *pvparameters ) {
     GO_DISPLAY::set(GO_DISPLAY::PWM_LEFT, PWMData.pwm[0]);
     GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
     GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
+    GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
+
     GO.update();
     // TODO: just to see if something happens
 
@@ -551,6 +554,10 @@ void loopCommunication( void *pvparameters ) {
 
     if(GO.JOY_X.isAxisPressed() == 2) {
       motor.setpoint.steer = -50.0;
+    }
+
+    if(GO.BtnStart.isPressed()) {
+      hbpOut.sendPing();
     }
 
   #endif // PHAIL_MONITOR
