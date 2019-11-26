@@ -122,15 +122,16 @@ void protocolMarkup(unsigned char *data, int len, int prefix) {
       break;
 
     case 1:
-      COM[DEBUG_COM]->printf("CI:%03i ", data[i]);
+      COM[DEBUG_COM]->printf("CMD:%c ", (data[i] & 0b01111111) );
+      COM[DEBUG_COM]->printf("ACK:%01i ", (data[i] & 0b10000000) );
       break;
 
     case 2:
-      COM[DEBUG_COM]->printf("len:%03i ", data[i]);
+      COM[DEBUG_COM]->printf("CI:%03i ", data[i]);
       break;
 
     case 3:
-      COM[DEBUG_COM]->printf("CMD:%c ", data[i]);
+      COM[DEBUG_COM]->printf("len:%03i ", data[i]);
       break;
 
     case 4:
@@ -301,7 +302,7 @@ double limit(double min, double value, double max) {
   return value;
 }
 
-void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
 
   fn_defaultProcessing(s, param, cmd, msg);
 
@@ -314,7 +315,7 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PR
   }
 }
 
-void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
   switch (cmd) {
     case PROTOCOL_CMD_READVAL:
     case PROTOCOL_CMD_SILENTREAD:
@@ -364,25 +365,23 @@ void pollUDP() {
 #endif
 
 
-void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
   hbpOut.protocolPost(msg);
 }
 
 #ifdef INPUT_ESPNOW
-void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
   hbpIn.protocolPost(msg);
 }
 #endif
 
-void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG2 *msg ) {
+void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
   switch (cmd) {
     case PROTOCOL_CMD_WRITEVAL:
     case PROTOCOL_CMD_READVALRESPONSE:
 
-      PROTOCOL_BYTES_WRITEVALS *writevals = (PROTOCOL_BYTES_WRITEVALS *) msg->bytes;
-
-      if( (param) && (strlen((const char *)writevals->content) <= param->len ) )
-        COM[DEBUG_COM]->println( (char *) writevals->content);
+      if( (param) && (strlen((const char *)msg->content) <= param->len ) )
+        COM[DEBUG_COM]->println( (char *) msg->content);
       break;
   }
 }
