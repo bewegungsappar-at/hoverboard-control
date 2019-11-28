@@ -461,6 +461,9 @@ void setupCommunication() {
   #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
   setupEspNow();
     esp_now_register_recv_cb(espReceiveDataWrapper);
+    hbpOut.sendPing(); // First messages are lost
+    hbpOut.sendPing();
+    hbpOut.sendPing();
   #endif
 
   // ESPnow to UART Protocol Relay
@@ -491,11 +494,11 @@ void setupCommunication() {
     #ifdef INPUT_TESTRUN
       // send enable periodically
       hbpOut.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
-      hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 30);
+      hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 60);
     #endif
 
       // Get Protocol statistics periodically
-      hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 100);
+    hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
 
     // Set up hall data readout (=hoverboard measured speed) and periodically read Hall Data
     hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
@@ -508,7 +511,8 @@ void setupCommunication() {
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
     hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
-    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 60);
+    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
+    hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
   #endif
 
 }
@@ -553,19 +557,19 @@ void loopCommunication( void *pvparameters ) {
     }
 
     if(GO.JOY_Y.isAxisPressed() == 2) {
-      motor.setpoint.pwm = 50.0 * mult;
+      motor.setpoint.pwm = 100.0 * mult;
     }
 
     if(GO.JOY_Y.isAxisPressed() == 1) {
-      motor.setpoint.pwm = -50.0 * mult;
+      motor.setpoint.pwm = -100.0 * mult;
     }
 
     if(GO.JOY_X.isAxisPressed() == 1) {
-      motor.setpoint.steer = 50.0;
+      motor.setpoint.steer = 100.0;
     }
 
     if(GO.JOY_X.isAxisPressed() == 2) {
-      motor.setpoint.steer = -50.0;
+      motor.setpoint.steer = -100.0;
     }
 
     if(GO.BtnStart.isPressed()) {
