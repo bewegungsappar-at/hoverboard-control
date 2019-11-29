@@ -4,6 +4,7 @@
 #include "config.h"
 #include "serialbridge.h"
 #include <HoverboardAPI.h>
+#include "protocolFunctions.h"
 
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
   #include "ESP32_espnow_MasterSlave.h"
@@ -241,7 +242,8 @@ void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int dat
             mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     extern bool debug_espnow;
     if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
-    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
+    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->write(data, data_len);
+    if(debug_espnow) COM[DEBUG_COM]->println("");
     if(debug_espnow) COM[DEBUG_COM]->println("");
   #endif
 
@@ -458,6 +460,9 @@ void setupCommunication() {
   #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
   setupEspNow();
     esp_now_register_recv_cb(espReceiveDataWrapper);
+    hbpOut.sendPing(); // First messages are lost
+    hbpOut.sendPing();
+    hbpOut.sendPing();
   #endif
 
   // ESPnow to UART Protocol Relay
@@ -488,11 +493,11 @@ void setupCommunication() {
     #ifdef INPUT_TESTRUN
       // send enable periodically
       hbpOut.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
-      hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 30);
+      hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 60);
     #endif
 
       // Get Protocol statistics periodically
-      hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 100);
+    hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
 
     // Set up hall data readout (=hoverboard measured speed) and periodically read Hall Data
     hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
@@ -505,14 +510,26 @@ void setupCommunication() {
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
     hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
-    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 60);
+    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
+    hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
   #endif
 
 }
 
 void loopCommunication( void *pvparameters ) {
+
+  int pingCounter = 0;
+
   while(1) {
 
+  #ifdef DEBUG_PING
+    if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
+      pingCounter = 0;
+      latency = 0;
+      hbpOut.sendPing();
+    }
+
+  #endif
 
   #ifdef PHAIL_MONITOR
     // TODO: assuming motor 0 is left and motor 1 is right
@@ -523,6 +540,8 @@ void loopCommunication( void *pvparameters ) {
     GO_DISPLAY::set(GO_DISPLAY::PWM_LEFT, PWMData.pwm[0]);
     GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
     GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
+    GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
+
     GO.update();
     // TODO: just to see if something happens
 
@@ -537,19 +556,23 @@ void loopCommunication( void *pvparameters ) {
     }
 
     if(GO.JOY_Y.isAxisPressed() == 2) {
-      motor.setpoint.pwm = 50.0 * mult;
+      motor.setpoint.pwm = 100.0 * mult;
     }
 
     if(GO.JOY_Y.isAxisPressed() == 1) {
-      motor.setpoint.pwm = -50.0 * mult;
+      motor.setpoint.pwm = -100.0 * mult;
     }
 
     if(GO.JOY_X.isAxisPressed() == 1) {
-      motor.setpoint.steer = 50.0;
+      motor.setpoint.steer = 100.0;
     }
 
     if(GO.JOY_X.isAxisPressed() == 2) {
-      motor.setpoint.steer = -50.0;
+      motor.setpoint.steer = -100.0;
+    }
+
+    if(GO.BtnStart.isPressed()) {
+      hbpOut.sendPing();
     }
 
   #endif // PHAIL_MONITOR

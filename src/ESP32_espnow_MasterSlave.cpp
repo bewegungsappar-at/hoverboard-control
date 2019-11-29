@@ -62,7 +62,7 @@ int SlaveCnt = 0;
 #ifdef debugESPNOW
   bool debug_espnow = true;
 #else
-bool debug_espnow = false;
+  bool debug_espnow = false;
 #endif
 
 int hideAP = 0;
@@ -190,17 +190,9 @@ void manageSlave() {
 
 // send data
 void sendData(const void *data, size_t n_bytes) {
-  sendTimeout++;
-  if(sendTimeout > 100) sendReady = true;
-
-  if(!sendReady) return;    // Do not send new data, when no feedback was received.
 
   for (int i = 0; i < SlaveCnt; i++) {
     const uint8_t *peer_addr = slaves[i].peer_addr;
-    if (i == 0) { // print only for first slave
-      if(debug_espnow) COM[DEBUG_COM]->print("Sending: ");
-      if(debug_espnow) COM[DEBUG_COM]->println((char *)data);
-    }
 
 #ifdef debugESPNOW
     char macStr[18];
@@ -209,9 +201,9 @@ void sendData(const void *data, size_t n_bytes) {
     if(debug_espnow) COM[DEBUG_COM]->print("Last Packet Sent to: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
 #endif
 
-    sendReady = false;
     esp_err_t result = esp_now_send(peer_addr, (uint8_t*)data, n_bytes);
 
+/*
     if(debug_espnow) COM[DEBUG_COM]->print("Send Status: ");
     if (result == ESP_OK) {
       if(debug_espnow) COM[DEBUG_COM]->println("Success");
@@ -229,6 +221,7 @@ void sendData(const void *data, size_t n_bytes) {
     } else {
       if(debug_espnow) COM[DEBUG_COM]->println("Not sure what happened");
     }
+    */
   }
 }
 
