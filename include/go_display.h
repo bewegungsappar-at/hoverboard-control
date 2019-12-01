@@ -1,7 +1,9 @@
 #ifndef GO_DISPLAY_H
 #define GO_DISPLAY_H
 
-#ifdef PHAIL_MONITOR
+#include "config.h"
+
+#ifdef ODROID_GO_HW
 #include <odroid_go.h>
 
 /*
@@ -44,7 +46,7 @@ namespace GO_DISPLAY
 
 }
 
-#endif /* PHAIL_MONITOR */
+#endif /* ODROID_GO_HW */
 
 
 #endif /* GO_DISPLAY_H */

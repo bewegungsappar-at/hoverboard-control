@@ -1,6 +1,7 @@
+#include "config.h"
 #include "go_display.h"
 
-#ifdef PHAIL_MONITOR
+#ifdef ODROID_GO_HW
 
 
 #include <driver/adc.h>
@@ -130,4 +131,4 @@ namespace GO_DISPLAY
     }
 }
 
-#endif /* PHAIL_MONITOR */
+#endif /* ODROID_GO_HW */

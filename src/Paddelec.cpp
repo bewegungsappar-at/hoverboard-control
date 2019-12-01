@@ -2,6 +2,7 @@
 #include "Paddelec.h"
 #include "serialbridge.h"
 #include "main.h"
+#include "config.h"
 
 #if defined(INPUT_PADDELECIMU)
 

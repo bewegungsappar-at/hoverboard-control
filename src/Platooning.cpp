@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "Platooning.h"
+#include "config.h"
 
 #ifdef INPUT_PLATOONING
 
@@ -10,7 +11,7 @@ void Platooning::update(double &pwm, double &steer) {
   if(gametrak1.getR_mm() < cfgPlatooning.rActivationThreshold_mm) {
     /* gametrak distance is short, probably not in use */
 
-    /* do nothing. If pwm and steer were set before, do not change. */    
+    /* do nothing. If pwm and steer were set before, do not change. */
 
   } else if(gametrak1.getR_mm() < cfgPlatooning.rForwardThreshold_mm) {
     /* drive backwards */
@@ -23,7 +24,7 @@ void Platooning::update(double &pwm, double &steer) {
   }
 }
 
-void Platooning::debug(Stream &port) 
+void Platooning::debug(Stream &port)
 {
   gametrak1.debug(port);
 //  port.printf("P %5i %5i %6.2f ", gametrak1.r - gametrak1.r_last, gametrak1.r - gametrak1.r_last, gametrak1.getTheta_deg() - gametrak1.getTheta_deg());
