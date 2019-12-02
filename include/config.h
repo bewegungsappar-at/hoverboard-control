@@ -200,11 +200,11 @@
 #endif
 
 #ifndef SERIAL1_RXPIN
-    #define SERIAL1_RXPIN 15            // receive Pin UART1
+    #define SERIAL1_RXPIN 9            // receive Pin UART1
 #endif
 
 #ifndef SERIAL1_TXPIN
-    #define SERIAL1_TXPIN  2            // transmit Pin UART1
+    #define SERIAL1_TXPIN  10            // transmit Pin UART1
 #endif
 
 #ifndef SERIAL1_TCP_PORT
