@@ -527,6 +527,7 @@ void loopCommunication( void *pvparameters ) {
   #ifdef DEBUG_PING
     if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
       pingCounter = 0;
+      GO_DISPLAY::plot(latency);
       latency = 0;
       hbpOut.sendPing();
     }
@@ -542,39 +543,26 @@ void loopCommunication( void *pvparameters ) {
     GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
     GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
     GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
+//    GO_DISPLAY::plot(latency);
 
     GO.update();
     // TODO: just to see if something happens
 
-    double mult = 1;
+    double wantedSpeed = 0.0;
+    double wantedSteer = 0.0;
 
-    if(GO.BtnA.isPressed()) {
-      mult += 0.8;
-    }
+    if(GO.JOY_Y.isAxisPressed() == 2) wantedSpeed =  200.0;
+    if(GO.JOY_Y.isAxisPressed() == 1) wantedSpeed = -200.0;
+    if(GO.JOY_X.isAxisPressed() == 1) wantedSteer =  200.0;
+    if(GO.JOY_X.isAxisPressed() == 2) wantedSteer = -200.0;
 
-    if(GO.BtnB.isPressed()) {
-      mult += 0.8;
-    }
+    if(GO.BtnA.isPressed()) wantedSpeed = wantedSpeed *2.0;
+    if(GO.BtnB.isPressed()) wantedSpeed = wantedSpeed *2.0;
 
-    if(GO.JOY_Y.isAxisPressed() == 2) {
-      motor.setpoint.pwm = 100.0 * mult;
-    }
+    slowReset(motor.setpoint.pwm,   wantedSpeed, 0, 0.1);
+    slowReset(motor.setpoint.steer, wantedSteer, 0, 0.1);
 
-    if(GO.JOY_Y.isAxisPressed() == 1) {
-      motor.setpoint.pwm = -100.0 * mult;
-    }
-
-    if(GO.JOY_X.isAxisPressed() == 1) {
-      motor.setpoint.steer = 100.0;
-    }
-
-    if(GO.JOY_X.isAxisPressed() == 2) {
-      motor.setpoint.steer = -100.0;
-    }
-
-    if(GO.BtnStart.isPressed()) {
-      hbpOut.sendPing();
-    }
+    if(GO.BtnStart.isPressed()) hbpOut.sendPing();
 
   #endif // ODROID_GO_HW
 

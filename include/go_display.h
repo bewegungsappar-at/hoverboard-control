@@ -44,6 +44,8 @@ namespace GO_DISPLAY
     void set(field_value_t field, float value);
     void update(void);
 
+    void plot(double value);
+
 }
 
 #endif /* ODROID_GO_HW */

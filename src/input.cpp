@@ -70,15 +70,6 @@ void setupInput() {
 }
 
 
-// Incrementally decrease variable
-void slowReset(volatile double &variable, double goal, double step) {
-  if      ((variable - goal) > step) variable -= step;
-  else if ((goal - variable) > step) variable += step;
-  else                               variable  = goal;
-}
-
-
-
 
 void loopInput( void *pvparameters ) {
 //  int taskno = (int)pvparameters;
@@ -118,9 +109,9 @@ void loopInput( void *pvparameters ) {
     }
   #endif
 
-  #if !defined(INPUT_PADDELECIMU) // TODO: Find better way?
-    slowReset(motor.setpoint.pwm,   0.0, 10.0);
-    slowReset(motor.setpoint.steer, 0.0, 10.0);
+  #if !defined(INPUT_PADDELECIMU) && !defined(ODROID_GO_HW) // TODO: Find better way?
+    slowReset(motor.setpoint.pwm,   0.0, 10.0, 0.0);
+    slowReset(motor.setpoint.steer, 0.0, 10.0, 0.0);
   #endif
 
   #ifdef INPUT_IMU

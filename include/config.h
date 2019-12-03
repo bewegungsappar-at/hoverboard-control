@@ -21,16 +21,13 @@
 
 
 #if (CONFIGURATION_SET == CFG_ODROIDGO)
-    // ESPnow
-    //    #define INPUT_ESPNOW
-        #define OUTPUT_ESPNOW
-        #define ESPNOW_PREFIX "WBOARD" // ESPNOW "Channel" encoded in SSID
-        #define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodenboard
-    //    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
 
-    // UDP
-    //    #define INPUT_UDP
-    //    #define OUTPUT_UDP
+//    #define OUTPUT_ESPNOW
+//    #define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodenboard
+    //    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
+    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
+
+    #define OUTPUT_UDP
 
     #define DEBUG_PING
     #define ODROID_GO_HW
@@ -89,31 +86,24 @@
 
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
-    // Nunchuk
         #define INPUT_NUNCHUK
         #define      NUNCHUK_VCCPIN 18
         #define      NUNCHUK_GNDPIN 19
 
-    // ESPnow
         #define INPUT_ESPNOW
-        #define ESPNOW_PREFIX "WBOARD"  // ESPNOW "Channel" encoded in SSID
     //    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x6A,0xD4 // feather esp remote
     //    #define ESPNOW_PEERMAC 0xB4,0xE6,0x2D,0xD4,0x29,0xD9 // odroid Nico
         #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
 
-    // Serial Output
         #define OUTPUT_PROTOCOL_UART
 #endif
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_REMOTE)
     #define INPUT_NUNCHUK
 
-    // ESPnow
         #define OUTPUT_ESPNOW
-        #define ESPNOW_PREFIX "FEATHER" // ESPNOW "Channel" encoded in SSID
     //    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
         #define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodeboard
-
 #endif
 
 
@@ -263,6 +253,7 @@
 //  #define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodenboard
 //  #define ESPNOW_PEERMAC 0xB4,0xE6,0x2D,0xD4,0x29,0xD9 // odroid Nico
 //  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
+//  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
 
 //#define OUTPUT_UDP   // Send output via protocol over UDP
 

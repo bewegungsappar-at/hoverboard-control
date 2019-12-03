@@ -17,19 +17,22 @@ namespace GO_DISPLAY
     static esp_adc_cal_characteristics_t _adc_chars;
     static uint16_t backgroundColor;
 
+    int plotX = 0;
+
 
     // impl
     void setup(void)
     {
         GO.begin();
-        GO.lcd.setTextSize(2);
+//        GO.lcd.setTextSize(2);
+        GO.lcd.setFreeFont(&FreeMono9pt7b);
         GO.lcd.clearDisplay();
         GO_DISPLAY::show_labels();
         GO_DISPLAY::setup_internal_battery_adc();
-        GO_DISPLAY::show_internal_battery_voltage();
     }
     void set(field_value_t field, float value)
     {
+        GO.lcd.setCharCursor(10, 2);
         // TODO: just for now update V_bat everytime one set a value.
         GO_DISPLAY::show_internal_battery_voltage();
 
@@ -37,40 +40,40 @@ namespace GO_DISPLAY
         switch (field)
         {
         case CURRENT_LEFT:
-            x = 1;
-            y = 2;
+            x = 19;
+            y = 4;
             break;
         case CURRENT_RIGHT:
-            x = 15;
-            y = 2;
+            x = 46;
+            y = 4;
             break;
         case PWM_LEFT:
-            x = 2;
-            y = 5;
+            x = 19;
+            y = 6;
             break;
         case PWM_RIGHT:
-            x = 15;
-            y = 5;
+            x = 46;
+            y = 6;
             break;
         case SPEED:
-            x = 2;
+            x = 19;
             y = 8;
             break;
         case STEER:
-            x = 15;
+            x = 46;
             y = 8;
             break;
         case PACKAGE_LOSS_UPSTREAM:
-            x = 2;
-            y = 11;
+            x = 46;
+            y = 10;
             break;
         case PACKAGE_LOSS_DOWNSTREAM:
-            x = 15;
-            y = 11;
+            x = 19;
+            y = 10;
             break;
         case BATTERY_VOLTAGE:
-            x = 5;
-            y = 14;
+            x = 46;
+            y = 12;
             break;
         default:
             break;
@@ -78,32 +81,55 @@ namespace GO_DISPLAY
         if(0 != x && 0 != y)
         {
             GO.lcd.setCharCursor(x,y);
+            GO.lcd.fillRect(x*6, (y*8)-11, 4*12,12, backgroundColor);
             GO.lcd.print(value);
         }
+    }
+
+    void plot(double value)
+    {
+
+        int plotY = (int) (230.0 - (value * 0.1));
+
+        GO.lcd.drawLine(plotX, 230, plotX, (int) (230.0 - (200 * 0.4)), backgroundColor);
+
+        if(value > 200) {
+            GO.lcd.drawPixel(plotX,  (int) (230.0 - (200 * 0.4)), TFT_RED);
+        } else if(value <= 0) {
+            GO.lcd.drawPixel(plotX,  230, TFT_RED);
+        } else {
+            GO.lcd.drawPixel(plotX, plotY, TFT_ORANGE);
+        }
+
+        if(++plotX > 319) plotX = 0;
+        GO.lcd.drawLine(plotX, 230, plotX, (int) (230.0 - (200 * 0.4)), TFT_DARKGREEN);
     }
 
     void show_labels()
     {
         GO.lcd.clearDisplay();
-        GO.lcd.setCharCursor(0, 0);
+        GO.lcd.setCharCursor(0, 2);
         GO.lcd.setTextColor(TFT_MAROON, backgroundColor);
-        GO.lcd.println("phail monitor  V_bat:");
-        GO.lcd.setTextColor(TFT_GREEN, backgroundColor);
-        GO.lcd.print("L current   | R current");
+        GO.lcd.print("phail monitor  V_bat:");
         GO.lcd.setCharCursor(0, 4);
-        GO.lcd.print("L PWM       | R PWM");
-        GO.lcd.setCharCursor(0, 7);
-        GO.lcd.print("speed       | steer");
+        GO.lcd.setTextColor(TFT_GREEN, backgroundColor);
+        GO.lcd.print("L current      R current");
+        GO.lcd.setCharCursor(0, 6);
+        GO.lcd.print("L PWM          R PWM");
+        GO.lcd.setCharCursor(0, 8);
+        GO.lcd.print("speed          steer");
         GO.lcd.setCharCursor(0, 10);
-        GO.lcd.print("package loss|");
-        GO.lcd.setCharCursor(0, 13);
-        GO.lcd.print("hoverboard battery in Volt");
+        GO.lcd.print("Ping  ");
+        GO.lcd.setCharCursor(0, 12);
+        GO.lcd.print("hb battery in Volt");
     }
 
     void show_internal_battery_voltage()
     {
         GO.lcd.setTextColor(TFT_MAROON, backgroundColor);
-        GO.lcd.setCharCursor(21,0);
+        GO.lcd.setCharCursor(45,2);
+        GO.lcd.fillRect(45*6, (2*8)-11, 4*12,12, backgroundColor);
+
         GO.lcd.print(get_internal_battery_voltage());
         GO.lcd.setTextColor(TFT_GREEN, backgroundColor);
     }

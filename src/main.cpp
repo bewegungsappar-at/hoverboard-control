@@ -90,3 +90,11 @@ void loop() {
 
   delay(5);
 }
+
+// Incrementally decrease variable
+void slowReset(volatile double &variable, double goal, double step, double fact) {
+  variable  += (goal - variable) * fact;
+  if      ((variable - goal) > step) variable -= step;
+  else if ((goal - variable) > step) variable += step;
+  else                               variable  = goal;
+}

@@ -25,3 +25,5 @@ extern volatile int32_t deltaMillis;
 #ifdef DEBUG_PLOTTER
   extern double plotterTempDouble[6];
 #endif
+
+void slowReset(volatile double &variable, double goal, double step, double fact);
