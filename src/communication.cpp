@@ -518,7 +518,9 @@ void setupCommunication() {
 
 void loopCommunication( void *pvparameters ) {
 
-  int pingCounter = 0;
+  #ifdef DEBUG_PING
+    int pingCounter = 0;
+  #endif
 
   while(1) {
 
@@ -528,7 +530,6 @@ void loopCommunication( void *pvparameters ) {
       latency = 0;
       hbpOut.sendPing();
     }
-
   #endif
 
   #ifdef ODROID_GO_HW
