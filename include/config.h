@@ -124,6 +124,7 @@
 //#define debugESPNOW                    // Debug ESPnow
 
 //#define DEBUG_PING                     // Send periodic Pings over protocol
+//#define DEBUG_SPEED                      // Use closed loop speed control instead of pwm
 
 
 /******************************* Wifi **********************************/

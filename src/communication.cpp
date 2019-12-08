@@ -71,6 +71,13 @@ PROTOCOL_PWM_DATA PWMData = {
 #endif
 };
 
+PROTOCOL_SPEED_DATA PIDSpeedData = {
+  .wanted_speed_mm_per_sec = {0,0},
+  .speed_max_power = 400, // max speed in this mode
+  .speed_min_power = 400, // minimum speed (to get wheels moving)
+  .speed_minimum_speed = 30 // below this, we don't ask it to do anything
+};
+
 uint8_t enableHoverboardMotors = 0;
 
 #if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
@@ -328,6 +335,16 @@ void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PRO
   fn_defaultProcessing(s, param, cmd, msg);
 }
 
+void processPIDSpeedData ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+  switch (cmd) {
+    case PROTOCOL_CMD_READVAL:
+    case PROTOCOL_CMD_SILENTREAD:
+      PIDSpeedData.wanted_speed_mm_per_sec[0] = motor.setpoint.pwm + motor.setpoint.steer;
+      PIDSpeedData.wanted_speed_mm_per_sec[1] = motor.setpoint.pwm - motor.setpoint.steer;
+      break;
+  }
+  fn_defaultProcessing(s, param, cmd, msg);
+}
 
 #ifdef OUTPUT_PROTOCOL_UART
 void pollUART() {
@@ -485,7 +502,11 @@ void setupCommunication() {
     hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
 
     // Initialize  PWM limits
+#ifdef DEBUG_SPEED
+    hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
+#else
     hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
+#endif
 
     // enable motors
     hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
@@ -507,10 +528,17 @@ void setupCommunication() {
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
 
     // Send PWM values periodically
+#ifdef DEBUG_SPEED
+    hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
+    hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
+    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
+    hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
+#else
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
     hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
     hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
+#endif
     hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
   #endif
 
@@ -534,6 +562,9 @@ void loopCommunication( void *pvparameters ) {
   #endif
 
   #ifdef ODROID_GO_HW
+
+    static int16_t tempPID = 100;
+
     // TODO: assuming motor 0 is left and motor 1 is right
     GO_DISPLAY::set(GO_DISPLAY::CURRENT_LEFT ,hbpOut.getMotorAmpsAvg(0));
     GO_DISPLAY::set(GO_DISPLAY::CURRENT_RIGHT ,hbpOut.getMotorAmpsAvg(1));
@@ -543,7 +574,7 @@ void loopCommunication( void *pvparameters ) {
     GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
     GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
     GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
-//    GO_DISPLAY::plot(latency);
+    GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_UPSTREAM, (float) tempPID);
 
     GO.update();
     // TODO: just to see if something happens
@@ -559,10 +590,19 @@ void loopCommunication( void *pvparameters ) {
     if(GO.BtnA.isPressed()) wantedSpeed = wantedSpeed *2.0;
     if(GO.BtnB.isPressed()) wantedSpeed = wantedSpeed *2.0;
 
-    slowReset(motor.setpoint.pwm,   wantedSpeed, 0, 0.1);
-    slowReset(motor.setpoint.steer, wantedSteer, 0, 0.1);
+    if(wantedSpeed > 400) wantedSpeed = 400;
+    if(wantedSpeed < -400) wantedSpeed = -400;
+
+    slowReset(motor.setpoint.pwm,   wantedSpeed, 0, 0.15);
+    slowReset(motor.setpoint.steer, wantedSteer, 0, 0.5);
 
     if(GO.BtnStart.isPressed()) hbpOut.sendPing();
+
+#ifdef DEBUG_SPEED
+    if(GO.BtnMenu.isPressed()) hbpOut.sendPIDControl(22,1,8,--tempPID,PROTOCOL_SOM_ACK);;
+    if(GO.BtnVolume.isPressed()) hbpOut.sendPIDControl(22,1,8,++tempPID,PROTOCOL_SOM_ACK);;
+#endif
+
 
   #endif // ODROID_GO_HW
 
