@@ -555,6 +555,7 @@ void loopCommunication( void *pvparameters ) {
   #ifdef DEBUG_PING
     if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
       pingCounter = 0;
+      GO_DISPLAY::show_internal_battery_voltage();
       GO_DISPLAY::plot(latency);
       latency = 0;
       hbpOut.sendPing();
@@ -575,6 +576,9 @@ void loopCommunication( void *pvparameters ) {
     GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
     GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
     GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_UPSTREAM, (float) tempPID);
+
+    GO_DISPLAY::plotBattery(hbpOut.getBatteryVoltage());
+    GO_DISPLAY::plotSpeed(hbpOut.getSpeed_kmh());
 
     GO.update();
     // TODO: just to see if something happens

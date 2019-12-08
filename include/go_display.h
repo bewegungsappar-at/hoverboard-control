@@ -43,9 +43,10 @@ namespace GO_DISPLAY
     void setup(void);
     void set(field_value_t field, float value);
     void update(void);
-
+    void show_internal_battery_voltage();
     void plot(double value);
-
+    void plotBattery(double value);
+    void plotSpeed(double value);
 }
 
 #endif /* ODROID_GO_HW */

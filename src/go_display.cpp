@@ -11,13 +11,11 @@ namespace GO_DISPLAY
 {
     // forward declaration
     static void show_labels(void);
-    static void show_internal_battery_voltage(void);
     static void setup_internal_battery_adc(void);
     static float get_internal_battery_voltage(void);
     static esp_adc_cal_characteristics_t _adc_chars;
     static uint16_t backgroundColor;
 
-    int plotX = 0;
 
 
     // impl
@@ -32,47 +30,43 @@ namespace GO_DISPLAY
     }
     void set(field_value_t field, float value)
     {
-        GO.lcd.setCharCursor(10, 2);
-        // TODO: just for now update V_bat everytime one set a value.
-        GO_DISPLAY::show_internal_battery_voltage();
-
         uint8_t x=0,y=0;
         switch (field)
         {
         case CURRENT_LEFT:
-            x = 19;
+            x = 17;
             y = 4;
             break;
         case CURRENT_RIGHT:
-            x = 46;
+            x = 44;
             y = 4;
             break;
         case PWM_LEFT:
-            x = 19;
+            x = 17;
             y = 6;
             break;
         case PWM_RIGHT:
-            x = 46;
+            x = 44;
             y = 6;
             break;
         case SPEED:
-            x = 19;
+            x = 17;
             y = 8;
             break;
         case STEER:
-            x = 46;
+            x = 44;
             y = 8;
             break;
         case PACKAGE_LOSS_UPSTREAM:
-            x = 46;
+            x = 44;
             y = 10;
             break;
         case PACKAGE_LOSS_DOWNSTREAM:
-            x = 19;
+            x = 17;
             y = 10;
             break;
         case BATTERY_VOLTAGE:
-            x = 46;
+            x = 44;
             y = 12;
             break;
         default:
@@ -81,28 +75,133 @@ namespace GO_DISPLAY
         if(0 != x && 0 != y)
         {
             GO.lcd.setCharCursor(x,y);
-            GO.lcd.fillRect(x*6, (y*8)-11, 4*12,12, backgroundColor);
-            GO.lcd.print(value);
+            GO.lcd.fillRect(x*6, (y*8)-11, 5*12,12, backgroundColor);
+            GO.lcd.printf("%5.1f", value);
         }
     }
 
     void plot(double value)
     {
+//        int plotBottom = 230;
+        int plotBottom = 84;
+//        int plotHeight = 80;
+        int plotHeight = 15;
+//        int plotLeft   = 0;
+        int plotLeft   = 45;
+//        int plotWidth  = 319;
+        int plotWidth  = 56;
+        double valueMin = 0.0;
+        double valueMax = 200.0;
+        double valueScale   = (double)plotHeight / (valueMax - valueMin);
 
-        int plotY = (int) (230.0 - (value * 0.1));
+        static int plotX = plotLeft;
 
-        GO.lcd.drawLine(plotX, 230, plotX, (int) (230.0 - (200 * 0.4)), backgroundColor);
+        int plotY = (int) (plotBottom - ((value-valueMin) * valueScale));
 
-        if(value > 200) {
-            GO.lcd.drawPixel(plotX,  (int) (230.0 - (200 * 0.4)), TFT_RED);
-        } else if(value <= 0) {
-            GO.lcd.drawPixel(plotX,  230, TFT_RED);
-        } else {
+        // Clear old Data
+        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, 0x39E7);
+
+        if(value > valueMax)
+        {
+            GO.lcd.drawPixel(plotX, plotBottom - plotHeight, TFT_RED);
+        }
+        else if(value <= valueMin)
+        {
+            GO.lcd.drawPixel(plotX,  plotBottom, TFT_RED);
+        }
+        else
+        {
             GO.lcd.drawPixel(plotX, plotY, TFT_ORANGE);
         }
 
-        if(++plotX > 319) plotX = 0;
-        GO.lcd.drawLine(plotX, 230, plotX, (int) (230.0 - (200 * 0.4)), TFT_DARKGREEN);
+        // Move plot forward, wrap around at end
+        if(++plotX > (plotWidth + plotLeft)) plotX = plotLeft;
+
+        // Draw 'Cursor'
+        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, TFT_DARKGREY);
+    }
+
+
+    void plotBattery(double value)
+    {
+//        int plotBottom = 230;
+        int plotBottom = 230;
+//        int plotHeight = 80;
+        int plotHeight = 40;
+//        int plotLeft   = 0;
+        int plotLeft   = 0;
+//        int plotWidth  = 319;
+        int plotWidth  = 200;
+        double valueMin = 30.0;
+        double valueMax = 42.0;
+        double valueScale   = (double)plotHeight / (valueMax - valueMin);
+
+        static int plotX = plotLeft;
+
+        int plotY = (int) (plotBottom - ((value-valueMin) * valueScale));
+
+        // Clear old Data
+        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, 0x39E7);
+
+        if(value > valueMax)
+        {
+            GO.lcd.drawPixel(plotX, plotBottom - plotHeight, TFT_RED);
+        }
+        else if(value <= valueMin)
+        {
+            GO.lcd.drawPixel(plotX,  plotBottom, TFT_RED);
+        }
+        else
+        {
+            GO.lcd.drawPixel(plotX, plotY, TFT_ORANGE);
+        }
+
+        // Move plot forward, wrap around at end
+        if(++plotX > (plotWidth + plotLeft)) plotX = plotLeft;
+
+        // Draw 'Cursor'
+        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, TFT_DARKGREY);
+    }
+
+    void plotSpeed(double value)
+    {
+//        int plotBottom = 230;
+        int plotBottom = 180;
+//        int plotHeight = 80;
+        int plotHeight = 60;
+//        int plotLeft   = 0;
+        int plotLeft   = 0;
+//        int plotWidth  = 319;
+        int plotWidth  = 200;
+        double valueMin = -8.0;
+        double valueMax = 8.0;
+        double valueScale   = (double)plotHeight / (valueMax - valueMin);
+
+        static int plotX = plotLeft;
+
+        int plotY = (int) (plotBottom - ((value-valueMin) * valueScale));
+
+        // Clear old Data
+        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, 0x39E7);
+
+        if(value > valueMax)
+        {
+            GO.lcd.drawPixel(plotX, plotBottom - plotHeight, TFT_RED);
+        }
+        else if(value <= valueMin)
+        {
+            GO.lcd.drawPixel(plotX,  plotBottom, TFT_RED);
+        }
+        else
+        {
+            GO.lcd.drawPixel(plotX, plotY, TFT_BLUE);
+        }
+
+        // Move plot forward, wrap around at end
+        if(++plotX > (plotWidth + plotLeft)) plotX = plotLeft;
+
+        // Draw 'Cursor'
+        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, TFT_DARKGREY);
     }
 
     void show_labels()
