@@ -3,14 +3,14 @@
 #include "config.h"
 #include "main.h"
 
+#ifdef OTA_HANDLER
+# include <ArduinoOTA.h>
+#endif // OTA_HANDLER
+
 #ifdef WIFI
 #include <esp_wifi.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
-
-#ifdef OTA_HANDLER
-  #include <ArduinoOTA.h>
-#endif // OTA_HANDLER
 
 
 const char *ssid = WIFI_SSID;
@@ -101,6 +101,8 @@ void setupSerialbridge() {
   server[2]->setNoDelay(true);
 }
 
+#endif // WIFI
+
 #ifdef OTA_HANDLER
 void setupOTA() {
   ArduinoOTA
@@ -138,6 +140,7 @@ void ota() {
 }
 #endif // OTA_HANDLER
 
+#ifdef WIFI
 void bridge()
 {
   for(int num= 0; num < NUM_COM ; num++)

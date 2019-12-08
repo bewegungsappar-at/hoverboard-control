@@ -22,8 +22,8 @@
   #include <WiFi.h>
   #include <WiFiUdp.h>
 
-  const char *ssid = "paddelec";
-  const char *pass = "bewegungsappar.at";
+  const char *ssid = WIFI_SSID;
+  const char *pass = WIFI_PWD;
 
   unsigned int localPort = 1337; // local port to listen for UDP packets
 

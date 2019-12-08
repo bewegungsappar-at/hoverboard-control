@@ -15,22 +15,23 @@
 
 // Default config setting
 #ifndef CONFIGURATION_SET
-  #define CONFIGURATION_SET CFG_UDP_RELAY
+  #define CONFIGURATION_SET CFG_ODROIDGO
 #endif
 //////////////////////////////////////////////////////////
 
 
 #if (CONFIGURATION_SET == CFG_ODROIDGO)
+//#   define OUTPUT_ESPNOW
+//#   define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodenboard
+//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
+//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
 
-//    #define OUTPUT_ESPNOW
-//    #define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodenboard
-    //    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
-    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
-
-    #define OUTPUT_UDP
-
-    #define DEBUG_PING
-    #define ODROID_GO_HW
+#   define OUTPUT_UDP
+#   define OTA_HANDLER
+#   define WIFI_SSID       "panzer"
+#   define WIFI_PWD        "bewegungsappar.at"
+#   define DEBUG_PING
+#   define ODROID_GO_HW
 #endif
 
 
@@ -57,21 +58,17 @@
 
 
 #if (CONFIGURATION_SET == CFG_TTGO_PADDELEC)
-    #define TTGO
-    #define DEBUG_OLED
+#   define TTGO
+#   define DEBUG_OLED
+//    #define INPUT_NUNCHUK
+#   define      NUNCHUK_VCCPIN 16
+#   define INPUT_PADDELECIMU
+#   define             IMU_CPIN 23
+#   define             IMU_ZPIN 25
+#   define OUTPUT_UDP
 
-    // Nunchuk
-        #define INPUT_NUNCHUK
-        #define      NUNCHUK_VCCPIN 16
-
-    // IMU
-        #define INPUT_PADDELECIMU
-        #define             IMU_CPIN 23
-        #define             IMU_ZPIN 25
-
-    // ESPnow
-        #define OUTPUT_ESPNOW
-        #define ESPNOW_PREFIX "PADDELEC" // ESPNOW "Channel" encoded in SSID
+//    #define OUTPUT_ESPNOW
+//#   define ESPNOW_PREFIX "PADDELEC" // ESPNOW "Channel" encoded in SSID
 #endif
 
 #if (CONFIGURATION_SET == CFG_TESTRUN)
@@ -80,22 +77,24 @@
 #endif
 
 #if (CONFIGURATION_SET == CFG_UDP_RELAY)
-    #define INPUT_UDP
-    #define OUTPUT_PROTOCOL_UART
+#   define INPUT_UDP
+#   define OTA_HANDLER
+#   define WIFI_SSID       "panzer"
+#   define WIFI_PWD        "bewegungsappar.at"
+#   define OUTPUT_PROTOCOL_UART
+#   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
 #endif
 
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
-        #define INPUT_NUNCHUK
-        #define      NUNCHUK_VCCPIN 18
-        #define      NUNCHUK_GNDPIN 19
-
-        #define INPUT_ESPNOW
-    //    #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x6A,0xD4 // feather esp remote
-    //    #define ESPNOW_PEERMAC 0xB4,0xE6,0x2D,0xD4,0x29,0xD9 // odroid Nico
-        #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
-
-        #define OUTPUT_PROTOCOL_UART
+#   define INPUT_NUNCHUK
+#   define      NUNCHUK_VCCPIN 18
+#   define      NUNCHUK_GNDPIN 19
+#   define INPUT_ESPNOW
+//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x6A,0xD4 // feather esp remote
+//#   define ESPNOW_PEERMAC 0xB4,0xE6,0x2D,0xD4,0x29,0xD9 // odroid Nico
+#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
+#   define OUTPUT_PROTOCOL_UART
 #endif
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_REMOTE)
@@ -137,12 +136,17 @@
 
 //#define WIFI_TRYSTA   // Try to connect to network on boot
 
-#define WIFI_SSID       "paddelec"
-#define WIFI_PWD        "bewegungsappar.at"
 #define WIFI_IP         192, 168, 4, 1
 #define WIFI_NETMASK    255, 255, 255, 0
 #endif
 
+#ifndef WIFI_SSID
+#   define WIFI_SSID       "paddelec"
+#endif
+
+#ifndef WIFI_PWD
+#   define WIFI_PWD        "bewegungsappar.at"
+#endif
 
 /***************************** Serial ********************************/
 #ifndef NUM_COM
@@ -307,7 +311,7 @@
 
 // ############################### VALIDATE SETTINGS ###############################
 
-#if !defined(OUTPUT_PROTOCOL_UART) && !defined(OUTPUT_ESPNOW) && !defined(ESPNOW_PEERMAC)
+#if !defined(OUTPUT_PROTOCOL_UART) && !defined(OUTPUT_ESPNOW) && !defined(OUTPUT_UDP)
   #error no Output Method defined. Nothing will be done..
 #endif
 
