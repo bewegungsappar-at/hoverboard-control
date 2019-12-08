@@ -410,13 +410,13 @@ void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCO
 // Communication Init
 ///////////////////////////////////////////////////////////
 
-void setupCommunication() {
-
+void initializeUDP()
+{
 #if defined(INPUT_UDP) || defined (OUTPUT_UDP)
 
 
   #if defined(INPUT_UDP)
-      WiFi.softAP(ssid, pass);    //Create Access point
+    WiFi.softAP(ssid, pass);    //Create Access point
 
     if(debug) COM[DEBUG_COM]->print("IP address: ");
     if(debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
@@ -462,7 +462,10 @@ void setupCommunication() {
               delay(100);
 
 #endif
+}
 
+void initializeOdroidGo()
+{
   #ifdef ODROID_GO_HW
     // init display and show labels
     GO_DISPLAY::setup();
@@ -472,7 +475,10 @@ void setupCommunication() {
                            // Activates Standby of the Audio Amplifier when Low.
 
   #endif // ODROID_GO_HW
+}
 
+void initializeESPnow()
+{
   // Init ESPnow
   #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
   setupEspNow();
@@ -481,7 +487,10 @@ void setupCommunication() {
     hbpOut.sendPing();
     hbpOut.sendPing();
   #endif
+}
 
+void setupRelaying()
+{
   // ESPnow to UART Protocol Relay
   #if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
     // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
@@ -494,6 +503,10 @@ void setupCommunication() {
       if(hbpIn.s.params[i]) hbpIn.updateParamHandler((HoverboardAPI::Codes) i ,relayDataOut);
     }
   #endif
+}
+
+void setupHbpOut()
+{
 
   // Initialize and setup protocol values, setup all periodic messages.
   #if !defined(INPUT_ESPNOW) && !defined(INPUT_UDP) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
@@ -541,18 +554,12 @@ void setupCommunication() {
 #endif
     hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
   #endif
-
 }
 
-void loopCommunication( void *pvparameters ) {
-
+void processOdroidGo()
+{
   #ifdef DEBUG_PING
-    int pingCounter = 0;
-  #endif
-
-  while(1) {
-
-  #ifdef DEBUG_PING
+    static int pingCounter = 0;
     if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
       pingCounter = 0;
       GO_DISPLAY::show_internal_battery_voltage();
@@ -609,8 +616,10 @@ void loopCommunication( void *pvparameters ) {
 
 
   #endif // ODROID_GO_HW
+}
 
-
+void printProtocolMeasurements()
+{
   #ifdef DEBUG_PROTOCOL_MEASUREMENTS
     COM[DEBUG_COM]->print("V: ");
     COM[DEBUG_COM]->print(hbpOut.getBatteryVoltage());
@@ -624,7 +633,10 @@ void loopCommunication( void *pvparameters ) {
     COM[DEBUG_COM]->print(hbpOut.getSteer_kmh());
     COM[DEBUG_COM]->println();
   #endif
+}
 
+void processBuzzer()
+{
     // Send Buzzer Data
     // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
     if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
@@ -634,11 +646,10 @@ void loopCommunication( void *pvparameters ) {
       sendBuzzer.buzzerLen = 0;
       sendBuzzer.buzzerPattern = 0;
     }
+}
 
-
-    unsigned long start = millis();
-    do {
-
+void receiveAndprocessProtocol()
+{
       #ifdef OUTPUT_PROTOCOL_UART
         pollUART();
       #endif
@@ -652,10 +663,30 @@ void loopCommunication( void *pvparameters ) {
       #if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
         hbpIn.protocolTick();
       #endif
+}
 
+void setupCommunication()
+{
+  initializeUDP();
+  initializeOdroidGo();
+  initializeESPnow();
+  setupRelaying();
+  setupHbpOut();
+}
+
+void loopCommunication( void *pvparameters )
+{
+  while(1)
+  {
+    processOdroidGo();
+    printProtocolMeasurements();
+
+    unsigned long start = millis();
+    do
+    {
+      receiveAndprocessProtocol();
       delayMicroseconds(100);
-
-    } while (millis() < start + MOTORINPUT_PERIOD);
-
+    }
+    while( millis() < start + MOTORINPUT_PERIOD );
   }
 }
