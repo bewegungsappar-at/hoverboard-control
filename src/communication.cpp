@@ -6,45 +6,29 @@
 #include <HoverboardAPI.h>
 #include "protocolFunctions.h"
 
-#if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
-  #include "ESP32_espnow_MasterSlave.h"
-  #include "input.h"
-  #include <esp_now.h>
-#endif
+#include "ESP32_espnow_MasterSlave.h"
+#include "input.h"
+#include <esp_now.h>
 
 #ifdef ODROID_GO_HW
 #include "go_display.h"
 #endif // ODROID_GO_HW
 
 
-#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
+#include <WiFi.h>
+#include <WiFiUdp.h>
 
-  #include <WiFi.h>
-  #include <WiFiUdp.h>
+const char *ssid = WIFI_SSID;
+const char *pass = WIFI_PWD;
 
-  const char *ssid = WIFI_SSID;
-  const char *pass = WIFI_PWD;
+unsigned int localPort = 1337; // local port to listen for UDP packets
 
-  unsigned int localPort = 1337; // local port to listen for UDP packets
-
-  IPAddress broadcast(192,168,0,255); //UDP Broadcast IP data sent to all devicess on same network
+IPAddress broadcast(192,168,0,255); //UDP Broadcast IP data sent to all devicess on same network
 
 
-  // A UDP instance to let us send and receive packets over UDP
-  WiFiUDP udp;
+// A UDP instance to let us send and receive packets over UDP
+WiFiUDP udp;
 
-  char packetBuffer[9];   //Where we get the UDP data
-  int udpSendDataWrapper(unsigned char *data, int len);
-
-  #ifdef INPUT_UDP
-    HoverboardAPI hbpIn = HoverboardAPI(udpSendDataWrapper);
-  #endif
-
-  #ifdef OUTPUT_UDP
-    HoverboardAPI hbpOut = HoverboardAPI(udpSendDataWrapper);
-  #endif
-
-#endif
 
 //======================================================================
 ///////////////////////////////////////////////////////////
@@ -80,24 +64,10 @@ PROTOCOL_SPEED_DATA PIDSpeedData = {
 
 uint8_t enableHoverboardMotors = 0;
 
-#if defined(OUTPUT_ESPNOW) || defined(INPUT_ESPNOW)
-  int scanCounter = 0;
-#endif
+int scanCounter = 0;
 
-#ifdef OUTPUT_PROTOCOL_UART
-  int serialWriteWrapper(unsigned char *data, int len);
-  HoverboardAPI hbpOut = HoverboardAPI(serialWriteWrapper);
-#endif
-
-#ifdef INPUT_ESPNOW
-  int espSendDataWrapper(unsigned char *data, int len);
-  HoverboardAPI hbpIn = HoverboardAPI(espSendDataWrapper);
-#endif
-
-#ifdef OUTPUT_ESPNOW
-  int espSendDataWrapper(unsigned char *data, int len);
-  HoverboardAPI hbpOut = HoverboardAPI(espSendDataWrapper);
-#endif
+HoverboardAPI hbpOut;
+HoverboardAPI hbpIn;
 
 ///////////////////////////////////////////////////////////
 // Support Functions
@@ -186,19 +156,15 @@ void protocolMarkup(unsigned char *data, int len, int prefix) {
   COM[DEBUG_COM]->println();
 }
 
-
-#ifdef OUTPUT_PROTOCOL_UART
-int serialWriteWrapper(unsigned char *data, int len) {
-
+int serialWriteWrapper(unsigned char *data, int len)
+{
   #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
   protocolMarkup(data, len, 0);
   #endif
 
   return (int) COM[MOTOR_COM]->write(data,len);
 }
-#endif
 
-#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
 int udpSendDataWrapper(unsigned char *data, int len) {
 
   #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
@@ -212,9 +178,7 @@ int udpSendDataWrapper(unsigned char *data, int len) {
   return (int) result;
 }
 
-#endif
 
-#if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
 int espSendDataWrapper(unsigned char *data, int len) {
 
   #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
@@ -289,15 +253,12 @@ void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int dat
   #endif
 
   // Pass data to protocol
-  for(int i=0; i < data_len; i++) {
-    #if defined(OUTPUT_ESPNOW)
-      hbpOut.protocolPush(data[i]);
-    #elif defined(INPUT_ESPNOW)
-      hbpIn.protocolPush(data[i]);
-    #endif
+  for(int i=0; i < data_len; i++)
+  {
+    if( communicationSettings.output == COMM_OUTPUT_ESPNOW) hbpOut.protocolPush(data[i]);
+    if( communicationSettings.input  == COMM_INPUT_ESPNOW ) hbpIn.protocolPush(data[i]);
   }
 }
-#endif
 
 #ifdef WIFI
   #include <WiFi.h>
@@ -311,8 +272,8 @@ double limit(double min, double value, double max) {
   return value;
 }
 
-void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
-
+void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg )
+{
   fn_defaultProcessing(s, param, cmd, msg);
 
   switch (cmd) {
@@ -346,7 +307,6 @@ void processPIDSpeedData ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd
   fn_defaultProcessing(s, param, cmd, msg);
 }
 
-#ifdef OUTPUT_PROTOCOL_UART
 void pollUART() {
   // Read and Process Incoming data
   int i=0;
@@ -364,37 +324,33 @@ void pollUART() {
     }
   #endif
 }
-#endif
 
-#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
-void pollUDP() {
-  if (udp.parsePacket()) {
-    while( udp.available() ) {
+void pollUDP()
+{
+  if (udp.parsePacket())
+  {
+    while( udp.available() )
+    {
       unsigned char readChar = (unsigned char) udp.read();
 
-#if defined(INPUT_UDP)
-      hbpIn.protocolPush( readChar );
-#else // OUTPUT_UDP
-      hbpOut.protocolPush( readChar );
-#endif
-
+      if( communicationSettings.input == COMM_INPUT_UDP) hbpIn.protocolPush( readChar );
+      if( communicationSettings.output == COMM_OUTPUT_UDP) hbpOut.protocolPush( readChar );
     }
   }
 }
-#endif
 
-
-void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg )
+{
   hbpOut.protocolPost(msg);
 }
 
-#if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
-void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg )
+{
   hbpIn.protocolPost(msg);
 }
-#endif
 
-void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg )
+{
   switch (cmd) {
     case PROTOCOL_CMD_WRITEVAL:
     case PROTOCOL_CMD_READVALRESPONSE:
@@ -412,10 +368,8 @@ void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCO
 
 void initializeUDP()
 {
-#if defined(INPUT_UDP) || defined (OUTPUT_UDP)
-
-
-  #if defined(INPUT_UDP)
+  if( communicationSettings.input == COMM_INPUT_UDP)
+  {
     WiFi.softAP(ssid, pass);    //Create Access point
 
     if(debug) COM[DEBUG_COM]->print("IP address: ");
@@ -426,15 +380,18 @@ void initializeUDP()
     broadcast[3] = 255;
     if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
     if(debug) COM[DEBUG_COM]->println(broadcast);
-
-  #else // OUTPUT_UDP
-      WiFi.begin(ssid, pass);   //Connect to access point
+  }
+  else if( communicationSettings.output == COMM_OUTPUT_UDP)
+  {
+    WiFi.begin(ssid, pass);   //Connect to access point
 
     // Wait for connection
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
       delay(500);
       if(debug) COM[DEBUG_COM]->print(".");
     }
+
     if(debug) COM[DEBUG_COM]->println("");
     if(debug) COM[DEBUG_COM]->print("Connected to ");
     if(debug) COM[DEBUG_COM]->println(ssid);
@@ -446,22 +403,20 @@ void initializeUDP()
     broadcast[3] = 255;
     if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
     if(debug) COM[DEBUG_COM]->println(broadcast);
-  #endif
+  }
 
-    //Start UDP
-    if(debug) COM[DEBUG_COM]->println("Starting UDP");
-    udp.begin(localPort);
-    if(debug) COM[DEBUG_COM]->print("Local port: ");
-    if(debug) COM[DEBUG_COM]->println(localPort);
+  //Start UDP
+  if(debug) COM[DEBUG_COM]->println("Starting UDP");
+  udp.begin(localPort);
+  if(debug) COM[DEBUG_COM]->print("Local port: ");
+  if(debug) COM[DEBUG_COM]->println(localPort);
 
-    broadcast = WiFi.softAPIP();
+  broadcast = WiFi.softAPIP();
 
-    broadcast[3] = 255;
-    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
-    if(debug) COM[DEBUG_COM]->println(broadcast);
-              delay(100);
-
-#endif
+  broadcast[3] = 255;
+  if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
+  if(debug) COM[DEBUG_COM]->println(broadcast);
+  delay(100);
 }
 
 void initializeOdroidGo()
@@ -480,55 +435,50 @@ void initializeOdroidGo()
 void initializeESPnow()
 {
   // Init ESPnow
-  #if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
   setupEspNow();
-    esp_now_register_recv_cb(espReceiveDataWrapper);
-    hbpOut.sendPing(); // First messages are lost
-    hbpOut.sendPing();
-    hbpOut.sendPing();
-  #endif
+  esp_now_register_recv_cb(espReceiveDataWrapper);
+  hbpOut.sendPing(); // First messages are lost
+  hbpOut.sendPing();
+  hbpOut.sendPing();
 }
 
 void setupRelaying()
 {
   // ESPnow to UART Protocol Relay
-  #if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
-    // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
-    for (int i = 0; i < sizeof(hbpOut.s.params)/sizeof(hbpOut.s.params[0]); i++) {
-      if(hbpOut.s.params[i]) hbpOut.updateParamHandler((HoverboardAPI::Codes) i ,relayDataIn);
-    }
+  // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
+  for (int i = 0; i < sizeof(hbpOut.s.params)/sizeof(hbpOut.s.params[0]); i++) {
+    if(hbpOut.s.params[i]) hbpOut.updateParamHandler((HoverboardAPI::Codes) i ,relayDataIn);
+  }
 
-    // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
-    for (int i = 0; i < sizeof(hbpIn.s.params)/sizeof(hbpIn.s.params[0]); i++) {
-      if(hbpIn.s.params[i]) hbpIn.updateParamHandler((HoverboardAPI::Codes) i ,relayDataOut);
-    }
-  #endif
+  // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
+  for (int i = 0; i < sizeof(hbpIn.s.params)/sizeof(hbpIn.s.params[0]); i++) {
+    if(hbpIn.s.params[i]) hbpIn.updateParamHandler((HoverboardAPI::Codes) i ,relayDataOut);
+  }
 }
 
 void setupHbpOut()
 {
-
   // Initialize and setup protocol values, setup all periodic messages.
-  #if !defined(INPUT_ESPNOW) && !defined(INPUT_UDP) && !defined(DEBUG_PROTOCOL_PASSTHROUGH)
+#if !defined(DEBUG_PROTOCOL_PASSTHROUGH)
 
     // Print all incoming Texts on console
     hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
 
     // Initialize  PWM limits
-#ifdef DEBUG_SPEED
+# ifdef DEBUG_SPEED
     hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
-#else
+# else
     hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
-#endif
+# endif
 
     // enable motors
     hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
 
-    #ifdef INPUT_TESTRUN
+# ifdef INPUT_TESTRUN
       // send enable periodically
       hbpOut.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
       hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 60);
-    #endif
+# endif
 
       // Get Protocol statistics periodically
     hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
@@ -541,19 +491,19 @@ void setupHbpOut()
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
 
     // Send PWM values periodically
-#ifdef DEBUG_SPEED
+# ifdef DEBUG_SPEED
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
     hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
     hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
     hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
-#else
+# else
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
     hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
     hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
     hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
-#endif
+# endif
     hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
-  #endif
+#endif
 }
 
 void processOdroidGo()
@@ -637,41 +587,74 @@ void printProtocolMeasurements()
 
 void processBuzzer()
 {
-    // Send Buzzer Data
-    // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
-    if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
-      hbpOut.sendBuzzer(sendBuzzer.buzzerFreq, sendBuzzer.buzzerPattern, sendBuzzer.buzzerLen);
+  // Send Buzzer Data
+  // TODO: Find better way to find out when to send data. This way edge case 0, 0, 0 can not be sent.
+  if( (sendBuzzer.buzzerFreq != 0) || (sendBuzzer.buzzerLen != 0) || (sendBuzzer.buzzerPattern != 0) ) {
+    hbpOut.sendBuzzer(sendBuzzer.buzzerFreq, sendBuzzer.buzzerPattern, sendBuzzer.buzzerLen);
 
-      sendBuzzer.buzzerFreq = 0;
-      sendBuzzer.buzzerLen = 0;
-      sendBuzzer.buzzerPattern = 0;
-    }
+    sendBuzzer.buzzerFreq = 0;
+    sendBuzzer.buzzerLen = 0;
+    sendBuzzer.buzzerPattern = 0;
+  }
 }
 
 void receiveAndprocessProtocol()
 {
-      #ifdef OUTPUT_PROTOCOL_UART
-        pollUART();
-      #endif
+  if( communicationSettings.output == COMM_OUTPUT_UART )
+  {
+    pollUART();
+  }
 
-      #if defined(INPUT_UDP) || defined (OUTPUT_UDP)
-        pollUDP();
-      #endif
+  if( communicationSettings.output == COMM_OUTPUT_UDP || communicationSettings.input == COMM_INPUT_UDP )
+  {
+    pollUDP();
+  }
 
-      hbpOut.protocolTick();
+  hbpOut.protocolTick();
 
-      #if defined(INPUT_ESPNOW) || defined(INPUT_UDP)
-        hbpIn.protocolTick();
-      #endif
+  if( communicationSettings.input == COMM_INPUT_ESPNOW || communicationSettings.input == COMM_INPUT_UDP )
+  {
+    hbpIn.protocolTick();
+  }
 }
+
+
 
 void setupCommunication()
 {
-  initializeUDP();
+  if( communicationSettings.output == COMM_OUTPUT_ESPNOW )
+  {
+    initializeESPnow();
+    hbpOut.setSendSerialData(espSendDataWrapper);
+  }
+  else if( communicationSettings.output == COMM_OUTPUT_UDP )
+  {
+    initializeUDP();
+    hbpOut.setSendSerialData(udpSendDataWrapper);
+  }
+  else
+  {
+    hbpOut.setSendSerialData(serialWriteWrapper);
+  }
+
+  if( communicationSettings.input == COMM_INPUT_ESPNOW )
+  {
+    initializeESPnow();
+    setupRelaying();
+    hbpIn.setSendSerialData(espSendDataWrapper);
+  }
+  else if( communicationSettings.input == COMM_INPUT_UDP )
+  {
+    initializeUDP();
+    setupRelaying();
+    hbpIn.setSendSerialData(udpSendDataWrapper);
+  }
+  else
+  {
+    setupHbpOut();
+  }
+
   initializeOdroidGo();
-  initializeESPnow();
-  setupRelaying();
-  setupHbpOut();
 }
 
 void loopCommunication( void *pvparameters )

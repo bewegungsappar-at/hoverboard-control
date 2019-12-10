@@ -20,10 +20,6 @@
   int nunchukTimeout=0;
 #endif // INPUT_NUNCHUK
 
-#if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
-  volatile int espnowTimeout = 10000;
-#endif
-
 #ifdef INPUT_TESTRUN
   #include "testrun.h"
   #include "HoverboardAPI.h"
@@ -99,14 +95,6 @@ void loopInput( void *pvparameters ) {
 
     motor.setpoint.pwm = testrun.update(deltaMillis, enableHoverboardMotors);
     break;
-  #endif
-
-#if defined(INPUT_ESPNOW) || defined(OUTPUT_ESPNOW)
-    // Disable all other Input Methods as soon as data from ESPnow was received
-    if(espnowTimeout < 100) {
-      espnowTimeout++;
-      break;
-    }
   #endif
 
   #if !defined(INPUT_PADDELECIMU) && !defined(ODROID_GO_HW) // TODO: Find better way?

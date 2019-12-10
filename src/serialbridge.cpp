@@ -13,7 +13,7 @@
 #include <WiFiClient.h>
 
 
-const char *ssid = WIFI_SSID;
+extern const char *ssid;
 const char *pw = WIFI_PWD;
 IPAddress ip(WIFI_IP);
 IPAddress netmask(WIFI_NETMASK);
