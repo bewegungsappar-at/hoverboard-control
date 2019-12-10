@@ -255,8 +255,8 @@ void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int dat
   // Pass data to protocol
   for(int i=0; i < data_len; i++)
   {
-    if( communicationSettings.output == COMM_OUTPUT_ESPNOW) hbpOut.protocolPush(data[i]);
-    if( communicationSettings.input  == COMM_INPUT_ESPNOW ) hbpIn.protocolPush(data[i]);
+    if( communicationSettings.output == COMM_OUT_ESPNOW) hbpOut.protocolPush(data[i]);
+    if( communicationSettings.input  == COMM_IN_ESPNOW ) hbpIn.protocolPush(data[i]);
   }
 }
 
@@ -333,8 +333,8 @@ void pollUDP()
     {
       unsigned char readChar = (unsigned char) udp.read();
 
-      if( communicationSettings.input == COMM_INPUT_UDP) hbpIn.protocolPush( readChar );
-      if( communicationSettings.output == COMM_OUTPUT_UDP) hbpOut.protocolPush( readChar );
+      if( communicationSettings.input == COMM_IN_UDP) hbpIn.protocolPush( readChar );
+      if( communicationSettings.output == COMM_OUT_UDP) hbpOut.protocolPush( readChar );
     }
   }
 }
@@ -368,7 +368,7 @@ void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCO
 
 void initializeUDP()
 {
-  if( communicationSettings.input == COMM_INPUT_UDP)
+  if( communicationSettings.input == COMM_IN_UDP)
   {
     WiFi.softAP(ssid, pass);    //Create Access point
 
@@ -381,7 +381,7 @@ void initializeUDP()
     if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
     if(debug) COM[DEBUG_COM]->println(broadcast);
   }
-  else if( communicationSettings.output == COMM_OUTPUT_UDP)
+  else if( communicationSettings.output == COMM_OUT_UDP)
   {
     WiFi.begin(ssid, pass);   //Connect to access point
 
@@ -600,19 +600,19 @@ void processBuzzer()
 
 void receiveAndprocessProtocol()
 {
-  if( communicationSettings.output == COMM_OUTPUT_UART )
+  if( communicationSettings.output == COMM_OUT_UART )
   {
     pollUART();
   }
 
-  if( communicationSettings.output == COMM_OUTPUT_UDP || communicationSettings.input == COMM_INPUT_UDP )
+  if( communicationSettings.output == COMM_OUT_UDP || communicationSettings.input == COMM_IN_UDP )
   {
     pollUDP();
   }
 
   hbpOut.protocolTick();
 
-  if( communicationSettings.input == COMM_INPUT_ESPNOW || communicationSettings.input == COMM_INPUT_UDP )
+  if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP )
   {
     hbpIn.protocolTick();
   }
@@ -622,12 +622,12 @@ void receiveAndprocessProtocol()
 
 void setupCommunication()
 {
-  if( communicationSettings.output == COMM_OUTPUT_ESPNOW )
+  if( communicationSettings.output == COMM_OUT_ESPNOW )
   {
     initializeESPnow();
     hbpOut.setSendSerialData(espSendDataWrapper);
   }
-  else if( communicationSettings.output == COMM_OUTPUT_UDP )
+  else if( communicationSettings.output == COMM_OUT_UDP )
   {
     initializeUDP();
     hbpOut.setSendSerialData(udpSendDataWrapper);
@@ -637,13 +637,13 @@ void setupCommunication()
     hbpOut.setSendSerialData(serialWriteWrapper);
   }
 
-  if( communicationSettings.input == COMM_INPUT_ESPNOW )
+  if( communicationSettings.input == COMM_IN_ESPNOW )
   {
     initializeESPnow();
     setupRelaying();
     hbpIn.setSendSerialData(espSendDataWrapper);
   }
-  else if( communicationSettings.input == COMM_INPUT_UDP )
+  else if( communicationSettings.input == COMM_IN_UDP )
   {
     initializeUDP();
     setupRelaying();

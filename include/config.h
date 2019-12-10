@@ -2,16 +2,16 @@
 
 typedef enum
 {
-    COMM_INPUT_UDP     = 0x00,
-    COMM_INPUT_ESPNOW  = 0x01,
-    COMM_INPUT_OTHER   = 0x02
+    COMM_IN_UDP     = 0x00,
+    COMM_IN_ESPNOW  = 0x01,
+    COMM_IN_OTHER   = 0x02
 } comm_input;
 
 typedef enum
 {
-    COMM_OUTPUT_UDP     = 0x00, // Send output via protocol over UDP
-    COMM_OUTPUT_ESPNOW  = 0x01,
-    COMM_OUTPUT_UART    = 0x02
+    COMM_OUT_UDP     = 0x00, // Send output via protocol over UDP
+    COMM_OUT_ESPNOW  = 0x01,
+    COMM_OUT_UART    = 0x02
 } comm_output;
 
 typedef struct
