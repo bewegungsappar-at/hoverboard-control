@@ -52,6 +52,14 @@ comm_settings communicationSettings =
 };
 #endif
 
+#if (CONFIGURATION_SET == CFG_PADDELEC)
+comm_settings communicationSettings =
+{
+  input  : COMM_IN_UDP,
+  output : COMM_OUT_UART
+};
+#endif
+
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
 comm_settings communicationSettings =

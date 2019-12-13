@@ -30,6 +30,7 @@ extern comm_settings communicationSettings;
 #define   CFG_TTGO_IMU_WIFI        2
 #define   CFG_TTGO_PADDELEC        3
 #define   CFG_TESTRUN              4
+#define   CFG_PADDELEC             5
 #define   CFG_UDP_RELAY            7
 #define   CFG_NUNCHUK_ESPNOW_RELAY 8
 #define   CFG_NUNCHUK_REMOTE      10
@@ -48,7 +49,7 @@ extern comm_settings communicationSettings;
 //#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
 
 #   define OTA_HANDLER
-#   define WIFI_SSID       "panzer"
+#   define WIFI_SSID       "paddelec"
 #   define WIFI_PWD        "bewegungsappar.at"
 #   define DEBUG_PING
 #   define ODROID_GO_HW
@@ -94,6 +95,12 @@ extern comm_settings communicationSettings;
 #   define WIFI_SSID       "panzer"
 #   define WIFI_PWD        "bewegungsappar.at"
 #   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
+#endif
+
+#if (CONFIGURATION_SET == CFG_PADDELEC)
+#   define OTA_HANDLER
+#   define WIFI_SSID       "paddelec"
+#   define WIFI_PWD        "bewegungsappar.at"
 #endif
 
 
