@@ -22,7 +22,63 @@ namespace GO_DISPLAY
     void setup(void)
     {
         GO.begin();
-//        GO.lcd.setTextSize(2);
+
+        //    pinMode(25, INPUT);  // These mute the speaker.. Speaker is connected to pam8304a audio amplifier IN- Pin 25, IN+ Pin26
+        digitalWrite(25, LOW); // The library sets Pin 26 to HIGH. Pin 25 is also connected to SD, which
+                           // Activates Standby of the Audio Amplifier when Low.
+
+        GO.lcd.clearDisplay();
+
+        int cursor = 4;
+        GO.lcd.setTextColor(TFT_BLUE, backgroundColor);
+        GO.lcd.setTextSize(2);
+        GO.lcd.setCharCursor(4,cursor);
+        GO.lcd.println("UDP");
+        GO.lcd.setCharCursor(4,++cursor);
+        GO.lcd.println("ESPNOW");
+
+        int timer = 600;
+        uint8_t joyYold = 0;
+        GO.lcd.setCharCursor(2,cursor);
+        GO.lcd.print(">");
+
+        while ( timer > 100 )
+        {
+            GO.update();
+            GO.lcd.setCharCursor(2,10);
+            GO.lcd.print(timer--/100);
+            GO.lcd.print("   ");
+            delay(10);
+            if( GO.JOY_Y.isAxisPressed() != joyYold ) {
+                joyYold = GO.JOY_Y.isAxisPressed();
+                timer = 600;
+                switch (joyYold)
+                {
+
+                case 2:
+                    GO.lcd.setCharCursor(2,cursor);
+                    GO.lcd.print(" ");
+                    if(--cursor < 4) cursor =4;
+                    GO.lcd.setCharCursor(2,cursor);
+                    GO.lcd.print(">");
+                    break;
+
+                case 1:
+                    GO.lcd.setCharCursor(2,cursor);
+                    GO.lcd.print(" ");
+                    if(++cursor > 5) cursor =5;
+                    GO.lcd.setCharCursor(2,cursor);
+                    GO.lcd.print(">");
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
+        }
+
+        GO.lcd.setTextSize(1);
         GO.lcd.setFreeFont(&FreeMono9pt7b);
         GO.lcd.clearDisplay();
         GO_DISPLAY::show_labels();

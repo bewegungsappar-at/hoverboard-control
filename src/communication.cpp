@@ -424,11 +424,6 @@ void initializeOdroidGo()
   #ifdef ODROID_GO_HW
     // init display and show labels
     GO_DISPLAY::setup();
-
-//    pinMode(25, INPUT);  // These mute the speaker.. Speaker is connected to pam8304a audio amplifier IN- Pin 25, IN+ Pin26
-    digitalWrite(25, LOW); // The library sets Pin 26 to HIGH. Pin 25 is also connected to SD, which
-                           // Activates Standby of the Audio Amplifier when Low.
-
   #endif // ODROID_GO_HW
 }
 
@@ -601,27 +596,24 @@ void processBuzzer()
 void receiveAndprocessProtocol()
 {
   if( communicationSettings.output == COMM_OUT_UART )
-  {
     pollUART();
-  }
 
   if( communicationSettings.output == COMM_OUT_UDP || communicationSettings.input == COMM_IN_UDP )
-  {
     pollUDP();
-  }
 
   hbpOut.protocolTick();
 
   if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP )
-  {
     hbpIn.protocolTick();
-  }
 }
 
 
 
 void setupCommunication()
 {
+
+  initializeOdroidGo();
+
   if( communicationSettings.output == COMM_OUT_ESPNOW )
   {
     initializeESPnow();
@@ -653,8 +645,6 @@ void setupCommunication()
   {
     setupHbpOut();
   }
-
-  initializeOdroidGo();
 }
 
 void loopCommunication( void *pvparameters )
