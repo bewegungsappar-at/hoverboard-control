@@ -138,13 +138,9 @@ namespace GO_DISPLAY
 
     void plot(double value)
     {
-//        int plotBottom = 230;
         int plotBottom = 84;
-//        int plotHeight = 80;
         int plotHeight = 15;
-//        int plotLeft   = 0;
         int plotLeft   = 45;
-//        int plotWidth  = 319;
         int plotWidth  = 56;
         double valueMin = 0.0;
         double valueMax = 200.0;
@@ -155,7 +151,7 @@ namespace GO_DISPLAY
         int plotY = (int) (plotBottom - ((value-valueMin) * valueScale));
 
         // Clear old Data
-        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, 0x39E7);
+        GO.lcd.drawRect(plotX, plotBottom - plotHeight, 1, plotHeight +1, 0x39E7);
 
         if(value > valueMax)
         {
@@ -174,19 +170,15 @@ namespace GO_DISPLAY
         if(++plotX > (plotWidth + plotLeft)) plotX = plotLeft;
 
         // Draw 'Cursor'
-        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, TFT_DARKGREY);
+        GO.lcd.drawRect(plotX, plotBottom - plotHeight, 1, plotHeight +1, TFT_DARKGREY);
     }
 
 
     void plotBattery(double value)
     {
-//        int plotBottom = 230;
         int plotBottom = 230;
-//        int plotHeight = 80;
         int plotHeight = 40;
-//        int plotLeft   = 0;
         int plotLeft   = 0;
-//        int plotWidth  = 319;
         int plotWidth  = 200;
         double valueMin = 30.0;
         double valueMax = 42.0;
@@ -197,7 +189,7 @@ namespace GO_DISPLAY
         int plotY = (int) (plotBottom - ((value-valueMin) * valueScale));
 
         // Clear old Data
-        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, 0x39E7);
+        GO.lcd.drawRect(plotX, plotBottom - plotHeight, 1, plotHeight +1, 0x39E7);
 
         if(value > valueMax)
         {
@@ -216,18 +208,14 @@ namespace GO_DISPLAY
         if(++plotX > (plotWidth + plotLeft)) plotX = plotLeft;
 
         // Draw 'Cursor'
-        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, TFT_DARKGREY);
+        GO.lcd.drawRect(plotX, plotBottom - plotHeight, 1, plotHeight +1, TFT_DARKGREY);
     }
 
     void plotSpeed(double value)
     {
-//        int plotBottom = 230;
         int plotBottom = 180;
-//        int plotHeight = 80;
         int plotHeight = 60;
-//        int plotLeft   = 0;
         int plotLeft   = 0;
-//        int plotWidth  = 319;
         int plotWidth  = 200;
         double valueMin = -8.0;
         double valueMax = 8.0;
@@ -238,7 +226,7 @@ namespace GO_DISPLAY
         int plotY = (int) (plotBottom - ((value-valueMin) * valueScale));
 
         // Clear old Data
-        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, 0x39E7);
+        GO.lcd.drawRect(plotX, plotBottom - plotHeight, 1, plotHeight +1, 0x39E7);
 
         if(value > valueMax)
         {
@@ -257,7 +245,7 @@ namespace GO_DISPLAY
         if(++plotX > (plotWidth + plotLeft)) plotX = plotLeft;
 
         // Draw 'Cursor'
-        GO.lcd.drawLine(plotX, plotBottom, plotX, plotBottom - plotHeight, TFT_DARKGREY);
+        GO.lcd.drawRect(plotX, plotBottom - plotHeight, 1, plotHeight +1, TFT_DARKGREY);
     }
 
     void show_labels()
