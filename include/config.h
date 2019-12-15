@@ -31,6 +31,7 @@ extern comm_settings communicationSettings;
 #define   CFG_TTGO_PADDELEC        3
 #define   CFG_TESTRUN              4
 #define   CFG_PADDELEC             5
+#define   CFG_PADDLE               6
 #define   CFG_UDP_RELAY            7
 #define   CFG_NUNCHUK_ESPNOW_RELAY 8
 #define   CFG_NUNCHUK_REMOTE      10
@@ -103,6 +104,14 @@ extern comm_settings communicationSettings;
 #   define WIFI_PWD        "bewegungsappar.at"
 #endif
 
+#if (CONFIGURATION_SET == CFG_PADDLE)
+#   define OTA_HANDLER
+#   define WIFI_SSID       "paddelec"
+#   define WIFI_PWD        "bewegungsappar.at"
+#   define INPUT_PADDELECIMU         // look at Paddelec.h for paddelec specific config options!
+#   define IMU_GNDPIN 14
+#   define IMU_VCCPIN 32
+#endif
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
 #   define INPUT_NUNCHUK

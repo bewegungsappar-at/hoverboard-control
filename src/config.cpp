@@ -60,6 +60,13 @@ comm_settings communicationSettings =
 };
 #endif
 
+#if (CONFIGURATION_SET == CFG_PADDLE)
+comm_settings communicationSettings =
+{
+  input  : COMM_IN_OTHER,
+  output : COMM_OUT_UDP
+};
+#endif
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
 comm_settings communicationSettings =
