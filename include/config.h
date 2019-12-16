@@ -32,7 +32,7 @@ extern comm_settings communicationSettings;
 #define   CFG_TESTRUN              4
 #define   CFG_PADDELEC             5
 #define   CFG_PADDLE               6
-#define   CFG_UDP_RELAY            7
+#define   CFG_WIRESHARK            7
 #define   CFG_NUNCHUK_ESPNOW_RELAY 8
 #define   CFG_NUNCHUK_REMOTE      10
 
@@ -85,15 +85,19 @@ extern comm_settings communicationSettings;
 #   define IMU_ZPIN 25
 
 //#   define ESPNOW_PREFIX "PADDELEC" // ESPNOW "Channel" encoded in SSID
+#   define DEBUG_CONSOLE
+#   define OTA_HANDLER
+#   define WIFI_SSID       "wireshark"
+#   define WIFI_PWD        "bewegungsappar.at"
 #endif
 
 #if (CONFIGURATION_SET == CFG_TESTRUN)
 #   define INPUT_TESTRUN
 #endif
 
-#if (CONFIGURATION_SET == CFG_UDP_RELAY)
+#if (CONFIGURATION_SET == CFG_WIRESHARK)
 #   define OTA_HANDLER
-#   define WIFI_SSID       "panzer"
+#   define WIFI_SSID       "wireshark"
 #   define WIFI_PWD        "bewegungsappar.at"
 #   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
 #endif

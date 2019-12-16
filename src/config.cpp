@@ -44,7 +44,7 @@ comm_settings communicationSettings =
 };
 #endif
 
-#if (CONFIGURATION_SET == CFG_UDP_RELAY)
+#if (CONFIGURATION_SET == CFG_WIRESHARK)
 comm_settings communicationSettings =
 {
   input  : COMM_IN_UDP,
