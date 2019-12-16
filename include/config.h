@@ -18,6 +18,8 @@ typedef struct
 {
   comm_input input;
   comm_output output;
+  char wifi_ssid[23];
+  char wifi_pass[23];
 } comm_settings;
 
 extern comm_settings communicationSettings;
@@ -50,10 +52,9 @@ extern comm_settings communicationSettings;
 //#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
 
 #   define OTA_HANDLER
-#   define WIFI_SSID       "paddelec"
-#   define WIFI_PWD        "bewegungsappar.at"
 #   define DEBUG_PING
 #   define ODROID_GO_HW
+#   define DEBUG_DISABLE_PWMOUTPUT
 #endif
 
 
@@ -87,8 +88,6 @@ extern comm_settings communicationSettings;
 //#   define ESPNOW_PREFIX "PADDELEC" // ESPNOW "Channel" encoded in SSID
 #   define DEBUG_CONSOLE
 #   define OTA_HANDLER
-#   define WIFI_SSID       "wireshark"
-#   define WIFI_PWD        "bewegungsappar.at"
 #endif
 
 #if (CONFIGURATION_SET == CFG_TESTRUN)
@@ -97,21 +96,15 @@ extern comm_settings communicationSettings;
 
 #if (CONFIGURATION_SET == CFG_WIRESHARK)
 #   define OTA_HANDLER
-#   define WIFI_SSID       "wireshark"
-#   define WIFI_PWD        "bewegungsappar.at"
 #   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDELEC)
 #   define OTA_HANDLER
-#   define WIFI_SSID       "paddelec"
-#   define WIFI_PWD        "bewegungsappar.at"
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDLE)
 #   define OTA_HANDLER
-#   define WIFI_SSID       "paddelec"
-#   define WIFI_PWD        "bewegungsappar.at"
 #   define INPUT_PADDELECIMU         // look at Paddelec.h for paddelec specific config options!
 #   define IMU_GNDPIN 14
 #   define IMU_VCCPIN 32
@@ -166,14 +159,6 @@ extern comm_settings communicationSettings;
 
 #define WIFI_IP         192, 168, 4, 1
 #define WIFI_NETMASK    255, 255, 255, 0
-#endif
-
-#ifndef WIFI_SSID
-#   define WIFI_SSID       "paddelec"
-#endif
-
-#ifndef WIFI_PWD
-#   define WIFI_PWD        "bewegungsappar.at"
 #endif
 
 /***************************** Serial ********************************/

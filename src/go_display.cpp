@@ -13,6 +13,7 @@ namespace GO_DISPLAY
     static void show_labels(void);
     static void setup_internal_battery_adc(void);
     static float get_internal_battery_voltage(void);
+    static void connectionSelector(void);
     static esp_adc_cal_characteristics_t _adc_chars;
     static uint16_t backgroundColor;
 
@@ -27,28 +28,101 @@ namespace GO_DISPLAY
         digitalWrite(25, LOW); // The library sets Pin 26 to HIGH. Pin 25 is also connected to SD, which
                            // Activates Standby of the Audio Amplifier when Low.
 
+        GO_DISPLAY::connectionSelector();
+
+        GO.lcd.setTextSize(1);
+        GO.lcd.setFreeFont(&FreeMono9pt7b);
+        GO.lcd.clearDisplay();
+        GO_DISPLAY::show_labels();
+        GO_DISPLAY::setup_internal_battery_adc();
+    }
+
+
+    void connectionSelector()
+    {
+
+        int firstline       = 4;
+        int firstcolumn     = 2;
+
         GO.lcd.clearDisplay();
 
-        int cursor = 4;
+        int cursor = firstline;
         GO.lcd.setTextColor(TFT_BLUE, backgroundColor);
         GO.lcd.setTextSize(2);
-        GO.lcd.setCharCursor(4,cursor);
-        GO.lcd.println("UDP");
-        GO.lcd.setCharCursor(4,++cursor);
-        GO.lcd.println("ESPNOW");
+
+        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+        GO.lcd.print("UDP paddelec");
+        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+        GO.lcd.print("UDP wireshark");
+        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+        GO.lcd.print("UDP panzer");
+        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+        GO.lcd.print("ESPnow paddelec");
+        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+        GO.lcd.print("ESPnow wireshark");
+        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+        GO.lcd.print("ESPnow panzer");
+
+        int entries =  cursor - firstline;
+        cursor = firstline;
 
         int timer = 600;
         uint8_t joyYold = 0;
-        GO.lcd.setCharCursor(2,cursor);
+        GO.lcd.setCharCursor(firstcolumn, cursor);
         GO.lcd.print(">");
 
         while ( timer > 100 )
         {
             GO.update();
-            GO.lcd.setCharCursor(2,10);
+            GO.lcd.setCharCursor(firstcolumn, firstline - 2);
             GO.lcd.print(timer--/100);
             GO.lcd.print("   ");
             delay(10);
+
+            if( GO.BtnA.isPressed() ) {
+                switch (cursor - firstline)
+                {
+                case 0:
+                    communicationSettings.output = COMM_OUT_UDP;
+                    strcpy(communicationSettings.wifi_ssid, "paddelec");
+                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
+                    return;
+
+                case 1:
+                    communicationSettings.output = COMM_OUT_UDP;
+                    strcpy(communicationSettings.wifi_ssid, "wireshark");
+                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
+                    return;
+
+                case 2:
+                    communicationSettings.output = COMM_OUT_UDP;
+                    strcpy(communicationSettings.wifi_ssid, "panzer");
+                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
+                    return;
+
+                case 3:
+                    communicationSettings.output = COMM_OUT_ESPNOW;
+                    strcpy(communicationSettings.wifi_ssid, "paddelec");
+                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
+                    return;
+
+                case 4:
+                    communicationSettings.output = COMM_OUT_ESPNOW;
+                    strcpy(communicationSettings.wifi_ssid, "wireshark");
+                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
+                    return;
+
+                case 5:
+                    communicationSettings.output = COMM_OUT_ESPNOW;
+                    strcpy(communicationSettings.wifi_ssid, "panzer");
+                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
+                    return;
+
+                default:
+                    break;
+                }
+            }
+
             if( GO.JOY_Y.isAxisPressed() != joyYold ) {
                 joyYold = GO.JOY_Y.isAxisPressed();
                 timer = 600;
@@ -56,18 +130,18 @@ namespace GO_DISPLAY
                 {
 
                 case 2:
-                    GO.lcd.setCharCursor(2,cursor);
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
                     GO.lcd.print(" ");
-                    if(--cursor < 4) cursor =4;
-                    GO.lcd.setCharCursor(2,cursor);
+                    if(--cursor < firstline) cursor = firstline;
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
                     GO.lcd.print(">");
                     break;
 
                 case 1:
-                    GO.lcd.setCharCursor(2,cursor);
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
                     GO.lcd.print(" ");
-                    if(++cursor > 5) cursor =5;
-                    GO.lcd.setCharCursor(2,cursor);
+                    if(++cursor >= firstline + entries) cursor = firstline + entries;
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
                     GO.lcd.print(">");
                     break;
 
@@ -77,13 +151,9 @@ namespace GO_DISPLAY
             }
 
         }
-
-        GO.lcd.setTextSize(1);
-        GO.lcd.setFreeFont(&FreeMono9pt7b);
-        GO.lcd.clearDisplay();
-        GO_DISPLAY::show_labels();
-        GO_DISPLAY::setup_internal_battery_adc();
     }
+
+
     void set(field_value_t field, float value)
     {
         uint8_t x=0,y=0;

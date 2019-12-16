@@ -5,7 +5,9 @@
 comm_settings communicationSettings =
 {
   input  : COMM_IN_OTHER,
-  output : COMM_OUT_UDP
+  output : COMM_OUT_UDP,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at "}
 };
 #endif
 
@@ -14,7 +16,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_ESPNOW,
-  output : COMM_OUT_UART
+  output : COMM_OUT_UART,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -23,7 +27,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_OTHER,
-  output : COMM_OUT_UART
+  output : COMM_OUT_UART,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -32,7 +38,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_OTHER,
-  output : COMM_OUT_UDP
+  output : COMM_OUT_UDP,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -40,7 +48,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_OTHER,
-  output : COMM_OUT_UART
+  output : COMM_OUT_UART,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -48,7 +58,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_UDP,
-  output : COMM_OUT_UART
+  output : COMM_OUT_UART,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -56,7 +68,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_UDP,
-  output : COMM_OUT_UART
+  output : COMM_OUT_UART,
+  { wifi_ssid : "paddelec" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -64,7 +78,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_OTHER,
-  output : COMM_OUT_UDP
+  output : COMM_OUT_UDP,
+  { wifi_ssid : "paddelec" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -72,7 +88,9 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_ESPNOW,
-  output : COMM_OUT_UART
+  output : COMM_OUT_UART,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif
 
@@ -80,6 +98,8 @@ comm_settings communicationSettings =
 comm_settings communicationSettings =
 {
   input  : COMM_IN_OTHER,
-  output : COMM_OUT_ESPNOW
+  output : COMM_OUT_ESPNOW,
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "bewegungsappar.at" },
 };
 #endif

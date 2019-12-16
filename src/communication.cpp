@@ -18,9 +18,6 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-const char *ssid = WIFI_SSID;
-const char *pass = WIFI_PWD;
-
 unsigned int localPort = 1337; // local port to listen for UDP packets
 
 IPAddress broadcast(192,168,0,255); //UDP Broadcast IP data sent to all devicess on same network
@@ -370,7 +367,7 @@ void initializeUDP()
 {
   if( communicationSettings.input == COMM_IN_UDP)
   {
-    WiFi.softAP(ssid, pass);    //Create Access point
+    WiFi.softAP(communicationSettings.wifi_ssid, communicationSettings.wifi_pass, 13, 1);    //Create Access point on Channel 13 with hidden ssid
 
     if(debug) COM[DEBUG_COM]->print("IP address: ");
     if(debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
@@ -383,7 +380,7 @@ void initializeUDP()
   }
   else if( communicationSettings.output == COMM_OUT_UDP)
   {
-    WiFi.begin(ssid, pass);   //Connect to access point
+    WiFi.begin(communicationSettings.wifi_ssid, communicationSettings.wifi_pass);   //Connect to access point
 
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED)
@@ -394,7 +391,7 @@ void initializeUDP()
 
     if(debug) COM[DEBUG_COM]->println("");
     if(debug) COM[DEBUG_COM]->print("Connected to ");
-    if(debug) COM[DEBUG_COM]->println(ssid);
+    if(debug) COM[DEBUG_COM]->println(communicationSettings.wifi_ssid);
     if(debug) COM[DEBUG_COM]->print("IP address: ");
     if(debug) COM[DEBUG_COM]->println(WiFi.localIP());
 
