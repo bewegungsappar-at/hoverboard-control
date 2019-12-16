@@ -26,13 +26,13 @@ class Paddelec
     PaddelecConfig cfgPaddle;
     bool init() {
       imu.init();
-      cfgPaddle.paddleAngleThreshold = 22.0;     // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed        =  0.0023;     // conversion factor between Gametrak movement to speed. This defines also the maximum speed.
-      cfgPaddle.pwmMultiplier        =  0.023;   // effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR          =  0.0;   // multiplier for steering
-      cfgPaddle.realign              =  0.0;  // paddelc tries to go straight forward
-      cfgPaddle.drag                 =  0.00013;  // drag/water resistance
-      cfgPaddle.flipControl          = 1;       // 1: Normal. -1 Flipped
+      cfgPaddle.paddleAngleThreshold = 22.0;      // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
+      cfgPaddle.deltaRtoSpeed        =  0.0023;   // conversion factor between Gametrak movement to speed. This defines also the maximum speed.
+      cfgPaddle.pwmMultiplier        =  0.013;    // effect of paddle stroke to speed
+      cfgPaddle.crosstalkLR          =  0.0;      // multiplier for steering
+      cfgPaddle.realign              =  0.0;      // paddelc tries to go straight forward
+      cfgPaddle.drag                 =  0.00020;  // drag/water resistance
+      cfgPaddle.flipControl          = 1;         // 1: Normal. -1 Flipped
 
       delay(1000);                  // Wait till shaking from switching on is gone
       imu.pitch_zero = imu.pitchangle();

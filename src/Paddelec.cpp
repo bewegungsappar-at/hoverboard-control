@@ -15,12 +15,12 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   imu.update();
 
   /* convert from speed and steering to left and right wheel speed */
-  steerToRL(steer,           pwm,             pwmR,       pwmL);
+  steerToRL(steer,           pwm,             pwmL,       pwmR);
   steerToRL(actualSteer_kmh, actualSpeed_kmh, speedR_kmh, speedL_kmh);
 
 
   #define PADDELEC_INERTIA_THRESHOLD  10.0
-  #define PADDELEC_INERTIA_OFFSET    150.0
+  #define PADDELEC_INERTIA_OFFSET    10.0
 
   /* Remove Offset added to overcome intial inertia */
   if(pwmL >  PADDELEC_INERTIA_OFFSET) pwmL -= PADDELEC_INERTIA_OFFSET;
@@ -101,7 +101,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 
 
   /* convert from left and right wheel speed to speed and steering */
-  RLpwmToSteer(steer, pwm, pwmR, pwmL);
+  RLpwmToSteer(steer, pwm, pwmL, pwmR);
 //  plotterTempDouble[0] = imu.ax;
 //  plotterTempDouble[1] = imu.ay;
 
@@ -118,13 +118,13 @@ void Paddelec::debug(Stream &port)
 void Paddelec::RLpwmToSteer(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL)
 {
   pwm = (pwmR + pwmL) / 2;
-  steer = pwmL - pwm;
+  steer = pwmR - pwm;
 }
 
 void Paddelec::steerToRL(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL)
 {
-  pwmR = pwm - steer;
-  pwmL = pwm + steer;
+  pwmR = pwm + steer;
+  pwmL = pwm - steer;
 }
 
 // Incrementally decrease variable
