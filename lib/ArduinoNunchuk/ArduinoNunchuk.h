@@ -42,7 +42,7 @@
 #define NUNCHUK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
 #define NUNCHUK_HISTORY                   8 // Number of array size for history. Use multiples of 2 to simplify division
 #define NUNCHUK_HIST_ANALOGTHRESH        60 // If value deviates by this number, consider invalid
-#define NUNCHUK_HIST_ACCELTHRESH         50 // If value deviates by this number, consider invalid
+#define NUNCHUK_HIST_ACCELTHRESH         70 // If value deviates by this number, consider invalid
 #define NUNCHUK_HIST_BUTTONTHRESH         0 // This many values out of history can deviate to still consider the button press valid
 
 class ArduinoNunchuk

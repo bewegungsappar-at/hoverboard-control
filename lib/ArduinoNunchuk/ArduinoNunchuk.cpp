@@ -61,9 +61,11 @@ void ArduinoNunchuk::init()
 
   delay(100);
 
-
+#if defined(NUNCHUK_SDAPIN) || defined(NUNCHUK_SCLPIN)
+  Wire.begin(NUNCHUK_SDAPIN, NUNCHUK_SCLPIN);
+#else
   Wire.begin();
-
+#endif
 
 
   ArduinoNunchuk::_sendByte(0x55, 0xF0);
