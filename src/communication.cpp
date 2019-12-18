@@ -282,8 +282,20 @@ void processHalldata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PR
   }
 }
 
+void relayDataOut ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg );
+void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg );
+
 void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
   switch (cmd) {
+    case PROTOCOL_CMD_WRITEVAL:
+    case PROTOCOL_CMD_READVALRESPONSE:
+      if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP)
+      {
+        // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
+        if(hbpIn.s.params[HoverboardAPI::Codes::setPointPWM]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setPointPWM ,relayDataOut);
+      }
+      break;
+
     case PROTOCOL_CMD_READVAL:
     case PROTOCOL_CMD_SILENTREAD:
       PWMData.pwm[0] = motor.setpoint.pwm + motor.setpoint.steer;
@@ -295,6 +307,15 @@ void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PRO
 
 void processPIDSpeedData ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
   switch (cmd) {
+    case PROTOCOL_CMD_WRITEVAL:
+    case PROTOCOL_CMD_READVALRESPONSE:
+      if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP)
+      {
+        // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
+        if(hbpIn.s.params[HoverboardAPI::Codes::setSpeed]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setSpeed ,relayDataOut);
+      }
+      break;
+
     case PROTOCOL_CMD_READVAL:
     case PROTOCOL_CMD_SILENTREAD:
       PIDSpeedData.wanted_speed_mm_per_sec[0] = motor.setpoint.pwm + motor.setpoint.steer;
@@ -448,6 +469,8 @@ void setupRelaying()
   }
 }
 
+void setupPWMtransmission();
+
 void setupHbpOut()
 {
   // Initialize and setup protocol values, setup all periodic messages.
@@ -456,23 +479,7 @@ void setupHbpOut()
     // Print all incoming Texts on console
     hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
 
-    // Initialize  PWM limits
-# ifdef DEBUG_SPEED
-    hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
-# else
-    hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
-# endif
-
-    // enable motors
-    hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
-
-# ifdef INPUT_TESTRUN
-      // send enable periodically
-      hbpOut.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
-      hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 60);
-# endif
-
-      // Get Protocol statistics periodically
+    // Get Protocol statistics periodically
     hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
 
     // Set up hall data readout (=hoverboard measured speed) and periodically read Hall Data
@@ -482,19 +489,39 @@ void setupHbpOut()
     // Set up electrical measurements readout
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
 
-    // Send PWM values periodically
-# ifdef DEBUG_SPEED
-    hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
-    hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
-    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
-    hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
-# else
-    hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
-    hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
-    hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
-    hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
-# endif
-    hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
+    setupPWMtransmission();
+
+#endif
+}
+
+void setupPWMtransmission()
+{
+  // Initialize  PWM limits
+#ifdef DEBUG_SPEED
+  hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
+#else
+  hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
+#endif
+
+#ifdef DEBUG_SPEED
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
+  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
+  hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
+  hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
+#else
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
+  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
+  hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
+#endif
+
+#ifdef INPUT_TESTRUN
+    // send enable periodically
+    hbpOut.updateParamVariable(HoverboardAPI::Codes::enableMotors, &enableHoverboardMotors, sizeof(enableHoverboardMotors));
+    hbpOut.scheduleTransmission(HoverboardAPI::Codes::enableMotors, -1, 60);
+#else
+  // enable motors
+  hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
 #endif
 }
 
