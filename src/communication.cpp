@@ -331,17 +331,8 @@ void pollUART() {
   while(COM[MOTOR_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
     unsigned char readChar = COM[MOTOR_COM]->read();
     hbpOut.protocolPush( readChar );
-    #ifdef DEBUG_PROTOCOL_PASSTHROUGH
-      COM[DEBUG_COM]->write( readChar );
-    #endif
   }
-
-  #ifdef DEBUG_PROTOCOL_PASSTHROUGH
-    while(COM[DEBUG_COM]->available() && i++ < 1024) { // read maximum 1024 byte at once.
-      COM[MOTOR_COM]->write( COM[DEBUG_COM]->read() );
     }
-  #endif
-}
 
 void pollUDP()
 {
@@ -471,28 +462,45 @@ void setupRelaying()
 }
 
 void setupPWMtransmission();
+void schedulePeriodicReadings();
+
 
 void setupHbpOut()
 {
   // Initialize and setup protocol values, setup all periodic messages.
-#if !defined(DEBUG_PROTOCOL_PASSTHROUGH)
 
     // Print all incoming Texts on console
     hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
 
-    // Get Protocol statistics periodically
+
+  // Set up hall data readout (=hoverboard measured speed)
+  hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
+
+#ifdef DEBUG_SPEED
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
+  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
+#else
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
+  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
+#endif
+
+#ifndef DEBUG_DISABLE_PWMOUTPUT
+  setupPWMtransmission();
+  schedulePeriodicReadings();
+#endif
+}
+
+void schedulePeriodicReadings()
+{
+  // Get Protocol statistics
     hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
 
-    // Set up hall data readout (=hoverboard measured speed) and periodically read Hall Data
-    hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
+  // hall data (=hoverboard measured speed)
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 100);
 
     // Set up electrical measurements readout
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
-
-    setupPWMtransmission();
-
-#endif
 }
 
 void setupPWMtransmission()
@@ -505,14 +513,9 @@ void setupPWMtransmission()
 #endif
 
 #ifdef DEBUG_SPEED
-  hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
-  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
   hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
   hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
 #else
-  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
-  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
-  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
   hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
 #endif
 

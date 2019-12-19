@@ -54,7 +54,7 @@ extern comm_settings communicationSettings;
 #   define OTA_HANDLER
 #   define DEBUG_PING
 #   define ODROID_GO_HW
-//#   define DEBUG_DISABLE_PWMOUTPUT
+#   define DEBUG_DISABLE_PWMOUTPUT
 
 #   define INPUT_NUNCHUK
 #   define NUNCHUK_SDAPIN 15
@@ -146,7 +146,6 @@ extern comm_settings communicationSettings;
 //#define DEBUG_PLOTTER         // Plot Values through Serial Interface
                                 // Get Listener: https://github.com/devinaconley/arduino-plotter/wiki/Installation-and-Quickstart
 //#define DEBUG_PROTOCOL_OUTGOING_MARKUP // Write all outgoing Messages to debug com in human readable form
-//#define DEBUG_PROTOCOL_PASSTHROUGH     // Connect motor com and debug com, disable usual machine protocol messages. useful when using ascii protocol manually
 //#define DEBUG_PROTOCOL_MEASUREMENTS    // Write measured values to debug com
 //#define debugESPNOW                    // Debug ESPnow
 
