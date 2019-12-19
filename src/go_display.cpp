@@ -10,10 +10,8 @@
 namespace GO_DISPLAY
 {
     // forward declaration
-    static void show_labels(void);
     static void setup_internal_battery_adc(void);
     static float get_internal_battery_voltage(void);
-    static void connectionSelector(void);
     static esp_adc_cal_characteristics_t _adc_chars;
     static uint16_t backgroundColor;
 
@@ -28,12 +26,6 @@ namespace GO_DISPLAY
         digitalWrite(25, LOW); // The library sets Pin 26 to HIGH. Pin 25 is also connected to SD, which
                            // Activates Standby of the Audio Amplifier when Low.
 
-        GO_DISPLAY::connectionSelector();
-
-        GO.lcd.setTextSize(1);
-        GO.lcd.setFreeFont(&FreeMono9pt7b);
-        GO.lcd.clearDisplay();
-        GO_DISPLAY::show_labels();
         GO_DISPLAY::setup_internal_battery_adc();
     }
 

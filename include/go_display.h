@@ -44,6 +44,8 @@ namespace GO_DISPLAY
     void set(field_value_t field, float value);
     void update(void);
     void show_internal_battery_voltage();
+    void show_labels();
+    void connectionSelector();
     void plot(double value);
     void plotBattery(double value);
     void plotSpeed(double value);

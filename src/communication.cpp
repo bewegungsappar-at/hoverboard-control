@@ -442,6 +442,7 @@ void initializeOdroidGo()
   #ifdef ODROID_GO_HW
     // init display and show labels
     GO_DISPLAY::setup();
+    GO_DISPLAY::connectionSelector();
   #endif // ODROID_GO_HW
 }
 
@@ -527,6 +528,27 @@ void setupPWMtransmission()
 
 void processOdroidGo()
 {
+#ifdef ODROID_GO_HW
+  GO.update();
+
+  static int state = 0;
+
+  static int BtnMenuOld = 0;
+  bool BtnMenuJustPressed = ( GO.BtnMenu.isPressed() && BtnMenuOld == 0 ) ;
+  BtnMenuOld = GO.BtnMenu.isPressed();
+
+
+  switch (state)
+  {
+    case 0:   // Init monitor screen
+        GO.lcd.setTextSize(1);
+        GO.lcd.setFreeFont(&FreeMono9pt7b);
+        GO.lcd.clearDisplay();
+        GO_DISPLAY::show_labels();
+        state = 1;
+    case 1:   // Show monitor screen
+    {
+
   #ifdef DEBUG_PING
     static int pingCounter = 0;
     if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
@@ -537,9 +559,6 @@ void processOdroidGo()
       hbpOut.sendPing();
     }
   #endif
-
-  #ifdef ODROID_GO_HW
-
     static int16_t tempPID = 100;
 
     // TODO: assuming motor 0 is left and motor 1 is right
@@ -556,7 +575,6 @@ void processOdroidGo()
     GO_DISPLAY::plotBattery(hbpOut.getBatteryVoltage());
     GO_DISPLAY::plotSpeed(hbpOut.getSpeed_kmh());
 
-    GO.update();
     // TODO: just to see if something happens
 
     double wantedSpeed = 0.0;
@@ -579,9 +597,32 @@ void processOdroidGo()
     if(GO.BtnStart.isPressed()) hbpOut.sendPing();
 
 #ifdef DEBUG_SPEED
-    if(GO.BtnMenu.isPressed()) hbpOut.sendPIDControl(22,1,8,--tempPID,PROTOCOL_SOM_ACK);;
-    if(GO.BtnVolume.isPressed()) hbpOut.sendPIDControl(22,1,8,++tempPID,PROTOCOL_SOM_ACK);;
+      if(BtnMenuJustPressed) hbpOut.sendPIDControl(22,1,8,--tempPID,PROTOCOL_SOM_ACK);
+      if(GO.BtnVolume.isPressed()) hbpOut.sendPIDControl(22,1,8,++tempPID,PROTOCOL_SOM_ACK);
+# else
+      if(BtnMenuJustPressed) state = 2;
 #endif
+
+      break;
+    }
+
+    case 2: // Init Menu
+      GO.lcd.setTextSize(1);
+      GO.lcd.setFreeFont(&FreeMono9pt7b);
+      GO.lcd.clearDisplay();
+      state = 3;
+
+    case 3: //Process Menu
+      if(BtnMenuJustPressed) state = 0;  // Go back
+      break;
+
+
+  default:
+    state = 0;
+    break;
+  }
+
+
 
 
   #endif // ODROID_GO_HW
