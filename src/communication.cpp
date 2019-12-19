@@ -296,6 +296,7 @@ void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PRO
       {
         // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
         if(hbpIn.s.params[HoverboardAPI::Codes::setPointPWM]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setPointPWM ,relayDataOut);
+        hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, 0, 30);
       }
       break;
 
@@ -316,6 +317,7 @@ void processPIDSpeedData ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd
       {
         // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
         if(hbpIn.s.params[HoverboardAPI::Codes::setSpeed]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setSpeed ,relayDataOut);
+        hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, 0, 30);
       }
       break;
 
