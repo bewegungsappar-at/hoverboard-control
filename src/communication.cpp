@@ -384,7 +384,7 @@ void initializeUDP()
 {
   if( communicationSettings.input == COMM_IN_UDP)
   {
-    WiFi.softAP(communicationSettings.wifi_ssid, communicationSettings.wifi_pass, 13, 1);    //Create Access point on Channel 13 with hidden ssid
+    WiFi.softAP(communicationSettings.wifi_ssid, communicationSettings.wifi_pass, 9 , 1);    //Create Access point on Channel 13 with hidden ssid
 
     if(debug) COM[DEBUG_COM]->print("IP address: ");
     if(debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
@@ -512,6 +512,7 @@ void hbpoutSetupPWMtransmission()
 #else
   // enable motors
   hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
+  hbpOut.sendEnable(1, PROTOCOL_SOM_ACK); // TODO: Check why this workaround is neccessary.
 #endif
 }
 
@@ -564,7 +565,9 @@ void processOdroidGo()
     GO_DISPLAY::plotBattery(hbpOut.getBatteryVoltage());
     GO_DISPLAY::plotSpeed(hbpOut.getSpeed_kmh());
 
-    // TODO: just to see if something happens
+
+    odroidSpeed = 0.0;
+    odroidSteer = 0.0;
 
     if(GO.JOY_Y.isAxisPressed() == 2) odroidSpeed =  200.0;
     if(GO.JOY_Y.isAxisPressed() == 1) odroidSpeed = -200.0;

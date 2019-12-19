@@ -54,7 +54,7 @@ extern comm_settings communicationSettings;
 #   define OTA_HANDLER
 #   define DEBUG_PING
 #   define ODROID_GO_HW
-#   define DEBUG_DISABLE_PWMOUTPUT
+//#   define DEBUG_DISABLE_PWMOUTPUT
 
 #   define INPUT_NUNCHUK
 #   define NUNCHUK_SDAPIN 15
@@ -101,7 +101,10 @@ extern comm_settings communicationSettings;
 
 #if (CONFIGURATION_SET == CFG_WIRESHARK)
 #   define OTA_HANDLER
-#   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
+//#   define INPUT_NUNCHUK
+#   define NUNCHUK_VCCPIN 18
+#   define NUNCHUK_GNDPIN 19
+//#   define DEBUG_CONSOLE
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDELEC)
