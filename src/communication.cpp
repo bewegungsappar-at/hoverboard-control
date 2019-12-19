@@ -66,6 +66,9 @@ int scanCounter = 0;
 HoverboardAPI hbpOut;
 HoverboardAPI hbpIn;
 
+double odroidSpeed = 0.0;
+double odroidSteer = 0.0;
+
 ///////////////////////////////////////////////////////////
 // Support Functions
 ///////////////////////////////////////////////////////////
@@ -461,37 +464,16 @@ void setupRelaying()
   }
 }
 
-void setupPWMtransmission();
-void schedulePeriodicReadings();
-
-
-void setupHbpOut()
+void hbpoutSetupHandlers()
 {
-  // Initialize and setup protocol values, setup all periodic messages.
-
-    // Print all incoming Texts on console
-    hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
-
+  // Print all incoming Texts on console
+  hbpOut.updateParamHandler(HoverboardAPI::Codes::text, consoleLog);
 
   // Set up hall data readout (=hoverboard measured speed)
   hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
-
-#ifdef DEBUG_SPEED
-  hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
-  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
-#else
-  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
-  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
-  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
-#endif
-
-#ifndef DEBUG_DISABLE_PWMOUTPUT
-  setupPWMtransmission();
-  schedulePeriodicReadings();
-#endif
 }
 
-void schedulePeriodicReadings()
+void hbpoutScheduleReadings()
 {
   // Get Protocol statistics
     hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
@@ -503,19 +485,21 @@ void schedulePeriodicReadings()
     hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
 }
 
-void setupPWMtransmission()
+void hbpoutSetupPWMtransmission()
 {
-  // Initialize  PWM limits
-#ifdef DEBUG_SPEED
-  hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
-#else
-  hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
-#endif
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setSpeed, &PIDSpeedData, sizeof(PIDSpeedData.wanted_speed_mm_per_sec)); // Perform short write
+  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setSpeed, processPIDSpeedData);
+
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWM, &PWMData, sizeof(PWMData.pwm));
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
+  hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
 
 #ifdef DEBUG_SPEED
+  hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
   hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
   hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
 #else
+  hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
   hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
 #endif
 
@@ -580,22 +564,16 @@ void processOdroidGo()
 
     // TODO: just to see if something happens
 
-    double wantedSpeed = 0.0;
-    double wantedSteer = 0.0;
+    if(GO.JOY_Y.isAxisPressed() == 2) odroidSpeed =  200.0;
+    if(GO.JOY_Y.isAxisPressed() == 1) odroidSpeed = -200.0;
+    if(GO.JOY_X.isAxisPressed() == 1) odroidSteer =  200.0;
+    if(GO.JOY_X.isAxisPressed() == 2) odroidSteer = -200.0;
 
-    if(GO.JOY_Y.isAxisPressed() == 2) wantedSpeed =  200.0;
-    if(GO.JOY_Y.isAxisPressed() == 1) wantedSpeed = -200.0;
-    if(GO.JOY_X.isAxisPressed() == 1) wantedSteer =  200.0;
-    if(GO.JOY_X.isAxisPressed() == 2) wantedSteer = -200.0;
+    if(GO.BtnA.isPressed()) odroidSpeed = odroidSpeed *2.0;
+    if(GO.BtnB.isPressed()) odroidSpeed = odroidSpeed *2.0;
 
-    if(GO.BtnA.isPressed()) wantedSpeed = wantedSpeed *2.0;
-    if(GO.BtnB.isPressed()) wantedSpeed = wantedSpeed *2.0;
-
-    if(wantedSpeed > 400) wantedSpeed = 400;
-    if(wantedSpeed < -400) wantedSpeed = -400;
-
-    slowReset(motor.setpoint.pwm,   wantedSpeed, 0, 0.15);
-    slowReset(motor.setpoint.steer, wantedSteer, 0, 0.5);
+    if(odroidSpeed > 400) odroidSpeed = 400;
+    if(odroidSpeed < -400) odroidSpeed = -400;
 
     if(GO.BtnStart.isPressed()) hbpOut.sendPing();
 
@@ -682,37 +660,46 @@ void setupCommunication()
 
   initializeOdroidGo();
 
-  if( communicationSettings.output == COMM_OUT_ESPNOW )
+  switch (communicationSettings.output)
   {
+  case COMM_OUT_ESPNOW:
     initializeESPnow();
     hbpOut.setSendSerialData(espSendDataWrapper);
-  }
-  else if( communicationSettings.output == COMM_OUT_UDP )
-  {
+    break;
+
+  case COMM_OUT_UDP:
     initializeUDP();
     hbpOut.setSendSerialData(udpSendDataWrapper);
-  }
-  else
-  {
+    break;
+
+  default:
     hbpOut.setSendSerialData(serialWriteWrapper);
+    break;
   }
 
-  if( communicationSettings.input == COMM_IN_ESPNOW )
+  switch (communicationSettings.input)
   {
+  case COMM_IN_ESPNOW:
     initializeESPnow();
     setupRelaying();
     hbpIn.setSendSerialData(espSendDataWrapper);
-  }
-  else if( communicationSettings.input == COMM_IN_UDP )
-  {
+    break;
+
+  case COMM_IN_UDP:
     initializeUDP();
     setupRelaying();
     hbpIn.setSendSerialData(udpSendDataWrapper);
+    break;
+
+  default:
+    hbpoutSetupHandlers();
+#ifndef DEBUG_DISABLE_PWMOUTPUT
+    hbpoutSetupPWMtransmission();
+    hbpoutScheduleReadings();
+#endif
+    break;
   }
-  else
-  {
-    setupHbpOut();
-  }
+
 }
 
 void loopCommunication( void *pvparameters )

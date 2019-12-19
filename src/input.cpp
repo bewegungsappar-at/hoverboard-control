@@ -3,6 +3,7 @@
 #include "main.h"
 #include "config.h"
 #include "serialbridge.h"
+#include "communication.h"
 
 #ifdef DEBUG_OLED
   #include "oled.h"
@@ -16,8 +17,6 @@
 #ifdef INPUT_NUNCHUK
   #include <ArduinoNunchuk.h>
   ArduinoNunchuk nunchuk = ArduinoNunchuk();
-  int nunchukReinitCount=0;
-  int nunchukTimeout=0;
 #endif // INPUT_NUNCHUK
 
 #ifdef INPUT_TESTRUN
@@ -66,6 +65,90 @@ void setupInput() {
 }
 
 
+
+typedef enum
+{
+  NUNCHUK_OK          = 0x00,
+  NUNCHUK_MINORERR    = 0x01,
+  NUNCHUK_NOK         = 0x02,
+  NUNCHUK_NOINIT      = 0x03,
+} nunchuk_poll_status;
+
+typedef struct
+{
+    double pwm;
+    double steer;
+    nunchuk_poll_status status;
+} nunchuk_poll_result;
+
+
+nunchuk_poll_result pollNunchuk()
+{
+  nunchuk_poll_result result = {
+    .pwm = 0.0,
+    .steer = 0.0,
+    .status = NUNCHUK_NOK,
+  };
+
+
+#if defined(INPUT_NUNCHUK)
+
+  if(debug) nunchuk.debug(*COM[DEBUG_COM]);
+
+
+  switch(nunchuk.update(result.pwm, result.steer)) {
+    case NUNCHUK_ERR_COUNT:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_NOINIT:
+      if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT ");
+      result.status = NUNCHUK_NOINIT;
+      break;
+    case NUNCHUK_ERR_SEND:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_ZERO:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_DEV3:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV3 ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_DEV4:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV4 ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_DEV5:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV5 ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_DEV6:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV6 ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_DEV7:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV7 ");
+      result.status = NUNCHUK_NOK;
+      break;
+    case NUNCHUK_ERR_DEV1:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV1 (continuing) ");
+      result.status = NUNCHUK_MINORERR;
+      break;
+    case NUNCHUK_ERR_DEV2:
+      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV2 (continuing) ");
+      result.status = NUNCHUK_MINORERR;
+      break;
+    case NUNCHUK_ERR_NOERR:
+      result.status = NUNCHUK_OK;
+      break;
+  }
+#endif
+
+  return result;
+}
 
 void loopInput( void *pvparameters ) {
 //  int taskno = (int)pvparameters;
@@ -119,79 +202,100 @@ void loopInput( void *pvparameters ) {
   #endif
 
   #if defined(INPUT_NUNCHUK)
-    ++nunchukTimeout;
-    ++nunchukReinitCount;
-    double tempPWM = motor.setpoint.pwm;
-    double tempSteer = motor.setpoint.steer;
 
-    if(debug) nunchuk.debug(*COM[DEBUG_COM]);
+    typedef enum
+    {
+      GOT_DATA,
+      REINIT,
+      NO_DATA,
+      NUNCHUK_NOINIT,
+      IDLE,
+      SETUP,
+      RUNNING,
+      RELEASE
+    } nunchuk_state;
 
-    switch(nunchuk.update(motor.setpoint.pwm, motor.setpoint.steer)) {
-      case NUNCHUK_ERR_COUNT:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT ");
-        break;
-      case NUNCHUK_ERR_NOINIT:
-        nunchuk.reInit();
-        nunchukReinitCount = 0;
-        if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT ");
-        break;
-      case NUNCHUK_ERR_SEND:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND ");
-        break;
-      case NUNCHUK_ERR_ZERO:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO ");
-        break;
-      case NUNCHUK_ERR_DEV3:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV3 ");
-        break;
-      case NUNCHUK_ERR_DEV4:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV4 ");
-        break;
-      case NUNCHUK_ERR_DEV5:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV5 ");
-        break;
-      case NUNCHUK_ERR_DEV6:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV6 ");
-        break;
-      case NUNCHUK_ERR_DEV7:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV7 ");
-        break;
-      case NUNCHUK_ERR_DEV1:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV1 (continuing) ");
-      case NUNCHUK_ERR_DEV2:
-        if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV2 (continuing) ");
-      case NUNCHUK_ERR_NOERR:
-        nunchukTimeout = 0;
-        nunchukReinitCount = 0;
-        break;
+    static nunchuk_state nunchukState = IDLE;
+    static int nunchukReinitCount=0;
+    static int nunchukTimeout=0;
+
+    nunchuk_poll_result poll = pollNunchuk();
+
+    switch (poll.status)
+    {
+    case NUNCHUK_OK:
+      nunchukTimeout = 0;
+      nunchukReinitCount = 0;
+      break;
+
+    case NUNCHUK_NOINIT:
+      ++nunchukTimeout;
+      nunchukReinitCount = 1000;
+      break;
+
+    default:
+      ++nunchukTimeout;
+      ++nunchukReinitCount;
+      break;
     }
 
+
     // try fixing the Nunchuk by resetting
-    if(nunchukReinitCount>=5) {
+    if(nunchukReinitCount>=5)
+    {
       nunchuk.reInit();
       if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk ");
       nunchukReinitCount = 0;
     }
 
-    // set safe value when no data is received
-    if(nunchukTimeout>=10) {
-      motor.setpoint.pwm   = 0.0;
+    switch (nunchukState)
+    {
+
+    case IDLE:
+      if(poll.status == NUNCHUK_OK) nunchukState = SETUP;
+      break;
+
+    case SETUP:
+      hbpoutSetupPWMtransmission();
+      nunchukState = RUNNING;
+
+    case RUNNING:
+
+      if(poll.status == NUNCHUK_OK)
+      {
+        motor.setpoint.pwm = poll.pwm;
+        motor.setpoint.steer = poll.steer;
+      }
+
+      // set safe value when no data is received for a long time
+      if(nunchukTimeout>=10) nunchukState = RELEASE;
+      break;
+
+    case RELEASE: //no new data, timeout
+      // protocol recovers on its own as soon as data is received
+      motor.setpoint.pwm = 0.0;
       motor.setpoint.steer = 0.0;
-      if(debug) COM[DEBUG_COM]->print("Nunchuk Timeout");
+      break;
+
+    default:
+      // should never happen
+      nunchukState = RELEASE;
+      break;
     }
 
+
     // Do not allow other inputs to override when Nunchuk has sent data
-    if(motor.setpoint.pwm != 0.0 && motor.setpoint.steer != 0.0 ) break;
-    else {
-      // TODO: dangerous, no defined state when joystick suddenly sends zero
-      motor.setpoint.pwm = tempPWM;
-      motor.setpoint.steer = tempSteer;
-    }
+    if( nunchukState == RUNNING ) break;
   #endif
 
   #ifdef INPUT_PADDELECIMU
     paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
+  #endif
+
+  #ifdef ODROID_GO_HW
+    slowReset(motor.setpoint.pwm,   odroidSpeed, 0, 0.15);
+    slowReset(motor.setpoint.steer, odroidSteer, 0, 0.5);
   #endif
 
   } while(false);
