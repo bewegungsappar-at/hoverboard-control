@@ -113,6 +113,8 @@ extern comm_settings communicationSettings;
 #   define INPUT_PADDELECIMU         // look at Paddelec.h for paddelec specific config options!
 #   define IMU_GNDPIN 14
 #   define IMU_VCCPIN 32
+#   define PADDELEC_STOPSWITCH_PIN1 A2
+#   define PADDELEC_STOPSWITCH_PIN2 A1
 #endif
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)

@@ -34,6 +34,15 @@ class Paddelec
       cfgPaddle.drag                 =  0.00020;  // drag/water resistance
       cfgPaddle.flipControl          = 1;         // 1: Normal. -1 Flipped
 
+# ifdef PADDELEC_STOPSWITCH_PIN1
+      pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLDOWN);
+# endif
+
+# ifdef PADDELEC_STOPSWITCH_PIN2
+      pinMode(PADDELEC_STOPSWITCH_PIN2, OUTPUT);
+      digitalWrite(PADDELEC_STOPSWITCH_PIN2, HIGH);
+# endif
+
       delay(1000);                  // Wait till shaking from switching on is gone
       imu.pitch_zero = imu.pitchangle();
       return(true);

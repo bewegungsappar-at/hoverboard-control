@@ -73,7 +73,13 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
     if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
   }
 
-  if(imu.az > 80) {
+  /* Panic Stop */
+#ifdef PADDELEC_STOPSWITCH_PIN1
+  if( !digitalRead(PADDELEC_STOPSWITCH_PIN1) )
+#else
+  if(imu.az > 80)
+#endif
+  {
     slowReset(steer, 0, 300);
     slowReset(pwm, 0, 300);
     return;
