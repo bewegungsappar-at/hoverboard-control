@@ -6,8 +6,8 @@ comm_settings communicationSettings =
 {
   input  : COMM_IN_OTHER,
   output : COMM_OUT_UDP,
-  { wifi_ssid : "wireshark" },
-  { wifi_pass : "bewegungsappar.at "}
+  { wifi_ssid : "panzer" },
+  { wifi_pass : "bewegungsappar.at"}
 };
 #endif
 
@@ -94,12 +94,12 @@ comm_settings communicationSettings =
 };
 #endif
 
-#if (CONFIGURATION_SET == CFG_NUNCHUK_REMOTE)
+#if (CONFIGURATION_SET == CFG_PANZER)
 comm_settings communicationSettings =
 {
-  input  : COMM_IN_OTHER,
-  output : COMM_OUT_ESPNOW,
-  { wifi_ssid : "wireshark" },
+  input  : COMM_IN_UDP,
+  output : COMM_OUT_UART,
+  { wifi_ssid : "panzer" },
   { wifi_pass : "bewegungsappar.at" },
 };
 #endif

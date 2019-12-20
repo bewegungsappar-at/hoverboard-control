@@ -36,7 +36,7 @@ extern comm_settings communicationSettings;
 #define   CFG_PADDLE               6
 #define   CFG_WIRESHARK            7
 #define   CFG_NUNCHUK_ESPNOW_RELAY 8
-#define   CFG_NUNCHUK_REMOTE      10
+#define   CFG_PANZER              10
 
 
 // Default config setting
@@ -129,10 +129,9 @@ extern comm_settings communicationSettings;
 #   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
 #endif
 
-#if (CONFIGURATION_SET == CFG_NUNCHUK_REMOTE)
-#   define INPUT_NUNCHUK
-//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
-#   define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodeboard
+#if (CONFIGURATION_SET == CFG_PANZER)
+#   define OTA_HANDLER
+#   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
 #endif
 
 
