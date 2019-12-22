@@ -6,10 +6,9 @@
 
 #if defined(INPUT_PADDELECIMU)
 
-#define INPUT_PADDELEC_DEBUG false
 
-
-void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  double &actualSpeed_kmh, volatile  double &actualSteer_kmh, volatile  uint32_t deltaMillis) {
+void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  double &actualSpeed_kmh, volatile  double &actualSteer_kmh, volatile  uint32_t deltaMillis)
+{
   double pwmR      =0, pwmL      =0;
   double speedR_kmh=0, speedL_kmh=0;
   imu.update();
@@ -19,14 +18,11 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   steerToRL(actualSteer_kmh, actualSpeed_kmh, speedR_kmh, speedL_kmh);
 
 
-  #define PADDELEC_INERTIA_THRESHOLD  10.0
-  #define PADDELEC_INERTIA_OFFSET    10.0
-
   /* Remove Offset added to overcome intial inertia */
-  if(pwmL >  PADDELEC_INERTIA_OFFSET) pwmL -= PADDELEC_INERTIA_OFFSET;
-  if(pwmR >  PADDELEC_INERTIA_OFFSET) pwmR -= PADDELEC_INERTIA_OFFSET;
-  if(pwmL < -PADDELEC_INERTIA_OFFSET) pwmL += PADDELEC_INERTIA_OFFSET;
-  if(pwmR < -PADDELEC_INERTIA_OFFSET) pwmR += PADDELEC_INERTIA_OFFSET;
+  if(pwmL >  cfgPaddle.inertiaOffset) pwmL -= cfgPaddle.inertiaOffset;
+  if(pwmR >  cfgPaddle.inertiaOffset) pwmR -= cfgPaddle.inertiaOffset;
+  if(pwmL < -cfgPaddle.inertiaOffset) pwmL += cfgPaddle.inertiaOffset;
+  if(pwmR < -cfgPaddle.inertiaOffset) pwmR += cfgPaddle.inertiaOffset;
 
 
   /* simulate drag */
@@ -43,22 +39,22 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 //  plotterTempDouble[2] = paddleAngle;
 //  plotterTempDouble[3] = imu.az;
 
-  if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("PD: ");
+  if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("PD: ");
 
   /* process paddle strokes */
-  if       (paddleAngle > cfgPaddle.paddleAngleThreshold) {    // gametrak2 side of paddle is down
-
+  if       (paddleAngle > cfgPaddle.paddleAngleThreshold)     // gametrak2 side of paddle is down
+  {
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
     double speedDelta = (-imu.gz * cfgPaddle.deltaRtoSpeed) - (speedL_kmh * 10);
 
     /* update speed and apply crosstalk */
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("g2L ");
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
-
-
-  } else if(paddleAngle <  -cfgPaddle.paddleAngleThreshold) {    // gametrak1 side of paddle is down
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("g2L ");
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
+  }
+  else if(paddleAngle <  -cfgPaddle.paddleAngleThreshold)  // gametrak1 side of paddle is down
+  {
 
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
     double speedDelta = (imu.gz * cfgPaddle.deltaRtoSpeed) - (speedR_kmh * 10);
@@ -66,11 +62,13 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
     /* update speed and apply crosstalk */
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("g1R ");
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
-  } else  {
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->print("___ ");
-    if(INPUT_PADDELEC_DEBUG) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("g1R ");
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
+  }
+  else
+  {
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("___ ");
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
   }
 
   /* Panic Stop */
@@ -86,23 +84,19 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   }
 
   /* Add Offset to overcome intial inertia */
-  if(pwmL >  PADDELEC_INERTIA_THRESHOLD) pwmL += PADDELEC_INERTIA_OFFSET;
-  if(pwmR >  PADDELEC_INERTIA_THRESHOLD) pwmR += PADDELEC_INERTIA_OFFSET;
-  if(pwmL < -PADDELEC_INERTIA_THRESHOLD) pwmL -= PADDELEC_INERTIA_OFFSET;
-  if(pwmR < -PADDELEC_INERTIA_THRESHOLD) pwmR -= PADDELEC_INERTIA_OFFSET;
-
-
+  if(pwmL >  cfgPaddle.inertiaThreshold) pwmL += cfgPaddle.inertiaOffset;
+  if(pwmR >  cfgPaddle.inertiaThreshold) pwmR += cfgPaddle.inertiaOffset;
+  if(pwmL < -cfgPaddle.inertiaThreshold) pwmL -= cfgPaddle.inertiaOffset;
+  if(pwmR < -cfgPaddle.inertiaThreshold) pwmR -= cfgPaddle.inertiaOffset;
 
 
 
 
 /* Limit Maximum Output */
-  #define PADDELEC_LIMIT 1500
-
-  if(pwmL >  PADDELEC_LIMIT) pwmL =  PADDELEC_LIMIT;
-  if(pwmL < -PADDELEC_LIMIT) pwmL = -PADDELEC_LIMIT;
-  if(pwmR >  PADDELEC_LIMIT) pwmR =  PADDELEC_LIMIT;
-  if(pwmR < -PADDELEC_LIMIT) pwmR = -PADDELEC_LIMIT;
+  if(pwmL >  cfgPaddle.pwmLimit) pwmL =  cfgPaddle.pwmLimit;
+  if(pwmL < -cfgPaddle.pwmLimit) pwmL = -cfgPaddle.pwmLimit;
+  if(pwmR >  cfgPaddle.pwmLimit) pwmR =  cfgPaddle.pwmLimit;
+  if(pwmR < -cfgPaddle.pwmLimit) pwmR = -cfgPaddle.pwmLimit;
 
 
 
@@ -134,7 +128,8 @@ void Paddelec::steerToRL(volatile double &steer, volatile double &pwm, double &p
 }
 
 // Incrementally decrease variable
-void Paddelec::slowReset(volatile double &variable, double goal, double step) {
+void Paddelec::slowReset(volatile double &variable, double goal, double step)
+{
   if      ((variable - goal) > step) variable -= step;
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;
