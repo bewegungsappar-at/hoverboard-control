@@ -20,9 +20,10 @@ class Paddelec
       double realign;
       double deltaRtoSpeed;
       double drag;
-      uint16_t pwmLimit;
-      uint16_t steerLimit;
       int flipControl;
+      double maxValidSpeed;
+      double maxValidSteer;
+      int16_t maxValidGyro;
       double inertiaThreshold;
       double inertiaOffset;
       bool debugMode;
@@ -34,12 +35,15 @@ class Paddelec
     {
       imu.init();
       cfgPaddle.paddleAngleThreshold =   22.0;      // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed        =    0.00023;  // conversion factor between Gametrak movement to speed. This defines also the maximum speed.
+      cfgPaddle.deltaRtoSpeed        =    0.0006;   // conversion factor between paddle movement to speed. This defines also the maximum speed.
       cfgPaddle.pwmMultiplier        =    0.13;     // effect of paddle stroke to speed
       cfgPaddle.crosstalkLR          =    0.0;      // multiplier for steering
       cfgPaddle.realign              =    0.0;      // paddelc tries to go straight forward
       cfgPaddle.drag                 =    0.00020;  // drag/water resistance
       cfgPaddle.flipControl          =    1;        // 1: Normal. -1 Flipped
+      cfgPaddle.maxValidSpeed        =   15.0;      // All speed inputs above this threshold are considered unplausible and therefore faulty
+      cfgPaddle.maxValidSteer        =   15.0;      // All steer inputs above this threshold are considered unplausible and therefore faulty
+      cfgPaddle.maxValidGyro         =   (int16_t)(20.0 / cfgPaddle.deltaRtoSpeed);      // All steer inputs above this threshold are considered unplausible and therefore faulty
       cfgPaddle.inertiaThreshold     =   10.0;      // Minimum value to get vehicle moving
       cfgPaddle.inertiaOffset        =  150.0;      // Offset to set vehicle in motion
       cfgPaddle.debugMode            = true;        // enable debug output
@@ -57,6 +61,7 @@ class Paddelec
 
       delay(1000);                  // Wait till shaking from switching on is gone
       imu.pitch_zero = imu.pitchangle();
+
       return(true);
     }
 

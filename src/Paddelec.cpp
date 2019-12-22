@@ -13,6 +13,32 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   double speedR_kmh=0, speedL_kmh=0;
   imu.update();
 
+
+  /* Check if speed and Steer are in a valid range */
+  if( actualSpeed_kmh < -cfgPaddle.maxValidSpeed || actualSpeed_kmh > cfgPaddle.maxValidSpeed)
+  {
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("\nExceeded Speed limit. Speed %5.1f Steer %5.1f\n", actualSpeed_kmh, actualSteer_kmh);
+    return;  // Abort processing.
+  }
+
+  if( actualSteer_kmh < -cfgPaddle.maxValidSteer || actualSteer_kmh > cfgPaddle.maxValidSteer)
+  {
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("\nExceeded Steer limit. Speed %5.1f Steer %5.1f\n", actualSpeed_kmh, actualSteer_kmh);
+    return;  // Abort processing.
+  }
+
+
+  if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("Paddle Speed %5.1f GYRO %5i ", imu.gz * cfgPaddle.deltaRtoSpeed, imu.gz);
+
+
+  /* Check if Gyro Input is in a valid range */
+  if( imu.gz < -cfgPaddle.maxValidGyro || imu.gz > cfgPaddle.maxValidGyro)
+  {
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("\nExceeded Gyro Speed. Paddle Speed %5.1f GYRO %5i\n", imu.gz * cfgPaddle.deltaRtoSpeed, imu.gz);
+    return;  // Abort processing.
+  }
+
+
   /* convert from speed and steering to left and right wheel speed */
   steerToRL(steer,           pwm,             pwmL,       pwmR);
   steerToRL(actualSteer_kmh, actualSpeed_kmh, speedR_kmh, speedL_kmh);

@@ -62,19 +62,8 @@ class Imu : public ArduinoNunchuk
         if(IMU_DEBUG) Serial.println("Testing device connections...");
         if(IMU_DEBUG) Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-        // use the code below to change accel/gyro offset values
-        if(IMU_DEBUG) Serial.println("Updating internal sensor offsets...");
-        // -76	-2359	1688	0	0	0
-        if(IMU_DEBUG) Serial.print(accelgyro.getXAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -76
-        if(IMU_DEBUG) Serial.print(accelgyro.getYAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -2359
-        if(IMU_DEBUG) Serial.print(accelgyro.getZAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // 1688
-        if(IMU_DEBUG) Serial.print(accelgyro.getXGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
-        if(IMU_DEBUG) Serial.print(accelgyro.getYGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
-        if(IMU_DEBUG) Serial.print(accelgyro.getZGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
-        if(IMU_DEBUG) Serial.print("\n");
-        if(IMU_DEBUG) accelgyro.setXGyroOffset(220);
-        if(IMU_DEBUG) accelgyro.setYGyroOffset(76);
-        if(IMU_DEBUG) accelgyro.setZGyroOffset(-85);
+        if(IMU_DEBUG) Serial.println("Internal sensor offsets...");
+
         if(IMU_DEBUG) Serial.print(accelgyro.getXAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -76
         if(IMU_DEBUG) Serial.print(accelgyro.getYAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // -2359
         if(IMU_DEBUG) Serial.print(accelgyro.getZAccelOffset()); if(IMU_DEBUG) Serial.print("\t"); // 1688
@@ -83,20 +72,38 @@ class Imu : public ArduinoNunchuk
         if(IMU_DEBUG) Serial.print(accelgyro.getZGyroOffset()); if(IMU_DEBUG) Serial.print("\t"); // 0
         if(IMU_DEBUG) Serial.print("\n");
 
-        accelgyro.setDLPFMode(6);
-        accelgyro.setRate(0);
         if(IMU_DEBUG) Serial.println("Config values...");
         if(IMU_DEBUG) Serial.print("digital low-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDLPFMode());
+        accelgyro.setDLPFMode(MPU6050_DLPF_BW_5);
+        if(IMU_DEBUG) Serial.print("digital low-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDLPFMode());
+        if(IMU_DEBUG) Serial.print("gyroscope output rate divider: "); if(IMU_DEBUG) Serial.println(accelgyro.getRate());
+        accelgyro.setRate(0);
         if(IMU_DEBUG) Serial.print("gyroscope output rate divider: "); if(IMU_DEBUG) Serial.println(accelgyro.getRate());
         if(IMU_DEBUG) Serial.print("full-scale gyroscope range: "); if(IMU_DEBUG) Serial.println(accelgyro.getFullScaleGyroRange());
+        accelgyro.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
+        if(IMU_DEBUG) Serial.print("full-scale gyroscope range: "); if(IMU_DEBUG) Serial.println(accelgyro.getFullScaleGyroRange());
+        if(IMU_DEBUG) Serial.print("sleep mode: "); if(IMU_DEBUG) Serial.println(accelgyro.getSleepEnabled());
+        accelgyro.setSleepEnabled(false);
+        if(IMU_DEBUG) Serial.print("sleep mode: "); if(IMU_DEBUG) Serial.println(accelgyro.getSleepEnabled());
         if(IMU_DEBUG) Serial.print("full-scale accelerometer range: "); if(IMU_DEBUG) Serial.println(accelgyro.getFullScaleAccelRange());
         if(IMU_DEBUG) Serial.print("high-pass filter configuration: "); if(IMU_DEBUG) Serial.println(accelgyro.getDHPFMode());
         // Datasheet see https://www.invensense.com/products/motion-tracking/6-axis/mpu-6050/
 
 
-       update();
-       ArduinoNunchuk::cButton = 0;
-       ArduinoNunchuk::zButton = 0;
+        update();
+        ArduinoNunchuk::cButton = 0;
+        ArduinoNunchuk::zButton = 0;
+
+        // Calibrate Gyro
+        accelgyro.setXGyroOffset(0);
+        accelgyro.setYGyroOffset(0);
+        accelgyro.setZGyroOffset(0);
+        delay(100);
+        accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+        delay(100);
+        accelgyro.setXGyroOffset(-gx/4);
+        accelgyro.setYGyroOffset(-gy/4);
+        accelgyro.setZGyroOffset(-gz/4);
     }
 
     // class default I2C address is 0x68
