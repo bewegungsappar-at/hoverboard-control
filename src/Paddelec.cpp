@@ -45,7 +45,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   if       (paddleAngle > cfgPaddle.paddleAngleThreshold)     // gametrak2 side of paddle is down
   {
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-    double speedDelta = (-imu.gz * cfgPaddle.deltaRtoSpeed) - (speedL_kmh * 10);
+    double speedDelta = (-imu.gz * cfgPaddle.deltaRtoSpeed) - speedL_kmh;
 
     /* update speed and apply crosstalk */
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
@@ -57,7 +57,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   {
 
     /* get speed difference between paddle and "water". Paddling slower than current speed should slow down. */
-    double speedDelta = (imu.gz * cfgPaddle.deltaRtoSpeed) - (speedR_kmh * 10);
+    double speedDelta = (imu.gz * cfgPaddle.deltaRtoSpeed) - speedR_kmh;
 
     /* update speed and apply crosstalk */
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
