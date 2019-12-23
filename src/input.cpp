@@ -323,7 +323,7 @@ void loopInput( void *pvparameters ) {
 
   #ifdef INPUT_PADDELECIMU
     double pwmR=0.0, pwmL=0.0;
-    paddelec.steerToRL(motor.setpoint.steer, motor.setpoint.pwm, pwmR, pwmL);
+    paddelec.steerToRL(motor.setpoint.steer, motor.setpoint.pwm, pwmL, pwmR);
     pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
     pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
 

@@ -14,6 +14,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   imu.update();
 
 
+
   /* Check if speed and Steer are in a valid range */
   if( actualSpeed_kmh < -cfgPaddle.maxValidSpeed || actualSpeed_kmh > cfgPaddle.maxValidSpeed)
   {
@@ -28,9 +29,6 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   }
 
 
-  if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("Paddle Speed %5.1f GYRO %5i ", imu.gz * cfgPaddle.deltaRtoSpeed, imu.gz);
-
-
   /* Check if Gyro Input is in a valid range */
   if( imu.gz < -cfgPaddle.maxValidGyro || imu.gz > cfgPaddle.maxValidGyro)
   {
@@ -41,7 +39,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 
   /* convert from speed and steering to left and right wheel speed */
   steerToRL(steer,           pwm,             pwmL,       pwmR);
-  steerToRL(actualSteer_kmh, actualSpeed_kmh, speedR_kmh, speedL_kmh);
+  steerToRL(actualSteer_kmh, actualSpeed_kmh, speedL_kmh, speedR_kmh);
 
 
   /* Remove Offset added to overcome intial inertia */
@@ -77,7 +75,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
     if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("g2L ");
-    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedL_kmh, (int)speedDelta);
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%5.2f %5.2f %5.2f ",imu.gz * cfgPaddle.deltaRtoSpeed, speedL_kmh, speedDelta);
   }
   else if(paddleAngle <  -cfgPaddle.paddleAngleThreshold)  // gametrak1 side of paddle is down
   {
@@ -89,12 +87,12 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
     pwmR += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis );
     pwmL += ( speedDelta * cfgPaddle.pwmMultiplier * deltaMillis * cfgPaddle.crosstalkLR );
     if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("g1R ");
-    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%6i %6i %6i ",(int)(-imu.gz * cfgPaddle.deltaRtoSpeed), (int)speedR_kmh, (int)speedDelta);
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%5.2f %5.2f %5.2f ",-imu.gz * cfgPaddle.deltaRtoSpeed, speedR_kmh, speedDelta);
   }
   else
   {
     if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("___ ");
-    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%6i %6i %6i ", 0, 0, 0);
+    if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("%5.2f %5.2f %5.2f ", 0.0, 0.0, 0.0);
   }
 
   /* Panic Stop */
@@ -104,8 +102,8 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   if(imu.az > 80)
 #endif
   {
-    slowReset(steer, 0, 300);
-    slowReset(pwm, 0, 300);
+    slowReset(steer, 0, 300, 0);
+    slowReset(pwm, 0, 300, 0);
     return;
   }
 
@@ -154,8 +152,9 @@ void Paddelec::steerToRL(volatile double &steer, volatile double &pwm, double &p
 }
 
 // Incrementally decrease variable
-void Paddelec::slowReset(volatile double &variable, double goal, double step)
+void Paddelec::slowReset(volatile double &variable, double goal, double step, double fact)
 {
+  variable  += (goal - variable) * fact;
   if      ((variable - goal) > step) variable -= step;
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;

@@ -36,16 +36,16 @@ class Paddelec
       imu.init();
       cfgPaddle.paddleAngleThreshold =   22.0;      // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
       cfgPaddle.deltaRtoSpeed        =    0.0006;   // conversion factor between paddle movement to speed. This defines also the maximum speed.
-      cfgPaddle.pwmMultiplier        =    0.13;     // effect of paddle stroke to speed
+      cfgPaddle.pwmMultiplier        =    0.02;      // effect of paddle stroke to speed
       cfgPaddle.crosstalkLR          =    0.0;      // multiplier for steering
       cfgPaddle.realign              =    0.0;      // paddelc tries to go straight forward
-      cfgPaddle.drag                 =    0.00020;  // drag/water resistance
+      cfgPaddle.drag                 =    0.0003;   // drag/water resistance
       cfgPaddle.flipControl          =    1;        // 1: Normal. -1 Flipped
       cfgPaddle.maxValidSpeed        =   15.0;      // All speed inputs above this threshold are considered unplausible and therefore faulty
       cfgPaddle.maxValidSteer        =   15.0;      // All steer inputs above this threshold are considered unplausible and therefore faulty
       cfgPaddle.maxValidGyro         =   (int16_t)(20.0 / cfgPaddle.deltaRtoSpeed);      // All steer inputs above this threshold are considered unplausible and therefore faulty
-      cfgPaddle.inertiaThreshold     =   10.0;      // Minimum value to get vehicle moving
-      cfgPaddle.inertiaOffset        =  150.0;      // Offset to set vehicle in motion
+      cfgPaddle.inertiaThreshold     =   20.0;      // Minimum value to get vehicle moving
+      cfgPaddle.inertiaOffset        =   50.0;      // Offset to set vehicle in motion
       cfgPaddle.debugMode            = true;        // enable debug output
       cfgPaddle.pwmLimit             = 1500.0;      // Limit maximum PWM to this value
 
@@ -71,7 +71,7 @@ class Paddelec
     void steerToRL(volatile double  &steer, volatile double  &pwm, double  &pwmR, double  &pwmL);
 
   private:
-    void slowReset(volatile double &variable, double goal, double step);
+    void slowReset(volatile double &variable, double goal, double step, double fact);
 };
 
 #endif
