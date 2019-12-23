@@ -39,7 +39,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 
   /* convert from speed and steering to left and right wheel speed */
   steerToRL(steer,           pwm,             pwmL,       pwmR);
-  steerToRL(actualSteer_kmh, actualSpeed_kmh, speedL_kmh, speedR_kmh);
+  steerToRL(actualSteer_kmh, actualSpeed_kmh, speedR_kmh, speedL_kmh);
 
 
   /* Remove Offset added to overcome intial inertia */
@@ -102,8 +102,8 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   if(imu.az > 80)
 #endif
   {
-    slowReset(steer, 0, 300, 0);
-    slowReset(pwm, 0, 300, 0);
+    slowReset(steer, 0, 100, 0);
+    slowReset(pwm, 0, 100, 0);
     return;
   }
 

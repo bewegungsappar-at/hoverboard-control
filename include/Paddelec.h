@@ -39,7 +39,7 @@ class Paddelec
       cfgPaddle.pwmMultiplier        =    0.02;      // effect of paddle stroke to speed
       cfgPaddle.crosstalkLR          =    0.0;      // multiplier for steering
       cfgPaddle.realign              =    0.0;      // paddelc tries to go straight forward
-      cfgPaddle.drag                 =    0.0003;   // drag/water resistance
+      cfgPaddle.drag                 =    0.0002;   // drag/water resistance
       cfgPaddle.flipControl          =    1;        // 1: Normal. -1 Flipped
       cfgPaddle.maxValidSpeed        =   15.0;      // All speed inputs above this threshold are considered unplausible and therefore faulty
       cfgPaddle.maxValidSteer        =   15.0;      // All steer inputs above this threshold are considered unplausible and therefore faulty
