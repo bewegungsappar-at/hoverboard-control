@@ -27,3 +27,4 @@ extern volatile int32_t deltaMillis;
 #endif
 
 void slowReset(volatile double &variable, double goal, double step, double fact);
+void slowReset(int32_t &variable, double goal, int32_t step, double fact);

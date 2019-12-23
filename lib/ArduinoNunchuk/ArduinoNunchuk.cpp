@@ -101,7 +101,7 @@ bool ArduinoNunchuk::reInit()
     pinMode(NUNCHUK_VCCPIN,INPUT);
   #endif
 
-  delay(100);
+  delay(200);
 
   #ifdef NUNCHUK_GNDPIN
     pinMode(NUNCHUK_GNDPIN,OUTPUT);
@@ -144,27 +144,20 @@ int ArduinoNunchuk::update() {
   if(countFF==6) return NUNCHUK_ERR_NOINIT; // if all Bytes are FF, the Nunchuk needs to be initialised probably. Errors indicate communication problems.
   if(count00==6) return NUNCHUK_ERR_ZERO;   // if all Bytes are 00.
 
+  static int lastdeviationCount = 0;
 
 // process data
 
-  // remove oldest value from sum
-  for(int i = 0; i<7; i++) {
-    avg_sum[i] -= avg_history[i][avg_ptr];
-  }
+  int16_t valuesTemp[7];
 
   // get latest values
-  avg_history[0][avg_ptr] = values[0];                                         // analogX
-  avg_history[1][avg_ptr] = values[1];                                         // analogY
-  avg_history[2][avg_ptr] = ((values[2] << 2) | ((values[5] >> 2) & 3))-511;   // accelX
-  avg_history[3][avg_ptr] = ((values[3] << 2) | ((values[5] >> 4) & 3))-511;   // accelY
-  avg_history[4][avg_ptr] = ((values[4] << 2) | ((values[5] >> 6) & 3))-511;   // accelZ
-  avg_history[5][avg_ptr] = !((values[5] >> 0) & 1);                           // zButton
-  avg_history[6][avg_ptr] = !((values[5] >> 1) & 1);                           // cButton
-
-  // add latest value to sum
-  for(int i = 0; i<7; i++) {
-    avg_sum[i] += avg_history[i][avg_ptr];
-  }
+  valuesTemp[0] = values[0];                                         // analogX
+  valuesTemp[1] = values[1];                                         // analogY
+  valuesTemp[2] = ((values[2] << 2) | ((values[5] >> 2) & 3))-511;   // accelX
+  valuesTemp[3] = ((values[3] << 2) | ((values[5] >> 4) & 3))-511;   // accelY
+  valuesTemp[4] = ((values[4] << 2) | ((values[5] >> 6) & 3))-511;   // accelZ
+  valuesTemp[5] = !((values[5] >> 0) & 1);                           // zButton
+  valuesTemp[6] = !((values[5] >> 1) & 1);                           // cButton
 
   // check if new values are valid
   int deviationCount = 0;
@@ -174,54 +167,80 @@ int ArduinoNunchuk::update() {
   #endif
 
   for(int i = 0; i<5; i++) {
-    avg_diff[i] = avg_history[i][avg_ptr] - ( avg_sum[i] / NUNCHUK_HISTORY );
+    avg_diff[i] = valuesTemp[i] - ( avg_sum[i] / NUNCHUK_HISTORY );
 //    if(avg_diff[i] > NUNCHUK_HIST_ANALOGTHRESH ) avg_diff[i] = NUNCHUK_HIST_ANALOGTHRESH ;
 //    else if(avg_diff[i] < (-NUNCHUK_HIST_ANALOGTHRESH ) ) avg_diff[i] = -NUNCHUK_HIST_ANALOGTHRESH ;
   }
 
   if( abs( avg_diff[0] ) < NUNCHUK_HIST_ANALOGTHRESH ) {
-    ArduinoNunchuk::analogX = avg_history[0][avg_ptr];
+    ArduinoNunchuk::analogX = valuesTemp[0];
   } else {
     deviationCount++;
   }
 
   if( abs( avg_diff[1] ) < NUNCHUK_HIST_ANALOGTHRESH ) {
-    ArduinoNunchuk::analogY = avg_history[1][avg_ptr];
+    ArduinoNunchuk::analogY = valuesTemp[1];
   } else {
     deviationCount++;
   }
 
   if( abs( avg_diff[2] ) < NUNCHUK_HIST_ACCELTHRESH ) {
-    ArduinoNunchuk::accelX = avg_history[2][avg_ptr];
+    ArduinoNunchuk::accelX = valuesTemp[2];
   } else {
     deviationCount++;
   }
 
   if( abs( avg_diff[3] ) < NUNCHUK_HIST_ACCELTHRESH ) {
-    ArduinoNunchuk::accelY = avg_history[3][avg_ptr];
+    ArduinoNunchuk::accelY = valuesTemp[3];
   } else {
     deviationCount++;
   }
 
   if( abs( avg_diff[4] ) < NUNCHUK_HIST_ACCELTHRESH ) {
-    ArduinoNunchuk::accelZ = avg_history[4][avg_ptr];
+    ArduinoNunchuk::accelZ = valuesTemp[4];
   } else {
     deviationCount++;
   }
 
-  if( abs( ( avg_history[5][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[5] ) <= NUNCHUK_HIST_BUTTONTHRESH ) {
+  if( abs( ( valuesTemp[5] * NUNCHUK_HISTORY ) - avg_sum[5] ) <= NUNCHUK_HIST_BUTTONTHRESH ) {
     zButton_last = zButton;
-    ArduinoNunchuk::zButton = avg_history[5][avg_ptr];
+    ArduinoNunchuk::zButton = valuesTemp[5];
   } else {
     deviationCount++;
   }
 
-  if( abs( ( avg_history[6][avg_ptr] * NUNCHUK_HISTORY ) - avg_sum[6] ) <= NUNCHUK_HIST_BUTTONTHRESH ) {
+  if( abs( ( valuesTemp[6] * NUNCHUK_HISTORY ) - avg_sum[6] ) <= NUNCHUK_HIST_BUTTONTHRESH ) {
     cButton_last = cButton;
-    ArduinoNunchuk::cButton = avg_history[6][avg_ptr];
+    ArduinoNunchuk::cButton = valuesTemp[6];
   } else {
     deviationCount++;
   }
+
+
+  if(deviationCount == 0 || lastdeviationCount != 0)
+  {
+    // remove oldest value from sum
+    for(int i = 0; i<7; i++) {
+      avg_sum[i] -= avg_history[i][avg_ptr];
+    }
+
+    // get latest values
+    avg_history[0][avg_ptr] = values[0];                                         // analogX
+    avg_history[1][avg_ptr] = values[1];                                         // analogY
+    avg_history[2][avg_ptr] = ((values[2] << 2) | ((values[5] >> 2) & 3))-511;   // accelX
+    avg_history[3][avg_ptr] = ((values[3] << 2) | ((values[5] >> 4) & 3))-511;   // accelY
+    avg_history[4][avg_ptr] = ((values[4] << 2) | ((values[5] >> 6) & 3))-511;   // accelZ
+    avg_history[5][avg_ptr] = !((values[5] >> 0) & 1);                           // zButton
+    avg_history[6][avg_ptr] = !((values[5] >> 1) & 1);                           // cButton
+
+    // add latest value to sum
+    for(int i = 0; i<7; i++) {
+      avg_sum[i] += avg_history[i][avg_ptr];
+    }
+  }
+
+  lastdeviationCount = deviationCount;
+
 
   avg_ptr++;
   if(NUNCHUK_HISTORY == avg_ptr) avg_ptr = 0;
@@ -257,14 +276,8 @@ int ArduinoNunchuk::update(volatile double &pwm, volatile double &steer) {
       yaw_zero     = yawangle();
       roll_zero    = rollangle();
     }
-    double newSteer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUK_ACCEL_STEER_ANGLE);
-    double newPwm = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUK_ACCEL_SPEED_ANGLE);
-
-    newSteer = steer + limit(-70.0, newSteer - steer, 70.0);
-    newPwm = pwm + limit(-70.0, newPwm - pwm, 70.0);
-
-    steer = (steer * 0.5) + (0.5 * newSteer);
-    pwm = (pwm * 0.5) + (0.5 * newPwm);
+    steer = scaleAngle(rollangle()  - roll_zero , 1000.0 / NUNCHUK_ACCEL_STEER_ANGLE);
+    pwm = scaleAngle(pitchangle() - pitch_zero, 1000.0 / NUNCHUK_ACCEL_SPEED_ANGLE);
   } else if (cButton && zButton) {
   /* Joystick calibration mode when both buttons are pressed */
     if((zButton_last != zButton) || (cButton_last != cButton)) { // do calibration

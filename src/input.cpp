@@ -39,6 +39,7 @@
 #endif
 
 uint32_t millisMotorcomm = 0;      // virtual timer for motor update
+nunchuk_state nunchukState = NEEDCALIB;
 
 void setupInput() {
 
@@ -68,10 +69,10 @@ void setupInput() {
 
 typedef enum
 {
-  NUNCHUK_OK          = 0x00,
-  NUNCHUK_MINORERR    = 0x01,
-  NUNCHUK_NOK         = 0x02,
-  NUNCHUK_NOINIT      = 0x03,
+  NUNCHUK_OK,
+  NUNCHUK_MINORERR,
+  NUNCHUK_NOK,
+  NUNCHUK_NOINIT,
 } nunchuk_poll_status;
 
 typedef struct
@@ -203,19 +204,6 @@ void loopInput( void *pvparameters ) {
 
   #if defined(INPUT_NUNCHUK)
 
-    typedef enum
-    {
-      GOT_DATA,
-      REINIT,
-      NO_DATA,
-      NUNCHUK_NOINIT,
-      IDLE,
-      SETUP,
-      RUNNING,
-      RELEASE
-    } nunchuk_state;
-
-    static nunchuk_state nunchukState = IDLE;
     static int nunchukReinitCount=0;
     static int nunchukTimeout=0;
 
@@ -233,6 +221,9 @@ void loopInput( void *pvparameters ) {
       nunchukReinitCount = 1000;
       break;
 
+    case NUNCHUK_MINORERR:
+      break;
+
     default:
       ++nunchukTimeout;
       ++nunchukReinitCount;
@@ -241,7 +232,7 @@ void loopInput( void *pvparameters ) {
 
 
     // try fixing the Nunchuk by resetting
-    if(nunchukReinitCount>=5)
+    if(nunchukReinitCount>=10)
     {
       nunchuk.reInit();
       if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk ");
@@ -250,6 +241,21 @@ void loopInput( void *pvparameters ) {
 
     switch (nunchukState)
     {
+
+    case NEEDCALIB:
+      if(poll.status == NUNCHUK_OK)
+      {
+        nunchuk.analogX_zero = nunchuk.analogX;
+        nunchuk.analogY_zero = nunchuk.analogY;
+        nunchuk.analogX_min = 0;
+        nunchuk.analogX_max = 255;
+        nunchuk.analogY_min = 0;
+        nunchuk.analogY_max = 255;
+        delay(1000);
+
+        nunchukState = SETUP;
+      }
+      break;
 
     case IDLE:
       if(poll.status == NUNCHUK_OK) nunchukState = SETUP;
@@ -263,18 +269,19 @@ void loopInput( void *pvparameters ) {
 
       if(poll.status == NUNCHUK_OK)
       {
-        motor.setpoint.pwm = poll.pwm;
-        motor.setpoint.steer = poll.steer;
+        slowReset(motor.setpoint.pwm, poll.pwm, 20, 0);
+        slowReset(motor.setpoint.steer, poll.steer, 20, 0);
       }
 
       // set safe value when no data is received for a long time
-      if(nunchukTimeout>=10) nunchukState = RELEASE;
+      if(nunchukTimeout>=20) nunchukState = RELEASE;
       break;
 
     case RELEASE: //no new data, timeout
       // protocol recovers on its own as soon as data is received
       motor.setpoint.pwm = 0.0;
       motor.setpoint.steer = 0.0;
+      nunchukState = IDLE;
       break;
 
     default:
@@ -291,11 +298,6 @@ void loopInput( void *pvparameters ) {
   #ifdef INPUT_PADDELECIMU
     paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
     if(debug) paddelec.debug(*COM[DEBUG_COM]);
-  #endif
-
-  #ifdef ODROID_GO_HW
-    slowReset(motor.setpoint.pwm,   odroidSpeed, 0, 0.15);
-    slowReset(motor.setpoint.steer, odroidSteer, 0, 0.5);
   #endif
 
   } while(false);
@@ -376,6 +378,11 @@ void loopInput( void *pvparameters ) {
   } while( u8g2.nextPage() );
 #endif
 
+#ifdef INPUT_NUNCHUK
+    vTaskDelay(1);
+#else
     vTaskDelay(10);
+#endif
+
   }
 }

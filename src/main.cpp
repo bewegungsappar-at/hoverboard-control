@@ -98,3 +98,10 @@ void slowReset(volatile double &variable, double goal, double step, double fact)
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;
 }
+
+void slowReset(int32_t &variable, double goal, int32_t step, double fact) {
+  variable  += (int32_t)((goal - variable) * fact);
+  if      ((variable - goal) > step) variable -= step;
+  else if ((goal - variable) > step) variable += step;
+  else                               variable  = goal;
+}

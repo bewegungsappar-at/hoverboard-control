@@ -290,6 +290,17 @@ void relayDataIn ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOC
 
 void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
   switch (cmd) {
+    case PROTOCOL_CMD_READVAL:
+    case PROTOCOL_CMD_SILENTREAD:
+      slowReset(PWMData.pwm[0], motor.setpoint.pwm + motor.setpoint.steer, 50, 0.0);
+      slowReset(PWMData.pwm[1], motor.setpoint.pwm - motor.setpoint.steer, 50, 0.0);
+      break;
+  }
+  fn_defaultProcessing(s, param, cmd, msg);
+}
+
+void waitForMessage ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+  switch (cmd) {
     case PROTOCOL_CMD_WRITEVAL:
     case PROTOCOL_CMD_READVALRESPONSE:
       if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP)
@@ -297,34 +308,19 @@ void processPWMdata ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PRO
         // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
         if(hbpIn.s.params[HoverboardAPI::Codes::setPointPWM]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setPointPWM ,relayDataOut);
         hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, 0, 30);
-      }
-      break;
-
-    case PROTOCOL_CMD_READVAL:
-    case PROTOCOL_CMD_SILENTREAD:
-      PWMData.pwm[0] = motor.setpoint.pwm + motor.setpoint.steer;
-      PWMData.pwm[1] = motor.setpoint.pwm - motor.setpoint.steer;
-      break;
-  }
-  fn_defaultProcessing(s, param, cmd, msg);
-}
-
-void processPIDSpeedData ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
-  switch (cmd) {
-    case PROTOCOL_CMD_WRITEVAL:
-    case PROTOCOL_CMD_READVALRESPONSE:
-      if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP)
-      {
-        // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
         if(hbpIn.s.params[HoverboardAPI::Codes::setSpeed]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setSpeed ,relayDataOut);
         hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, 0, 30);
       }
       break;
+  }
+}
 
+void processPIDSpeedData ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+  switch (cmd) {
     case PROTOCOL_CMD_READVAL:
     case PROTOCOL_CMD_SILENTREAD:
-      PIDSpeedData.wanted_speed_mm_per_sec[0] = motor.setpoint.pwm + motor.setpoint.steer;
-      PIDSpeedData.wanted_speed_mm_per_sec[1] = motor.setpoint.pwm - motor.setpoint.steer;
+      slowReset(PIDSpeedData.wanted_speed_mm_per_sec[0], motor.setpoint.pwm + motor.setpoint.steer, 50, 0.0);
+      slowReset(PIDSpeedData.wanted_speed_mm_per_sec[1], motor.setpoint.pwm - motor.setpoint.steer, 50, 0.0);
       break;
   }
   fn_defaultProcessing(s, param, cmd, msg);
@@ -514,6 +510,8 @@ void hbpoutSetupPWMtransmission()
   hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
   hbpOut.sendEnable(1, PROTOCOL_SOM_ACK); // TODO: Check why this workaround is neccessary.
 #endif
+  hbpIn.updateParamHandler(  HoverboardAPI::Codes::setSpeed, waitForMessage);
+  hbpIn.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, waitForMessage);
 }
 
 void processOdroidGo()
@@ -579,6 +577,13 @@ void processOdroidGo()
 
     if(odroidSpeed > 400) odroidSpeed = 400;
     if(odroidSpeed < -400) odroidSpeed = -400;
+
+
+    if(nunchukState != RUNNING)
+    {
+      slowReset(motor.setpoint.pwm,   odroidSpeed, 0, 0.15);
+      slowReset(motor.setpoint.steer, odroidSteer, 0, 0.5);
+    }
 
     if(GO.BtnStart.isPressed()) hbpOut.sendPing();
 

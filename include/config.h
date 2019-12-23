@@ -57,6 +57,7 @@ extern comm_settings communicationSettings;
 //#   define DEBUG_DISABLE_PWMOUTPUT
 
 #   define INPUT_NUNCHUK
+#   define NUNCHUK_VCCPIN 12
 #   define NUNCHUK_SDAPIN 15
 #   define NUNCHUK_SCLPIN 4
 #   define DEBUG_CONSOLE
@@ -101,7 +102,7 @@ extern comm_settings communicationSettings;
 
 #if (CONFIGURATION_SET == CFG_WIRESHARK)
 #   define OTA_HANDLER
-//#   define INPUT_NUNCHUK
+#   define INPUT_NUNCHUK
 #   define NUNCHUK_VCCPIN 18
 #   define NUNCHUK_GNDPIN 19
 //#   define DEBUG_CONSOLE
