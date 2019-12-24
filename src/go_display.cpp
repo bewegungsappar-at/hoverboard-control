@@ -165,6 +165,12 @@ namespace GO_DISPLAY
             GO.lcd.print("Send Enable");
             GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
             GO.lcd.print("Send Disable");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Decrease Wireshark distance");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Increase Wireshark distance");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Write Flash");
 
             entries =  cursor - firstline;
             cursor = firstline;

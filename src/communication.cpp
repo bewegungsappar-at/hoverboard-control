@@ -18,19 +18,14 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-unsigned int localPort = 1337; // local port to listen for UDP packets
-
-IPAddress broadcast(192,168,0,255); //UDP Broadcast IP data sent to all devicess on same network
-
-
-// A UDP instance to let us send and receive packets over UDP
-WiFiUDP udp;
-
-
-//======================================================================
 ///////////////////////////////////////////////////////////
 // Global Variables
 ///////////////////////////////////////////////////////////
+
+unsigned int localPort = 1337; // local port to listen for UDP packets
+IPAddress broadcast(192,168,0,255); //UDP Broadcast IP data sent to all devicess on same network
+WiFiUDP udp; // A UDP instance to let us send and receive packets over UDP
+
 
 volatile PROTOCOL_BUZZER_DATA sendBuzzer = {
     .buzzerFreq = 0,
@@ -66,8 +61,8 @@ int scanCounter = 0;
 HoverboardAPI hbpOut;
 HoverboardAPI hbpIn;
 
-double odroidSpeed = 0.0;
-double odroidSteer = 0.0;
+PROTOCOL_ADC_SETTINGS protocolADCSettings;
+int adcSettingsDelta = 0;
 
 ///////////////////////////////////////////////////////////
 // Support Functions
@@ -471,6 +466,25 @@ void hbpoutSetupHandlers()
   hbpOut.updateParamHandler(HoverboardAPI::Codes::sensHall, processHalldata);
 }
 
+
+void processADCsettings ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+  fn_defaultProcessing(s, param, cmd, msg);
+  switch (cmd) {
+    case PROTOCOL_CMD_READVALRESPONSE:
+    case PROTOCOL_CMD_WRITEVAL:
+      protocolADCSettings.adc_off_end += adcSettingsDelta;
+      protocolADCSettings.adc1_zero   += adcSettingsDelta;
+      hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::adcSettings, (unsigned char*) &protocolADCSettings, sizeof(protocolADCSettings), PROTOCOL_SOM_ACK );
+      break;
+  }
+}
+
+void hbpoutSetupADCsettings()
+{
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::adcSettings, &protocolADCSettings, sizeof(protocolADCSettings) );
+  hbpOut.updateParamHandler( HoverboardAPI::Codes::adcSettings, processADCsettings );
+}
+
 void hbpoutScheduleReadings()
 {
   // Get Protocol statistics
@@ -572,8 +586,8 @@ void processOdroidGo()
       GO_DISPLAY::plotBattery(hbpOut.getBatteryVoltage());
       GO_DISPLAY::plotSpeed(hbpOut.getSpeed_kmh());
 
-      odroidSpeed = 0.0;
-      odroidSteer = 0.0;
+      double odroidSpeed = 0.0;
+      double odroidSteer = 0.0;
 
       if(GO.JOY_Y.isAxisPressed() == 2) odroidSpeed =  200.0;
       if(GO.JOY_Y.isAxisPressed() == 1) odroidSpeed = -200.0;
@@ -631,6 +645,24 @@ void processOdroidGo()
 
       case GO_DISPLAY::MENU_DISABLE:
         hbpOut.sendEnable(0, PROTOCOL_SOM_ACK);
+        state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_WIRESHARKDEC:
+        hbpoutSetupADCsettings();
+        adcSettingsDelta = -50;
+        hbpOut.requestRead( HoverboardAPI::Codes::adcSettings );
+        break;
+
+      case GO_DISPLAY::MENU_WIRESHARKINC:
+        hbpoutSetupADCsettings();
+        adcSettingsDelta = 50;
+        hbpOut.requestRead( HoverboardAPI::Codes::adcSettings );
+        break;
+
+      case GO_DISPLAY::MENU_WRITEFLASH:
+        unsigned short magic = 1238; // Magic number for flash;
+        hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::flashMagic, (unsigned char*) &magic, sizeof(magic), PROTOCOL_SOM_ACK );
         state = OD_LCD_MONITORINIT;
         break;
 

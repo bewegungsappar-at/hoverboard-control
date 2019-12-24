@@ -46,6 +46,9 @@ namespace GO_DISPLAY
         MENU_PWM,
         MENU_ENABLE,
         MENU_DISABLE,
+        MENU_WIRESHARKDEC,
+        MENU_WIRESHARKINC,
+        MENU_WRITEFLASH,
         MENU_IDLE
     } menu_result;
 
