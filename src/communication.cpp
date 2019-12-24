@@ -519,7 +519,15 @@ void processOdroidGo()
 #ifdef ODROID_GO_HW
   GO.update();
 
-  static int state = 0;
+  typedef enum
+  {
+      OD_LCD_MONITORINIT,
+      OD_LCD_MONITOR,
+      OD_LCD_MENUINIT,
+      OD_LCD_MENU
+  } odroidLCD_state;
+
+  static odroidLCD_state state = OD_LCD_MONITORINIT;
 
   static int BtnMenuOld = 0;
   bool BtnMenuJustPressed = ( GO.BtnMenu.isPressed() && BtnMenuOld == 0 ) ;
@@ -528,88 +536,112 @@ void processOdroidGo()
 
   switch (state)
   {
-    case 0:   // Init monitor screen
+    case OD_LCD_MONITORINIT:
         GO.lcd.setTextSize(1);
         GO.lcd.setFreeFont(&FreeMono9pt7b);
         GO.lcd.clearDisplay();
         GO_DISPLAY::show_labels();
-        state = 1;
-    case 1:   // Show monitor screen
+        state = OD_LCD_MONITOR;
+
+    case OD_LCD_MONITOR:
     {
+# ifdef DEBUG_PING
+      static int pingCounter = 0;
+      if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
+        pingCounter = 0;
+        GO_DISPLAY::show_internal_battery_voltage();
+        GO_DISPLAY::plot(latency);
+        latency = 0;
+        hbpOut.sendPing();
+      }
+# endif
 
-  #ifdef DEBUG_PING
-    static int pingCounter = 0;
-    if( pingCounter++ >= (1000 / MOTORINPUT_PERIOD) ) {
-      pingCounter = 0;
-      GO_DISPLAY::show_internal_battery_voltage();
-      GO_DISPLAY::plot(latency);
-      latency = 0;
-      hbpOut.sendPing();
-    }
-  #endif
-    static int16_t tempPID = 100;
+      static int16_t tempPID = 100;
 
-    // TODO: assuming motor 0 is left and motor 1 is right
-    GO_DISPLAY::set(GO_DISPLAY::CURRENT_LEFT ,hbpOut.getMotorAmpsAvg(0));
-    GO_DISPLAY::set(GO_DISPLAY::CURRENT_RIGHT ,hbpOut.getMotorAmpsAvg(1));
-    GO_DISPLAY::set(GO_DISPLAY::SPEED, hbpOut.getSpeed_kmh());
-    GO_DISPLAY::set(GO_DISPLAY::STEER, hbpOut.getSteer_kmh());
-    GO_DISPLAY::set(GO_DISPLAY::PWM_LEFT, PWMData.pwm[0]);
-    GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
-    GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
-    GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
-    GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_UPSTREAM, (float) tempPID);
+      // TODO: assuming motor 0 is left and motor 1 is right
+      GO_DISPLAY::set(GO_DISPLAY::CURRENT_LEFT ,hbpOut.getMotorAmpsAvg(0));
+      GO_DISPLAY::set(GO_DISPLAY::CURRENT_RIGHT ,hbpOut.getMotorAmpsAvg(1));
+      GO_DISPLAY::set(GO_DISPLAY::SPEED, hbpOut.getSpeed_kmh());
+      GO_DISPLAY::set(GO_DISPLAY::STEER, hbpOut.getSteer_kmh());
+      GO_DISPLAY::set(GO_DISPLAY::PWM_LEFT, PWMData.pwm[0]);
+      GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
+      GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
+      GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
+      GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_UPSTREAM, (float) tempPID);
 
-    GO_DISPLAY::plotBattery(hbpOut.getBatteryVoltage());
-    GO_DISPLAY::plotSpeed(hbpOut.getSpeed_kmh());
+      GO_DISPLAY::plotBattery(hbpOut.getBatteryVoltage());
+      GO_DISPLAY::plotSpeed(hbpOut.getSpeed_kmh());
 
+      odroidSpeed = 0.0;
+      odroidSteer = 0.0;
 
-    odroidSpeed = 0.0;
-    odroidSteer = 0.0;
+      if(GO.JOY_Y.isAxisPressed() == 2) odroidSpeed =  200.0;
+      if(GO.JOY_Y.isAxisPressed() == 1) odroidSpeed = -200.0;
+      if(GO.JOY_X.isAxisPressed() == 1) odroidSteer =  200.0;
+      if(GO.JOY_X.isAxisPressed() == 2) odroidSteer = -200.0;
 
-    if(GO.JOY_Y.isAxisPressed() == 2) odroidSpeed =  200.0;
-    if(GO.JOY_Y.isAxisPressed() == 1) odroidSpeed = -200.0;
-    if(GO.JOY_X.isAxisPressed() == 1) odroidSteer =  200.0;
-    if(GO.JOY_X.isAxisPressed() == 2) odroidSteer = -200.0;
+      if(GO.BtnA.isPressed()) odroidSpeed = odroidSpeed *2.0;
+      if(GO.BtnB.isPressed()) odroidSpeed = odroidSpeed *2.0;
 
-    if(GO.BtnA.isPressed()) odroidSpeed = odroidSpeed *2.0;
-    if(GO.BtnB.isPressed()) odroidSpeed = odroidSpeed *2.0;
-
-    if(odroidSpeed > 400) odroidSpeed = 400;
-    if(odroidSpeed < -400) odroidSpeed = -400;
+      if(odroidSpeed > 400) odroidSpeed = 400;
+      if(odroidSpeed < -400) odroidSpeed = -400;
 
 
-    if(nunchukState != RUNNING)
-    {
-      slowReset(motor.setpoint.pwm,   odroidSpeed, 0, 0.15);
-      slowReset(motor.setpoint.steer, odroidSteer, 0, 0.5);
-    }
+      if(nunchukState != RUNNING)
+      {
+        slowReset(motor.setpoint.pwm,   odroidSpeed, 0, 0.15);
+        slowReset(motor.setpoint.steer, odroidSteer, 0, 0.5);
+      }
 
-    if(GO.BtnStart.isPressed()) hbpOut.sendPing();
+      if(GO.BtnStart.isPressed()) hbpOut.sendPing();
 
-#ifdef DEBUG_SPEED
-      if(BtnMenuJustPressed) hbpOut.sendPIDControl(22,1,8,--tempPID,PROTOCOL_SOM_ACK);
-      if(GO.BtnVolume.isPressed()) hbpOut.sendPIDControl(22,1,8,++tempPID,PROTOCOL_SOM_ACK);
+# ifdef DEBUG_SPEED
+        if(BtnMenuJustPressed) hbpOut.sendPIDControl(22,1,8,--tempPID,PROTOCOL_SOM_ACK);
+        if(GO.BtnVolume.isPressed()) hbpOut.sendPIDControl(22,1,8,++tempPID,PROTOCOL_SOM_ACK);
 # else
-      if(BtnMenuJustPressed) state = 2;
-#endif
+        if(BtnMenuJustPressed) state = OD_LCD_MENUINIT;
+# endif
 
       break;
     }
 
-    case 2: // Init Menu
-      GO.lcd.setTextSize(1);
-      GO.lcd.setFreeFont(&FreeMono9pt7b);
-      GO.lcd.clearDisplay();
-      state = 3;
+    case OD_LCD_MENUINIT:
+      GO_DISPLAY::menu(true);
+      state = OD_LCD_MENU;
 
-    case 3: //Process Menu
-      if(BtnMenuJustPressed) state = 0;  // Go back
+    case OD_LCD_MENU:
+      switch (GO_DISPLAY::menu(false))
+      {
+      case GO_DISPLAY::MENU_SENSOR:
+        hbpoutScheduleReadings();
+        state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_PWM:
+        hbpoutSetupPWMtransmission();
+        state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_ENABLE:
+        hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
+        state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_DISABLE:
+        hbpOut.sendEnable(0, PROTOCOL_SOM_ACK);
+        state = OD_LCD_MONITORINIT;
+        break;
+
+      default:
+        break;
+      }
+
+      if(BtnMenuJustPressed) state = OD_LCD_MONITORINIT;  // Go back
       break;
 
 
   default:
-    state = 0;
+    state = OD_LCD_MONITORINIT;
     break;
   }
 
@@ -703,7 +735,7 @@ void setupCommunication()
 
   default:
     hbpoutSetupHandlers();
-#ifndef DEBUG_DISABLE_PWMOUTPUT
+#ifndef ODROID_GO_HW
     hbpoutSetupPWMtransmission();
     hbpoutScheduleReadings();
 #endif

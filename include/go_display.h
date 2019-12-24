@@ -40,6 +40,15 @@ namespace GO_DISPLAY
         BATTERY_VOLTAGE
     } field_value_t;
 
+    typedef enum
+    {
+        MENU_SENSOR,
+        MENU_PWM,
+        MENU_ENABLE,
+        MENU_DISABLE,
+        MENU_IDLE
+    } menu_result;
+
     void setup(void);
     void set(field_value_t field, float value);
     void update(void);
@@ -49,6 +58,7 @@ namespace GO_DISPLAY
     void plot(double value);
     void plotBattery(double value);
     void plotSpeed(double value);
+    menu_result menu(bool init);
 }
 
 #endif /* ODROID_GO_HW */

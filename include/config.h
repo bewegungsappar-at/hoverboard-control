@@ -54,8 +54,6 @@ extern comm_settings communicationSettings;
 #   define OTA_HANDLER
 #   define DEBUG_PING
 #   define ODROID_GO_HW
-//#   define DEBUG_DISABLE_PWMOUTPUT
-
 #   define INPUT_NUNCHUK
 #   define NUNCHUK_VCCPIN 12
 #   define NUNCHUK_SDAPIN 15

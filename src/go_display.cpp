@@ -71,49 +71,43 @@ namespace GO_DISPLAY
             GO.lcd.print("   ");
             delay(10);
 
-            if( GO.BtnA.isPressed() ) {
+            if( GO.BtnA.isPressed() ) return;
+
                 switch (cursor - firstline)
                 {
                 case 0:
                     communicationSettings.output = COMM_OUT_UDP;
                     strcpy(communicationSettings.wifi_ssid, "paddelec");
-                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
-                    return;
+                break;
 
                 case 1:
                     communicationSettings.output = COMM_OUT_UDP;
                     strcpy(communicationSettings.wifi_ssid, "wireshark");
-                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
-                    return;
+                break;
 
                 case 2:
                     communicationSettings.output = COMM_OUT_UDP;
                     strcpy(communicationSettings.wifi_ssid, "panzer");
-                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
-                    return;
+                break;
 
                 case 3:
                     communicationSettings.output = COMM_OUT_ESPNOW;
                     strcpy(communicationSettings.wifi_ssid, "paddelec");
-                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
-                    return;
+                break;
 
                 case 4:
                     communicationSettings.output = COMM_OUT_ESPNOW;
                     strcpy(communicationSettings.wifi_ssid, "wireshark");
-                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
-                    return;
+                break;
 
                 case 5:
                     communicationSettings.output = COMM_OUT_ESPNOW;
                     strcpy(communicationSettings.wifi_ssid, "panzer");
-                    strcpy(communicationSettings.wifi_pass, "bewegungsappar.at");
-                    return;
+                break;
 
                 default:
                     break;
                 }
-            }
 
             if( GO.JOY_Y.isAxisPressed() != joyYold ) {
                 joyYold = GO.JOY_Y.isAxisPressed();
@@ -145,6 +139,75 @@ namespace GO_DISPLAY
         }
     }
 
+
+    menu_result menu(bool init)
+    {
+        int firstline       = 4;
+        int firstcolumn     = 2;
+        static int cursor;
+        static int entries;
+        static uint8_t joyYold;
+
+        if(init)
+        {
+            GO.lcd.clearDisplay();
+
+            cursor = firstline;
+            GO.lcd.setTextColor(TFT_BLUE, backgroundColor);
+            GO.lcd.setTextSize(1);
+            GO.lcd.setTextFont(1);
+
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Subscribe to Sensor Data");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Send PWM");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Send Enable");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Send Disable");
+
+            entries =  cursor - firstline;
+            cursor = firstline;
+
+            joyYold = 0;
+            GO.lcd.setCharCursor(firstcolumn, cursor);
+            GO.lcd.print(">");
+        }
+        else
+        {
+            GO.update();
+            delay(10);
+
+            if( GO.BtnA.isPressed() ) return (menu_result) (cursor - firstline);
+
+            if( GO.JOY_Y.isAxisPressed() != joyYold ) {
+                joyYold = GO.JOY_Y.isAxisPressed();
+                switch (joyYold)
+                {
+
+                case 2:
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
+                    GO.lcd.print(" ");
+                    if(--cursor < firstline) cursor = firstline;
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
+                    GO.lcd.print(">");
+                    break;
+
+                case 1:
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
+                    GO.lcd.print(" ");
+                    if(++cursor >= firstline + entries) cursor = firstline + entries;
+                    GO.lcd.setCharCursor(firstcolumn,cursor);
+                    GO.lcd.print(">");
+                    break;
+
+                default:
+                    break;
+                }
+            }
+        }
+        return MENU_IDLE;
+    }
 
     void set(field_value_t field, float value)
     {
