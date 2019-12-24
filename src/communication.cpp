@@ -474,13 +474,13 @@ void hbpoutSetupHandlers()
 void hbpoutScheduleReadings()
 {
   // Get Protocol statistics
-    hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
+  hbpOut.scheduleRead(HoverboardAPI::Codes::protocolCountSum, -1, 1000);
 
   // hall data (=hoverboard measured speed)
-    hbpOut.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 100);
+  hbpOut.scheduleRead(HoverboardAPI::Codes::sensHall, -1, 100);
 
-    // Set up electrical measurements readout
-    hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
+  // Set up electrical measurements readout
+  hbpOut.scheduleRead(HoverboardAPI::Codes::sensElectrical, -1, 500);
 }
 
 void hbpoutSetupPWMtransmission()
@@ -613,6 +613,7 @@ void processOdroidGo()
       switch (GO_DISPLAY::menu(false))
       {
       case GO_DISPLAY::MENU_SENSOR:
+        hbpOut.sendEnable(1, PROTOCOL_SOM_ACK); //TODO: workaround..
         hbpoutScheduleReadings();
         state = OD_LCD_MONITORINIT;
         break;
@@ -624,6 +625,7 @@ void processOdroidGo()
 
       case GO_DISPLAY::MENU_ENABLE:
         hbpOut.sendEnable(1, PROTOCOL_SOM_ACK);
+        hbpOut.sendEnable(1, PROTOCOL_SOM_ACK); //TODO: workaround..
         state = OD_LCD_MONITORINIT;
         break;
 
