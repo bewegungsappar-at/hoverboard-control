@@ -750,6 +750,7 @@ void loopCommunication( void *pvparameters )
   {
     processOdroidGo();
     printProtocolMeasurements();
+    processBuzzer();
 
     unsigned long start = millis();
     do
