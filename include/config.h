@@ -2,27 +2,30 @@
 
 typedef enum
 {
-    COMM_IN_UDP     = 0x00,
-    COMM_IN_ESPNOW  = 0x01,
-    COMM_IN_OTHER   = 0x02
-} comm_input;
+    COMM_CHAN_UDP,
+    COMM_CHAN_ESPNOW,
+    COMM_CHAN_UART,
+    COMM_CHAN_NONE
+} comm_channel_t;
 
 typedef enum
 {
-    COMM_OUT_UDP     = 0x00, // Send output via protocol over UDP
-    COMM_OUT_ESPNOW  = 0x01,
-    COMM_OUT_UART    = 0x02
-} comm_output;
+    SYSCONF_IN_IMU,
+    SYSCONF_IN_NONE,
+    SYSCONF_IN_PADDLEIMU,
+    SYSCONF_IN_NUNCHUK
+} sysconfig_in_t;
 
 typedef struct
 {
-  comm_input input;
-  comm_output output;
+  comm_channel_t chan_in;
+  comm_channel_t chan_out;
   char wifi_ssid[23];
   char wifi_pass[23];
-} comm_settings;
+  sysconfig_in_t input;
+} sysconfig_t;
 
-extern comm_settings communicationSettings;
+extern sysconfig_t sysconfig;
 
 //////////////////////////////////////////////////////////
 // macro types for different configurations and boards
@@ -41,7 +44,7 @@ extern comm_settings communicationSettings;
 
 // Default config setting
 #ifndef CONFIGURATION_SET
-#   define CONFIGURATION_SET CFG_ODROIDGO
+#   define CONFIGURATION_SET CFG_PADDLE
 #endif
 //////////////////////////////////////////////////////////
 
@@ -85,7 +88,6 @@ extern comm_settings communicationSettings;
 #   define DEBUG_OLED
 //    #define INPUT_NUNCHUK
 #   define NUNCHUK_VCCPIN 16
-#   define INPUT_PADDELECIMU
 #   define IMU_CPIN 23
 #   define IMU_ZPIN 25
 
@@ -112,7 +114,6 @@ extern comm_settings communicationSettings;
 
 #if (CONFIGURATION_SET == CFG_PADDLE)
 #   define OTA_HANDLER
-#   define INPUT_PADDELECIMU         // look at Paddelec.h for paddelec specific config options!
 #   define IMU_GNDPIN 14
 #   define IMU_VCCPIN 32
 #   define PADDELEC_STOPSWITCH_PIN1 A2
@@ -285,7 +286,6 @@ extern comm_settings communicationSettings;
 
 // IMU Based
 //#define INPUT_IMU
-//#define INPUT_PADDELECIMU         // look at Paddelec.h for paddelec specific config options!
 //#define IMU_GNDPIN 14
 //#define IMU_VCCPIN 32
 //#define IMU_CPIN 23

@@ -250,8 +250,8 @@ void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int dat
   // Pass data to protocol
   for(int i=0; i < data_len; i++)
   {
-    if( communicationSettings.output == COMM_OUT_ESPNOW) hbpOut.protocolPush(data[i]);
-    if( communicationSettings.input  == COMM_IN_ESPNOW ) hbpIn.protocolPush(data[i]);
+    if( sysconfig.chan_out == COMM_CHAN_ESPNOW ) hbpOut.protocolPush(data[i]);
+    if( sysconfig.chan_in  == COMM_CHAN_ESPNOW ) hbpIn.protocolPush(data[i]);
   }
 }
 
@@ -298,7 +298,7 @@ void waitForMessage ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PRO
   switch (cmd) {
     case PROTOCOL_CMD_WRITEVAL:
     case PROTOCOL_CMD_READVALRESPONSE:
-      if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP)
+      if( sysconfig.chan_in == COMM_CHAN_ESPNOW || sysconfig.chan_in == COMM_CHAN_UDP)
       {
         // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
         if(hbpIn.s.params[HoverboardAPI::Codes::setPointPWM]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setPointPWM ,relayDataOut);
@@ -338,8 +338,8 @@ void pollUDP()
     {
       unsigned char readChar = (unsigned char) udp.read();
 
-      if( communicationSettings.input == COMM_IN_UDP) hbpIn.protocolPush( readChar );
-      if( communicationSettings.output == COMM_OUT_UDP) hbpOut.protocolPush( readChar );
+      if( sysconfig.chan_in == COMM_CHAN_UDP) hbpIn.protocolPush( readChar );
+      if( sysconfig.chan_out == COMM_CHAN_UDP) hbpOut.protocolPush( readChar );
     }
   }
 }
@@ -373,9 +373,9 @@ void consoleLog ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCO
 
 void initializeUDP()
 {
-  if( communicationSettings.input == COMM_IN_UDP)
+  if( sysconfig.chan_in == COMM_CHAN_UDP)
   {
-    WiFi.softAP(communicationSettings.wifi_ssid, communicationSettings.wifi_pass, 9 , 1);    //Create Access point on Channel 13 with hidden ssid
+    WiFi.softAP(sysconfig.wifi_ssid, sysconfig.wifi_pass, 9 , 1);    //Create Access point on Channel 13 with hidden ssid
 
     if(debug) COM[DEBUG_COM]->print("IP address: ");
     if(debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
@@ -386,9 +386,9 @@ void initializeUDP()
     if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
     if(debug) COM[DEBUG_COM]->println(broadcast);
   }
-  else if( communicationSettings.output == COMM_OUT_UDP)
+  else if( sysconfig.chan_out == COMM_CHAN_UDP)
   {
-    WiFi.begin(communicationSettings.wifi_ssid, communicationSettings.wifi_pass);   //Connect to access point
+    WiFi.begin(sysconfig.wifi_ssid, sysconfig.wifi_pass);   //Connect to access point
 
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED)
@@ -399,7 +399,7 @@ void initializeUDP()
 
     if(debug) COM[DEBUG_COM]->println("");
     if(debug) COM[DEBUG_COM]->print("Connected to ");
-    if(debug) COM[DEBUG_COM]->println(communicationSettings.wifi_ssid);
+    if(debug) COM[DEBUG_COM]->println(sysconfig.wifi_ssid);
     if(debug) COM[DEBUG_COM]->print("IP address: ");
     if(debug) COM[DEBUG_COM]->println(WiFi.localIP());
 
@@ -483,6 +483,24 @@ void hbpoutSetupADCsettings()
 {
   hbpOut.updateParamVariable( HoverboardAPI::Codes::adcSettings, &protocolADCSettings, sizeof(protocolADCSettings) );
   hbpOut.updateParamHandler( HoverboardAPI::Codes::adcSettings, processADCsettings );
+}
+
+void processPaddelecParameters ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
+  fn_defaultProcessing(s, param, cmd, msg);
+  switch (cmd) {
+    case PROTOCOL_CMD_READVALRESPONSE:
+    case PROTOCOL_CMD_WRITEVAL:
+//      paddelec.cfgPaddle.adc_off_end += adcSettingsDelta;
+//      paddelec.cfgPaddle.adc1_zero   += adcSettingsDelta;
+      hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
+      break;
+  }
+}
+
+void hbpoutSetupPaddelParameters()
+{
+  hbpOut.updateParamVariable( HoverboardAPI::Codes::paddleParameters, &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle) );
+  hbpOut.updateParamHandler( HoverboardAPI::Codes::paddleParameters, processPaddelecParameters);
 }
 
 void hbpoutScheduleReadings()
@@ -661,10 +679,12 @@ void processOdroidGo()
         break;
 
       case GO_DISPLAY::MENU_WRITEFLASH:
-        unsigned short magic = 1238; // Magic number for flash;
+      {
+        uint16_t magic = 1238; // Magic number for flash;
         hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::flashMagic, (unsigned char*) &magic, sizeof(magic), PROTOCOL_SOM_ACK );
         state = OD_LCD_MONITORINIT;
         break;
+      }
 
       default:
         break;
@@ -717,15 +737,15 @@ void processBuzzer()
 
 void receiveAndprocessProtocol()
 {
-  if( communicationSettings.output == COMM_OUT_UART )
+  if( sysconfig.chan_out == COMM_CHAN_UART )
     pollUART();
 
-  if( communicationSettings.output == COMM_OUT_UDP || communicationSettings.input == COMM_IN_UDP )
+  if( sysconfig.chan_out == COMM_CHAN_UDP || sysconfig.chan_in == COMM_CHAN_UDP )
     pollUDP();
 
   hbpOut.protocolTick();
 
-  if( communicationSettings.input == COMM_IN_ESPNOW || communicationSettings.input == COMM_IN_UDP )
+  if( sysconfig.chan_in == COMM_CHAN_ESPNOW || sysconfig.chan_in == COMM_CHAN_UDP )
     hbpIn.protocolTick();
 }
 
@@ -736,14 +756,14 @@ void setupCommunication()
 
   initializeOdroidGo();
 
-  switch (communicationSettings.output)
+  switch (sysconfig.chan_out)
   {
-  case COMM_OUT_ESPNOW:
+  case COMM_CHAN_ESPNOW:
     initializeESPnow();
     hbpOut.setSendSerialData(espSendDataWrapper);
     break;
 
-  case COMM_OUT_UDP:
+  case COMM_CHAN_UDP:
     initializeUDP();
     hbpOut.setSendSerialData(udpSendDataWrapper);
     break;
@@ -753,15 +773,15 @@ void setupCommunication()
     break;
   }
 
-  switch (communicationSettings.input)
+  switch (sysconfig.chan_in)
   {
-  case COMM_IN_ESPNOW:
+  case COMM_CHAN_ESPNOW:
     initializeESPnow();
     setupRelaying();
     hbpIn.setSendSerialData(espSendDataWrapper);
     break;
 
-  case COMM_IN_UDP:
+  case COMM_CHAN_UDP:
     initializeUDP();
     setupRelaying();
     hbpIn.setSendSerialData(udpSendDataWrapper);

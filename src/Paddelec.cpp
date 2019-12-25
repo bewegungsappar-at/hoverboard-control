@@ -4,8 +4,6 @@
 #include "main.h"
 #include "config.h"
 
-#if defined(INPUT_PADDELECIMU)
-
 
 void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  double &actualSpeed_kmh, volatile  double &actualSteer_kmh, volatile  uint32_t deltaMillis)
 {
@@ -159,5 +157,3 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
   else if ((goal - variable) > step) variable += step;
   else                               variable  = goal;
 }
-
-#endif

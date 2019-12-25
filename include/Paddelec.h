@@ -4,8 +4,6 @@
 #include "config.h"
 #include <IMU.h>
 
-#if defined(INPUT_PADDELECIMU)
-
 class Paddelec
 {
   public:
@@ -73,5 +71,3 @@ class Paddelec
   private:
     void slowReset(volatile double &variable, double goal, double step, double fact);
 };
-
-#endif

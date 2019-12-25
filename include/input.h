@@ -15,3 +15,6 @@ typedef enum
 } nunchuk_state;
 
 extern nunchuk_state nunchukState;
+
+#include "Paddelec.h"
+extern Paddelec paddelec;

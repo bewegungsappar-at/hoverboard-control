@@ -59,9 +59,9 @@ void setupWifi() {
   // Assuming phone is also connected to that router
   // from RoboRemo you must connect to the IP of the ESP
   WiFi.mode(WIFI_STA);
-  WiFi.begin(communicationSettings.wifi_ssid, communicationSettings.wifi_pass);
+  WiFi.begin(sysconfig.wifi_ssid, sysconfig.wifi_pass);
   if(debug) COM[DEBUG_COM]->print("try to Connect to Wireless network: ");
-  if(debug) COM[DEBUG_COM]->println(communicationSettings.wifi_ssid);
+  if(debug) COM[DEBUG_COM]->println(sysconfig.wifi_ssid);
 
 #ifdef WIFI_TRYSTA
   while (WiFi.waitForConnectResult() != WL_CONNECTED)
@@ -74,11 +74,11 @@ void setupWifi() {
     //AP mode (phone connects directly to ESP) (no router)
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(ip, ip, netmask); // configure ip address for softAP
-    WiFi.softAP(communicationSettings.wifi_ssid, communicationSettings.wifi_pass);              // configure ssid and password for softAP
+    WiFi.softAP(sysconfig.wifi_ssid, sysconfig.wifi_pass);              // configure ssid and password for softAP
     if(debug) COM[DEBUG_COM]->print("SSID ");
-    if(debug) COM[DEBUG_COM]->print(communicationSettings.wifi_ssid);
+    if(debug) COM[DEBUG_COM]->print(sysconfig.wifi_ssid);
     if(debug) COM[DEBUG_COM]->print(" pw ");
-    if(debug) COM[DEBUG_COM]->println(communicationSettings.wifi_pass);
+    if(debug) COM[DEBUG_COM]->println(sysconfig.wifi_pass);
     break;
   }
   if(debug) COM[DEBUG_COM]->println("WiFi ready");

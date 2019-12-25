@@ -73,41 +73,47 @@ namespace GO_DISPLAY
 
             if( GO.BtnA.isPressed() ) return;
 
-                switch (cursor - firstline)
-                {
-                case 0:
-                    communicationSettings.output = COMM_OUT_UDP;
-                    strcpy(communicationSettings.wifi_ssid, "paddelec");
+            switch (cursor - firstline)
+            {
+            case 0:
+                sysconfig.chan_out = COMM_CHAN_UDP;
+                strcpy(sysconfig.wifi_ssid, "paddelec");
+                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
                 break;
 
-                case 1:
-                    communicationSettings.output = COMM_OUT_UDP;
-                    strcpy(communicationSettings.wifi_ssid, "wireshark");
+            case 1:
+                sysconfig.chan_out = COMM_CHAN_UDP;
+                strcpy(sysconfig.wifi_ssid, "wireshark");
+                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
                 break;
 
-                case 2:
-                    communicationSettings.output = COMM_OUT_UDP;
-                    strcpy(communicationSettings.wifi_ssid, "panzer");
+            case 2:
+                sysconfig.chan_out = COMM_CHAN_UDP;
+                strcpy(sysconfig.wifi_ssid, "panzer");
+                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
                 break;
 
-                case 3:
-                    communicationSettings.output = COMM_OUT_ESPNOW;
-                    strcpy(communicationSettings.wifi_ssid, "paddelec");
+            case 3:
+                sysconfig.chan_out = COMM_CHAN_ESPNOW;
+                strcpy(sysconfig.wifi_ssid, "paddelec");
+                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
                 break;
 
-                case 4:
-                    communicationSettings.output = COMM_OUT_ESPNOW;
-                    strcpy(communicationSettings.wifi_ssid, "wireshark");
+            case 4:
+                sysconfig.chan_out = COMM_CHAN_ESPNOW;
+                strcpy(sysconfig.wifi_ssid, "wireshark");
+                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
                 break;
 
-                case 5:
-                    communicationSettings.output = COMM_OUT_ESPNOW;
-                    strcpy(communicationSettings.wifi_ssid, "panzer");
+            case 5:
+                sysconfig.chan_out = COMM_CHAN_ESPNOW;
+                strcpy(sysconfig.wifi_ssid, "panzer");
+                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
                 break;
 
-                default:
-                    break;
-                }
+            default:
+                break;
+            }
 
             if( GO.JOY_Y.isAxisPressed() != joyYold ) {
                 joyYold = GO.JOY_Y.isAxisPressed();

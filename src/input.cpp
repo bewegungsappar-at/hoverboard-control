@@ -9,10 +9,8 @@
   #include "oled.h"
 #endif
 
-#if defined(INPUT_PADDELECIMU)
-  #include "Paddelec.h"
-  Paddelec paddelec = Paddelec();
-#endif // INPUT_PADDELEC
+#include "Paddelec.h"
+Paddelec paddelec = Paddelec();
 
 #ifdef INPUT_NUNCHUK
   #include <ArduinoNunchuk.h>
@@ -57,9 +55,7 @@ void setupInput() {
       #endif
     #endif
 
-    #if defined(INPUT_PADDELECIMU)
-    paddelec.init();
-    #endif //INPUT_PADDELEC
+    if(sysconfig.input == SYSCONF_IN_PADDLEIMU) paddelec.init();
 
     /* Keep this at the end of setup */
     millisMotorcomm = millis();
@@ -181,9 +177,12 @@ void loopInput( void *pvparameters ) {
     break;
   #endif
 
-  #if !defined(INPUT_PADDELECIMU) && !defined(ODROID_GO_HW) // TODO: Find better way?
-    slowReset(motor.setpoint.pwm,   0.0, 10.0, 0.0);
-    slowReset(motor.setpoint.steer, 0.0, 10.0, 0.0);
+  #if !defined(ODROID_GO_HW) // TODO: Find better way?
+    if(sysconfig.input != SYSCONF_IN_PADDLEIMU)
+    {
+      slowReset(motor.setpoint.pwm,   0.0, 10.0, 0.0);
+      slowReset(motor.setpoint.steer, 0.0, 10.0, 0.0);
+    }
   #endif
 
   #ifdef INPUT_IMU
@@ -295,15 +294,16 @@ void loopInput( void *pvparameters ) {
     if( nunchukState == RUNNING ) break;
   #endif
 
-  #ifdef INPUT_PADDELECIMU
-    paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
-    if(debug) paddelec.debug(*COM[DEBUG_COM]);
-  #endif
+    if(sysconfig.input == SYSCONF_IN_PADDLEIMU)
+    {
+      paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
+      if(debug) paddelec.debug(*COM[DEBUG_COM]);
+    }
 
   } while(false);
 
-  #if defined(DEBUG_PLOTTER) && defined(INPUT_PADDELECIMU)
-    plot.Plot();
+  #if defined(DEBUG_PLOTTER)
+  if(sysconfig.input == SYSCONF_IN_PADDLEIMU) plot.Plot();
   #endif
 
 #ifdef DEBUG_OLED
@@ -323,15 +323,16 @@ void loopInput( void *pvparameters ) {
     double gZ =  imu.gz / 32768.0 * u8g2.getDisplayHeight()/2.0;
   #endif
 
-  #ifdef INPUT_PADDELECIMU
     double pwmR=0.0, pwmL=0.0;
-    paddelec.steerToRL(motor.setpoint.steer, motor.setpoint.pwm, pwmL, pwmR);
-    pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
-    pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
+    double pitchangle;
+    if(sysconfig.input == SYSCONF_IN_PADDLEIMU)
+    {
+      paddelec.steerToRL(motor.setpoint.steer, motor.setpoint.pwm, pwmL, pwmR);
+      pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
+      pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
 
-    double pitchangle = paddelec.imu.pitchangle() - paddelec.imu.pitch_zero;
-
-  #endif
+      pitchangle = paddelec.imu.pitchangle() - paddelec.imu.pitch_zero;
+    }
 
   u8g2.firstPage();
 
@@ -357,18 +358,18 @@ void loopInput( void *pvparameters ) {
     if(gZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY   ,1, gZ);
     else     u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY+gZ,1,-gZ);
   #endif
-  #ifdef INPUT_PADDELECIMU
 
-    if(pwmL>0) u8g2.drawFrame(0    ,mY   ,1, pwmL);
-    else     u8g2.drawFrame(0    ,mY+pwmL,1,-pwmL);
+    if(sysconfig.input == SYSCONF_IN_PADDLEIMU)
+    {
+      if(pwmL>0) u8g2.drawFrame(0    ,mY   ,1, pwmL);
+      else     u8g2.drawFrame(0    ,mY+pwmL,1,-pwmL);
 
 
-    if(pwmR>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, pwmR);
-    else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+pwmR,1,-pwmR);
-    u8g2.setCursor(0,mY+30);
-    u8g2.printf("Pitch%4.0f", pitchangle);
-
-  #endif
+      if(pwmR>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, pwmR);
+      else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+pwmR,1,-pwmR);
+      u8g2.setCursor(0,mY+30);
+      u8g2.printf("Pitch%4.0f", pitchangle);
+    }
 
     u8g2.setCursor(5,5);
     u8g2.printf("%4.0f %4.0f", motor.setpoint.pwm, motor.setpoint.steer);

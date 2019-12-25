@@ -2,104 +2,114 @@
 
 
 #if (CONFIGURATION_SET == CFG_ODROIDGO)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_OTHER,
-  output : COMM_OUT_UDP,
+  chan_in  : COMM_CHAN_NONE,
+  chan_out : COMM_CHAN_UDP,
   { wifi_ssid : "panzer" },
-  { wifi_pass : "bewegungsappar.at"}
+  { wifi_pass : "bewegungsappar.at"},
+  input : SYSCONF_IN_NONE
 };
 #endif
 
 
 #if (CONFIGURATION_SET == CFG_ESPNOW_RELAY)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_ESPNOW,
-  output : COMM_OUT_UART,
+  chan_in  : COMM_CHAN_ESPNOW,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_NONE
 };
 #endif
 
 
 #if (CONFIGURATION_SET == CFG_TTGO_IMU_WIFI)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_OTHER,
-  output : COMM_OUT_UART,
+  chan_in  : COMM_CHAN_NONE,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_NONE
 };
 #endif
 
 
 #if (CONFIGURATION_SET == CFG_TTGO_PADDELEC)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_OTHER,
-  output : COMM_OUT_UDP,
-  { wifi_ssid : "wireshark" },
+  chan_in  : COMM_CHAN_NONE,
+  chan_out : COMM_CHAN_UDP,
+  { wifi_ssid : "paddelec" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_PADDLEIMU
 };
 #endif
 
 #if (CONFIGURATION_SET == CFG_TESTRUN)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_OTHER,
-  output : COMM_OUT_UART,
+  chan_in  : COMM_CHAN_NONE,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_NONE
 };
 #endif
 
 #if (CONFIGURATION_SET == CFG_WIRESHARK)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_UDP,
-  output : COMM_OUT_UART,
+  chan_in  : COMM_CHAN_UDP,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_NONE
 };
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDELEC)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_UDP,
-  output : COMM_OUT_UART,
+  chan_in  : COMM_CHAN_UDP,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "paddelec" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_NONE
 };
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDLE)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_OTHER,
-  output : COMM_OUT_UDP,
+  chan_in  : COMM_CHAN_NONE,
+  chan_out : COMM_CHAN_UDP,
   { wifi_ssid : "paddelec" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_PADDLEIMU
 };
 #endif
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_ESPNOW,
-  output : COMM_OUT_UART,
+  chan_in  : COMM_CHAN_ESPNOW,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_NONE
 };
 #endif
 
 #if (CONFIGURATION_SET == CFG_PANZER)
-comm_settings communicationSettings =
+sysconfig_t sysconfig =
 {
-  input  : COMM_IN_UDP,
-  output : COMM_OUT_UART,
+  chan_in  : COMM_CHAN_UDP,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "panzer" },
   { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_NONE
 };
 #endif
