@@ -485,23 +485,6 @@ void hbpoutSetupADCsettings()
   hbpOut.updateParamHandler( HoverboardAPI::Codes::adcSettings, processADCsettings );
 }
 
-void processPaddelecParameters ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PROTOCOL_MSG3full *msg ) {
-  fn_defaultProcessing(s, param, cmd, msg);
-  switch (cmd) {
-    case PROTOCOL_CMD_READVALRESPONSE:
-    case PROTOCOL_CMD_WRITEVAL:
-//      paddelec.cfgPaddle.adc_off_end += adcSettingsDelta;
-//      paddelec.cfgPaddle.adc1_zero   += adcSettingsDelta;
-      hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
-      break;
-  }
-}
-
-void hbpoutSetupPaddelParameters()
-{
-  hbpOut.updateParamVariable( HoverboardAPI::Codes::paddleParameters, &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle) );
-  hbpOut.updateParamHandler( HoverboardAPI::Codes::paddleParameters, processPaddelecParameters);
-}
 
 void hbpoutScheduleReadings()
 {
@@ -686,6 +669,65 @@ void processOdroidGo()
         break;
       }
 
+      case GO_DISPLAY::MENU_PADDLEREAD:
+        hbpOut.updateParamVariable( HoverboardAPI::Codes::paddleParameters, &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle) );
+        hbpOut.requestRead( HoverboardAPI::Codes::paddleParameters );
+        break;
+
+      case GO_DISPLAY::MENU_PADDLEDRAGINC:
+        if(paddelec.cfgPaddle.maxValidGyro != 0)        // Check if value were received.
+        {
+          paddelec.cfgPaddle.drag += 0.00005;
+          hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
+        }
+        else state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_PADDLEDRAGDEC:
+        if(paddelec.cfgPaddle.maxValidGyro != 0)        // Check if value were received.
+        {
+          paddelec.cfgPaddle.drag -= 0.00005;
+          hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
+        }
+        else state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_PADDLEMULTINC:
+        if(paddelec.cfgPaddle.maxValidGyro != 0)        // Check if value were received.
+        {
+          paddelec.cfgPaddle.pwmMultiplier += 0.005;
+          hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
+        }
+        else state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_PADDLEMULTDEC:
+        if(paddelec.cfgPaddle.maxValidGyro != 0)        // Check if value were received.
+        {
+          paddelec.cfgPaddle.pwmMultiplier -= 0.005;
+          hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
+        }
+        else state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_PADDLESPEEDINC:
+        if(paddelec.cfgPaddle.maxValidGyro != 0)        // Check if value were received.
+        {
+          paddelec.cfgPaddle.deltaRtoSpeed += 0.00005;
+          hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
+        }
+        else state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_PADDLESPEEDDEC:
+        if(paddelec.cfgPaddle.maxValidGyro != 0)        // Check if value were received.
+        {
+          paddelec.cfgPaddle.deltaRtoSpeed -= 0.00005;
+          hbpOut.sendRawData( PROTOCOL_CMD_WRITEVAL, (unsigned char)HoverboardAPI::Codes::paddleParameters, (unsigned char*) &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle), PROTOCOL_SOM_ACK );
+        }
+        else state = OD_LCD_MONITORINIT;
+        break;
+
       default:
         break;
       }
@@ -796,6 +838,11 @@ void setupCommunication()
     break;
   }
 
+  if(sysconfig.input == SYSCONF_IN_PADDLEIMU)
+  {
+    hbpOut.updateParamVariable( HoverboardAPI::Codes::paddleParameters, &paddelec.cfgPaddle, sizeof(paddelec.cfgPaddle) );
+    hbpOut.updateParamHandler(  HoverboardAPI::Codes::paddleParameters, fn_defaultProcessing);
+  }
 }
 
 void loopCommunication( void *pvparameters )

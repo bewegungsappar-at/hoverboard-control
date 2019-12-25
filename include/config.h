@@ -44,7 +44,7 @@ extern sysconfig_t sysconfig;
 
 // Default config setting
 #ifndef CONFIGURATION_SET
-#   define CONFIGURATION_SET CFG_PADDLE
+#   define CONFIGURATION_SET CFG_ODROIDGO
 #endif
 //////////////////////////////////////////////////////////
 

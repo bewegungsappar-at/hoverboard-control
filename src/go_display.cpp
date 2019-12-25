@@ -177,6 +177,20 @@ namespace GO_DISPLAY
             GO.lcd.print("Increase Wireshark distance");
             GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
             GO.lcd.print("Write Flash");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Paddle Read");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Paddle increase drag");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Paddle decrease drag");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Paddle increase PWM mult");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Paddle decrease PWM mult");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Paddle increase gyro to speed");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("Paddle decrease gyro to speed");
 
             entries =  cursor - firstline;
             cursor = firstline;
