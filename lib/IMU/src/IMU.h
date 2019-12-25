@@ -1,7 +1,6 @@
 #pragma once
 #include <Arduino.h>
-
-#include <ArduinoNunchuk.h>
+#include <math.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
@@ -19,10 +18,19 @@
 //#define IMU_GNDPIN 14
 //#define IMU_VCCPIN 32
 
-class Imu : public ArduinoNunchuk
+#define NUNCHUK_JOYSTICK_THRESHOLD_LOW   77 // calibration values above this are considered invalid
+#define NUNCHUK_JOYSTICK_THRESHOLD_HIGH 177 // calibration values below this are considered invalid
+#define NUNCHUK_JOYSTICK_STEER_MULT     0.5 // 0.8 too much
+#define NUNCHUK_JOYSTICK_SPEED_MULT     1.0 // 0.5 way too slow
+#define NUNCHUK_ACCEL_SPEED_ANGLE        60 // Pitch angle needed to reach full speed (60° with factor 0.5 was too slow)
+#define NUNCHUK_ACCEL_STEER_ANGLE       100 // Pitch angle needed to reach full speed (90° with factor 0.8 was ok,little slow)
+
+
+class Imu
 {
   public:
-    Imu() {
+    Imu()
+    {
         #ifdef IMU_GNDPIN
             pinMode(IMU_GNDPIN,OUTPUT);
             digitalWrite(IMU_GNDPIN,LOW);
@@ -40,13 +48,46 @@ class Imu : public ArduinoNunchuk
         delay(100);
     }
 
-    void init() {
+    int analogX, analogX_min=127, analogX_zero=0, analogX_max=127;
+    int analogY, analogY_min=127, analogY_zero=0, analogY_max=127;
+    int accelX, accelX_start;
+    int accelY, accelY_start;
+    int accelZ, accelZ_start;
+    int zButton, zButton_last;
+    int cButton, cButton_last;
+    double yaw_zero=0, pitch_zero=0, roll_zero=0;
+
+    double rollangle()  { return (atan2(accelX, accelZ) * 180.0 / M_PI); }
+    double pitchangle() { return (atan2(accelY, accelZ) * 180.0 / M_PI); }
+    double yawangle()   { return (atan2(accelZ, accelX) * 180.0 / M_PI); } // TODO: Check if it is working..
+
+    double scaleAngle(double angle, double factor)    {
+      if(angle<-180.0) angle+=360.0;
+      else if (angle>180.0) angle-=360.0;
+      return angle*factor;
+    }
+    double limit(double min, double value, double max) {
+      if(value<min) value = min;
+      if(value>max) value = max;
+      return value;
+    }
+
+    void debug(Stream &port)
+    {
+      port.print("N ");
+      port.printf("%4i %4i | ", analogX, analogY);
+      port.printf("%4i %4i %4i | ", accelX, accelY, accelZ);
+      port.printf("%2i %2i  \n", zButton, cButton);
+    }
+
+    void init()
+    {
 #ifndef DEBUG_OLED
-    #ifdef TTGO
+# ifdef TTGO
         Wire.begin(5,4);
-    #else
+# else
         Wire.begin();
-    #endif
+# endif
 #endif
 
         // initialize serial communication
@@ -91,8 +132,8 @@ class Imu : public ArduinoNunchuk
 
 
         update();
-        ArduinoNunchuk::cButton = 0;
-        ArduinoNunchuk::zButton = 0;
+        cButton = 0;
+        zButton = 0;
 
         // Calibrate Gyro
         accelgyro.setXGyroOffset(0);
@@ -150,20 +191,20 @@ class Imu : public ArduinoNunchuk
         cButton_last = cButton;
         zButton_last = zButton;
 
-        ArduinoNunchuk::analogX = 0;
-        ArduinoNunchuk::analogY = 0;
-        ArduinoNunchuk::accelX = -(ay >> 4); // -511;
-        ArduinoNunchuk::accelY = -(ax >> 4);  // -511;
-        ArduinoNunchuk::accelZ = -(az >> 4); // -511;
+        analogX = 0;
+        analogY = 0;
+        accelX = -(ay >> 4); // -511;
+        accelY = -(ax >> 4);  // -511;
+        accelZ = -(az >> 4); // -511;
     #ifdef IMU_ZPIN
-        ArduinoNunchuk::zButton = 1 - digitalRead(25);
+        zButton = 1 - digitalRead(25);
     #else
-        ArduinoNunchuk::zButton = 0;
+        zButton = 0;
     #endif
     #ifdef IMU_CPIN
-        ArduinoNunchuk::cButton = 1 - digitalRead(23);
+        cButton = 1 - digitalRead(23);
     #else
-        ArduinoNunchuk::cButton = 0;
+        cButton = 0;
     #endif
 
         return error;
@@ -244,24 +285,5 @@ class Imu : public ArduinoNunchuk
   return error;
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 };
