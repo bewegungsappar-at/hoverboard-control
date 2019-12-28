@@ -191,6 +191,10 @@ namespace GO_DISPLAY
             GO.lcd.print("Paddle increase gyro to speed");
             GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
             GO.lcd.print("Paddle decrease gyro to speed");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("PWM no limit");
+            GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
+            GO.lcd.print("PWM limit 400");
 
             entries =  cursor - firstline;
             cursor = firstline;

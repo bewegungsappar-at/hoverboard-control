@@ -56,6 +56,8 @@ namespace GO_DISPLAY
         MENU_PADDLEMULTDEC,
         MENU_PADDLESPEEDINC,
         MENU_PADDLESPEEDDEC,
+        MENU_PWM_VOLLGAS,
+        MENU_PWM_HALBGAS,
         MENU_IDLE
     } menu_result;
 

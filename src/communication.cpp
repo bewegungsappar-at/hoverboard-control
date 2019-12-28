@@ -41,9 +41,9 @@ PROTOCOL_PWM_DATA PWMData = {
     .speed_minimum_pwm = 1  // guard value, below this set to zero
 #else
     .pwm = {0,0},
-    .speed_max_power =  400,
-    .speed_min_power = -400,
-    .speed_minimum_pwm = 30 // guard value, below this set to zero
+    .speed_max_power =  500,
+    .speed_min_power = -500,
+    .speed_minimum_pwm = 20 // guard value, below this set to zero
 #endif
 };
 
@@ -573,16 +573,19 @@ void processOdroidGo()
 
       static int16_t tempPID = 100;
 
+      double deltaRtoSpeed = paddelec.cfgPaddle.deltaRtoSpeed * 10000.0;
+      double pwmMultiplier = paddelec.cfgPaddle.pwmMultiplier * 100.0;
+
       // TODO: assuming motor 0 is left and motor 1 is right
       GO_DISPLAY::set(GO_DISPLAY::CURRENT_LEFT ,hbpOut.getMotorAmpsAvg(0));
       GO_DISPLAY::set(GO_DISPLAY::CURRENT_RIGHT ,hbpOut.getMotorAmpsAvg(1));
       GO_DISPLAY::set(GO_DISPLAY::SPEED, hbpOut.getSpeed_kmh());
       GO_DISPLAY::set(GO_DISPLAY::STEER, hbpOut.getSteer_kmh());
       GO_DISPLAY::set(GO_DISPLAY::PWM_LEFT, PWMData.pwm[0]);
-      GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, PWMData.pwm[1]);
+      GO_DISPLAY::set(GO_DISPLAY::PWM_RIGHT, deltaRtoSpeed);
       GO_DISPLAY::set(GO_DISPLAY::BATTERY_VOLTAGE, hbpOut.getBatteryVoltage());
       GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_DOWNSTREAM, (float) latency);
-      GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_UPSTREAM, (float) tempPID);
+      GO_DISPLAY::set(GO_DISPLAY::PACKAGE_LOSS_UPSTREAM, pwmMultiplier);
 
       GO_DISPLAY::plotBattery(hbpOut.getBatteryVoltage());
       GO_DISPLAY::plotSpeed(hbpOut.getSpeed_kmh());
@@ -590,22 +593,22 @@ void processOdroidGo()
       double odroidSpeed = 0.0;
       double odroidSteer = 0.0;
 
-      if(GO.JOY_Y.isAxisPressed() == 2) odroidSpeed =  200.0;
-      if(GO.JOY_Y.isAxisPressed() == 1) odroidSpeed = -200.0;
-      if(GO.JOY_X.isAxisPressed() == 1) odroidSteer =  200.0;
-      if(GO.JOY_X.isAxisPressed() == 2) odroidSteer = -200.0;
+      if(GO.JOY_Y.isAxisPressed() == 2) odroidSpeed =  PWMData.speed_max_power / 3;
+      if(GO.JOY_Y.isAxisPressed() == 1) odroidSpeed = -PWMData.speed_max_power / 3;
+      if(GO.JOY_X.isAxisPressed() == 1) odroidSteer =  PWMData.speed_max_power / 3;
+      if(GO.JOY_X.isAxisPressed() == 2) odroidSteer = -PWMData.speed_max_power / 3;
 
       if(GO.BtnA.isPressed()) odroidSpeed = odroidSpeed *2.0;
       if(GO.BtnB.isPressed()) odroidSpeed = odroidSpeed *2.0;
 
-      if(odroidSpeed > 400) odroidSpeed = 400;
-      if(odroidSpeed < -400) odroidSpeed = -400;
+      if(odroidSpeed > PWMData.speed_max_power) odroidSpeed =   PWMData.speed_max_power;
+      if(odroidSpeed < -PWMData.speed_max_power) odroidSpeed = -PWMData.speed_max_power;
 
 
       if(nunchukState != RUNNING)
       {
         slowReset(motor.setpoint.pwm,   odroidSpeed, 0, 0.15);
-        slowReset(motor.setpoint.steer, odroidSteer, 0, 0.5);
+        slowReset(motor.setpoint.steer, odroidSteer, 0, 0.2);
       }
 
       if(GO.BtnStart.isPressed()) hbpOut.sendPing();
@@ -727,6 +730,19 @@ void processOdroidGo()
         }
         else state = OD_LCD_MONITORINIT;
         break;
+
+      case GO_DISPLAY::MENU_PWM_VOLLGAS:
+        PWMData.speed_max_power = 1000;
+        hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
+        state = OD_LCD_MONITORINIT;
+        break;
+
+      case GO_DISPLAY::MENU_PWM_HALBGAS:
+        PWMData.speed_max_power = 400;
+        hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
+        state = OD_LCD_MONITORINIT;
+        break;
+
 
       default:
         break;

@@ -132,6 +132,7 @@ extern sysconfig_t sysconfig;
 #if (CONFIGURATION_SET == CFG_PANZER)
 #   define OTA_HANDLER
 #   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
+#   define INPUT_NUNCHUK
 #endif
 
 
