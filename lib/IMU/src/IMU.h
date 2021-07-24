@@ -86,7 +86,7 @@ class Imu
 # ifdef TTGO
         Wire.begin(5,4);
 # else
-        Wire.begin();
+        Wire.begin(21,22);
 # endif
 #endif
 
@@ -193,6 +193,8 @@ class Imu
 
         analogX = 0;
         analogY = 0;
+
+
         accelX = -(ay >> 4); // -511;
         accelY = -(ax >> 4);  // -511;
         accelZ = -(az >> 4); // -511;

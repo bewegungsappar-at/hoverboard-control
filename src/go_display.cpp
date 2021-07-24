@@ -49,7 +49,7 @@ namespace GO_DISPLAY
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
         GO.lcd.print("UDP panzer");
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
-        GO.lcd.print("ESPnow paddelec");
+        GO.lcd.print("UDP zulu");
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
         GO.lcd.print("ESPnow wireshark");
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);

@@ -33,8 +33,8 @@ class Paddelec
     {
       imu.init();
       cfgPaddle.paddleAngleThreshold =   22.0;      // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed        =    0.00025;   // conversion factor between paddle movement to speed. This defines also the maximum speed.
-      cfgPaddle.pwmMultiplier        =    0.10;      // effect of paddle stroke to speed
+      cfgPaddle.deltaRtoSpeed        =    0.00025;   // (spassfaktor) conversion factor between paddle movement to speed. This defines also the maximum speed.
+      cfgPaddle.pwmMultiplier        =    0.10;      // (spassfaktor) effect of paddle stroke to speed
       cfgPaddle.crosstalkLR          =    0.0;      // multiplier for steering
       cfgPaddle.realign              =    0.0;      // paddelc tries to go straight forward
       cfgPaddle.drag                 =    0.0002;   // drag/water resistance
@@ -49,8 +49,16 @@ class Paddelec
 
 
 # ifdef PADDELEC_STOPSWITCH_PIN1
+    #if (CONFIGURATION_SET == CFG_PAGAIE)
+      pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLUP);
+    #else
       pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLDOWN);
+    #endif
 # endif
+
+
+# ifdef PAGAIE_STOPSWITCH_PIN1
+ # endif
 
 # ifdef PADDELEC_STOPSWITCH_PIN2
       pinMode(PADDELEC_STOPSWITCH_PIN2, OUTPUT);

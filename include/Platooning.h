@@ -35,7 +35,7 @@ class Platooning
       cfgPlatooning.PWMbackwardLimit        = 150.0;  // Limit PWM
       cfgPlatooning.SteerLimit              = 500.0;   // Limit Steering
     }
-    void update(double &pwm, double &steer);
+    void update(volatile double &pwm, volatile double &steer);
     void debug(Stream &port);
     
   private: 

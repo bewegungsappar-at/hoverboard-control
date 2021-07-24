@@ -39,12 +39,14 @@ extern sysconfig_t sysconfig;
 #define   CFG_PADDLE               6
 #define   CFG_WIRESHARK            7
 #define   CFG_NUNCHUK_ESPNOW_RELAY 8
+#define   CFG_PAGAIE               9
 #define   CFG_PANZER              10
+#define   CFG_GAMETRAK            11
 
 
 // Default config setting
 #ifndef CONFIGURATION_SET
-#   define CONFIGURATION_SET CFG_ODROIDGO
+#   define CONFIGURATION_SET CFG_PAGAIE
 #endif
 //////////////////////////////////////////////////////////
 
@@ -102,10 +104,28 @@ extern sysconfig_t sysconfig;
 
 #if (CONFIGURATION_SET == CFG_WIRESHARK)
 #   define OTA_HANDLER
-#   define INPUT_NUNCHUK
-#   define NUNCHUK_VCCPIN 18
-#   define NUNCHUK_GNDPIN 19
+//#   define INPUT_NUNCHUK
+//#   define NUNCHUK_VCCPIN 18
+//#   define NUNCHUK_GNDPIN 19
 //#   define DEBUG_CONSOLE
+
+#endif
+
+#if (CONFIGURATION_SET == CFG_GAMETRAK)
+#   define OTA_HANDLER
+#   define DEBUG_CONSOLE
+
+#define INPUT_PLATOONING
+// Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used
+/****  Gametrak 1 ****/
+#define       GAMETRAK1_RPIN 34  // wire length Pin Gametrak 1      -      white  - Pin 3
+#define     GAMETRAK1_PHIPIN 33  // horizontal angle Pin Gametrak 1 - blue/yellow - Pin 2
+#define   GAMETRAK1_THETAPIN 32  // vertical angle Pin Gametrak 1   - red/orange  - Pin 4
+#define   GAMETRAK1_PHI_REV 0    // Phi is inverted
+#define GAMETRAK1_THETA_REV 0    // Theta is inverted
+//#define     GAMETRAK1_VCCPIN 25  // Pin used to supply Power        - black/brown - Pin 5
+//#define     GAMETRAK1_GNDPIN 26  // Pin used as GND                 -       green - Pin 1
+
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDELEC)
@@ -118,6 +138,15 @@ extern sysconfig_t sysconfig;
 #   define IMU_VCCPIN 32
 #   define PADDELEC_STOPSWITCH_PIN1 A2
 #   define PADDELEC_STOPSWITCH_PIN2 A1
+#endif
+
+#if (CONFIGURATION_SET == CFG_PAGAIE)
+#   define OTA_HANDLER
+//#   define IMU_GNDPIN 14
+//#   define IMU_VCCPIN 32
+#   define PADDELEC_STOPSWITCH_PIN1 A14
+// #   define PADDELEC_STOPSWITCH_PIN2 A14
+#   define DEBUG_CONSOLE
 #endif
 
 #if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
@@ -242,7 +271,7 @@ extern sysconfig_t sysconfig;
 #endif
 
 #ifndef SERIAL2_TXPIN
-    #define SERIAL2_TXPIN 17            // transmit Pin UART2
+    #define SERIAL2_TXPIN 15            // transmit Pin UART2
 #endif
 
 #ifndef SERIAL2_TCP_PORT

@@ -64,11 +64,24 @@ sysconfig_t sysconfig =
 {
   chan_in  : COMM_CHAN_UDP,
   chan_out : COMM_CHAN_UART,
-  { wifi_ssid : "wireshark" },
+  { wifi_ssid : "zulu" },
   { wifi_pass : "bewegungsappar.at" },
   input : SYSCONF_IN_NONE
 };
 #endif
+
+#if (CONFIGURATION_SET == CFG_GAMETRAK)
+sysconfig_t sysconfig =
+{
+  chan_in  : COMM_CHAN_NONE,
+  chan_out : COMM_CHAN_UDP,
+  { wifi_ssid : "zulu" },
+  { wifi_pass : "bewgegungsappar.at" },
+  input : SYSCONF_IN_NONE
+
+};
+#endif
+
 
 #if (CONFIGURATION_SET == CFG_PADDELEC)
 sysconfig_t sysconfig =
@@ -84,9 +97,22 @@ sysconfig_t sysconfig =
 #if (CONFIGURATION_SET == CFG_PADDLE)
 sysconfig_t sysconfig =
 {
-  chan_in  : COMM_CHAN_NONE,
-  chan_out : COMM_CHAN_UDP,
+  chan_in  : COMM_CHAN_UDP,
+  chan_out : COMM_CHAN_UART,
   { wifi_ssid : "paddelec" },
+  { wifi_pass : "bewegungsappar.at" },
+  input : SYSCONF_IN_PADDLEIMU
+};
+#endif
+
+#if (CONFIGURATION_SET == CFG_PAGAIE)
+sysconfig_t sysconfig =
+{
+//   chan_in  : COMM_CHAN_UDP,
+   chan_in  : COMM_CHAN_NONE,
+//  chan_out : COMM_CHAN_UART,
+  chan_out : COMM_CHAN_UDP,
+  { wifi_ssid : "zulu" },
   { wifi_pass : "bewegungsappar.at" },
   input : SYSCONF_IN_PADDLEIMU
 };

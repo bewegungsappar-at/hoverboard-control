@@ -5,7 +5,8 @@
 #ifdef INPUT_PLATOONING
 
 
-void Platooning::update(double &pwm, double &steer) {
+void Platooning::update(volatile double &pwm, volatile double &steer) {
+
   gametrak1.update();
 
   if(gametrak1.getR_mm() < cfgPlatooning.rActivationThreshold_mm) {
