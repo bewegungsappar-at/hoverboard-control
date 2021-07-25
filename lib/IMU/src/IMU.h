@@ -8,10 +8,6 @@
 
 #define IMU_DEBUG false
 
-#ifdef DEBUG_PLOTTER
-  #include <Plotter.h>
-  extern Plotter plot;
-#endif
 
 //#define IMU_CPIN 23
 //#define IMU_ZPIN 25

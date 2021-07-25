@@ -20,12 +20,6 @@
 
 #define ADDRESS 0x52
 
-#ifdef DEBUG_PLOTTER
-  #include <Plotter.h>
-  extern Plotter plot;
-
-  int avg_diff[5];
-#endif
 
 extern volatile PROTOCOL_BUZZER_DATA sendBuzzer;
 
@@ -70,20 +64,6 @@ void ArduinoNunchuk::init()
 
   ArduinoNunchuk::_sendByte(0x55, 0xF0);
   ArduinoNunchuk::_sendByte(0x00, 0xFB);
-
-#ifdef DEBUG_PLOTTER
-//  plot.AddTimeGraph( "Nunchuk Acceleration + diff", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
-//  plot.AddTimeGraph( "Nunchuk Acceleration", 500, "X filtered", accelX, "Y filtered", accelY, "Z filtered", accelZ);
-//  plot.AddTimeGraph( "Nunchuk Acceleration diff", 500, "X diff", avg_diff[2], "y diff", avg_diff[3], "z diff", avg_diff[4]);
-
-//  plot.AddTimeGraph( "Nunchuk Joy + diff", 500, "X", analogX, "Y", analogY, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
-//  plot.AddTimeGraph( "Nunchuk Joy", 500, "X", analogX, "Y", analogY);
-//  plot.AddTimeGraph( "Nunchuk Joy diff", 500, "X diff", avg_diff[0], "Y diff", avg_diff[1] );
-
-//  plot.AddTimeGraph( "Nunchuk Buttons", 500, "Button C", cButton, "Button Z", zButton );
-//  plot.AddTimeGraph( "Nunchuk Buttons Sum", 500, "Sum C", avg_sum[6], "Sum Z", avg_sum[5] );
-
-#endif
 
 
   ArduinoNunchuk::update();
@@ -162,9 +142,7 @@ int ArduinoNunchuk::update() {
   // check if new values are valid
   int deviationCount = 0;
 
-  #ifndef DEBUG_PLOTTER
-    int avg_diff[5];
-  #endif
+  int avg_diff[5];
 
   for(int i = 0; i<5; i++) {
     avg_diff[i] = valuesTemp[i] - ( avg_sum[i] / NUNCHUK_HISTORY );
@@ -244,10 +222,6 @@ int ArduinoNunchuk::update() {
 
   avg_ptr++;
   if(NUNCHUK_HISTORY == avg_ptr) avg_ptr = 0;
-
-  #ifdef DEBUG_PLOTTER
-    plot.Plot();
-  #endif
 
   if(deviationCount > 0) return NUNCHUK_ERR_DEV1 + deviationCount - 1;
 

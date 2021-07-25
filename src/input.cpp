@@ -47,12 +47,6 @@ void setupInput() {
 
     #ifdef INPUT_IMU
       imu.init();
-      #ifdef DEBUG_PLOTTER
-//        plot.AddTimeGraph( "IMU acceleration", 1000, "ax", imu.ax, "ay", imu.ay, "az", imu.az);
-//        plot.AddTimeGraph( "IMU gyro", 1000, "gx", imu.gx, "gy", imu.gy, "gz", imu.gz);
-        plot.AddTimeGraph( "IMU acceleration", 500, "ax", imu.ax);
-        plot.AddTimeGraph( "IMU gyro", 500, "gz", imu.gz);
-      #endif
     #endif
 
     if(sysconfig.input == SYSCONF_IN_PADDLEIMU) paddelec.init();
@@ -301,10 +295,6 @@ void loopInput( void *pvparameters ) {
     }
 
   } while(false);
-
-  #if defined(DEBUG_PLOTTER)
-  if(sysconfig.input == SYSCONF_IN_PADDLEIMU) plot.Plot();
-  #endif
 
 #ifdef DEBUG_OLED
     uint mX = u8g2.getDisplayWidth()/2;

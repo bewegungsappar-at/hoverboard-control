@@ -3,7 +3,6 @@
 typedef enum
 {
     COMM_CHAN_UDP,
-    COMM_CHAN_ESPNOW,
     COMM_CHAN_UART,
     COMM_CHAN_NONE
 } comm_channel_t;
@@ -31,14 +30,12 @@ extern sysconfig_t sysconfig;
 // macro types for different configurations and boards
 
 #define   CFG_ODROIDGO             0
-#define   CFG_ESPNOW_RELAY         1
 #define   CFG_TTGO_IMU_WIFI        2
 #define   CFG_TTGO_PADDELEC        3
 #define   CFG_TESTRUN              4
 #define   CFG_PADDELEC             5
 #define   CFG_PADDLE               6
 #define   CFG_WIRESHARK            7
-#define   CFG_NUNCHUK_ESPNOW_RELAY 8
 #define   CFG_PANZER              10
 
 
@@ -50,9 +47,6 @@ extern sysconfig_t sysconfig;
 
 
 #if (CONFIGURATION_SET == CFG_ODROIDGO)
-//#   define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodenboard
-//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
-//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
 #   define OTA_HANDLER
 #   define DEBUG_PING
 #   define ODROID_GO_HW
@@ -64,12 +58,6 @@ extern sysconfig_t sysconfig;
 #endif
 
 
-#if (CONFIGURATION_SET == CFG_ESPNOW_RELAY)
-//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x6A,0xD4 // feather esp remote
-#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
-#endif
-
-
 #if (CONFIGURATION_SET == CFG_TTGO_IMU_WIFI)
 #   define TTGO
 #   define DEBUG_OLED
@@ -77,8 +65,6 @@ extern sysconfig_t sysconfig;
 #   define INPUT_IMU
 #   define IMU_CPIN 23
 #   define IMU_ZPIN 25
-
-#   define WIFI
 #endif
 
 
@@ -89,8 +75,6 @@ extern sysconfig_t sysconfig;
 #   define NUNCHUK_VCCPIN 16
 #   define IMU_CPIN 23
 #   define IMU_ZPIN 25
-
-//#   define ESPNOW_PREFIX "PADDELEC" // ESPNOW "Channel" encoded in SSID
 #   define DEBUG_CONSOLE
 #   define OTA_HANDLER
 #endif
@@ -119,14 +103,6 @@ extern sysconfig_t sysconfig;
 #   define PADDELEC_STOPSWITCH_PIN2 A1
 #endif
 
-#if (CONFIGURATION_SET == CFG_NUNCHUK_ESPNOW_RELAY)
-#   define INPUT_NUNCHUK
-#   define      NUNCHUK_VCCPIN 18
-#   define      NUNCHUK_GNDPIN 19
-//#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x6A,0xD4 // feather esp remote
-//#   define ESPNOW_PEERMAC 0xB4,0xE6,0x2D,0xD4,0x29,0xD9 // odroid Nico
-#   define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
-#endif
 
 #if (CONFIGURATION_SET == CFG_PANZER)
 #   define OTA_HANDLER
@@ -145,29 +121,12 @@ extern sysconfig_t sysconfig;
 //#define ODROID_GO_HW         // TODO: odroid Settings..
 
 //#define DEBUG_CONSOLE         // Debug through Serial Interface
-//#define DEBUG_PLOTTER         // Plot Values through Serial Interface
-                                // Get Listener: https://github.com/devinaconley/arduino-plotter/wiki/Installation-and-Quickstart
 //#define DEBUG_PROTOCOL_OUTGOING_MARKUP // Write all outgoing Messages to debug com in human readable form
 //#define DEBUG_PROTOCOL_MEASUREMENTS    // Write measured values to debug com
-//#define debugESPNOW                    // Debug ESPnow
 
 //#define DEBUG_PING                     // Send periodic Pings over protocol
 //#define DEBUG_SPEED                      // Use closed loop speed control instead of pwm
 
-
-/******************************* Wifi **********************************/
-
-//#define WIFI
-#ifdef WIFI
-#include <esp_wifi.h>
-
-#define OTA_HANDLER
-
-//#define WIFI_TRYSTA   // Try to connect to network on boot
-
-#define WIFI_IP         192, 168, 4, 1
-#define WIFI_NETMASK    255, 255, 255, 0
-#endif
 
 /***************************** Serial ********************************/
 #ifndef NUM_COM
@@ -258,21 +217,6 @@ extern sysconfig_t sysconfig;
 #ifndef MAX_NMEA_CLIENTS
     #define MAX_NMEA_CLIENTS 4
 #endif
-
-
-#ifndef ESPNOW_PREFIX
-  #define ESPNOW_PREFIX "ESPNOW" // ESPNOW "Channel" encoded in SSID
-#endif
-
-//  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x02,0x7E,0x98 // Paddelec WROOM
-//  #define ESPNOW_PEERMAC 0xB4,0xE6,0x2D,0xB2,0x79,0x3D // Paddel TTGO
-//  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x86,0x68 // Psycho Board
-//  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x6A,0xD4 // feather board Remote
-//  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0x26,0x26,0x14 // feather board with OLED
-//  #define ESPNOW_PEERMAC 0x24,0x0A,0xC4,0xAF,0xC9,0xE0 // Woodenboard
-//  #define ESPNOW_PEERMAC 0xB4,0xE6,0x2D,0xD4,0x29,0xD9 // odroid Nico
-//  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xE0,0x34,0x70 // odroid phail
-//  #define ESPNOW_PEERMAC 0x30,0xAE,0xA4,0xEE,0xC4,0x64 // wrover dev kit
 
 #ifndef MOTORINPUT_PERIOD
     #define MOTORINPUT_PERIOD   30  // Update Motor each xx milliseconds

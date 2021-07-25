@@ -58,8 +58,6 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 
 
   double paddleAngle = cfgPaddle.flipControl * (imu.pitchangle() - imu.pitch_zero);
-//  plotterTempDouble[2] = paddleAngle;
-//  plotterTempDouble[3] = imu.az;
 
   if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("PD: ");
 
@@ -124,11 +122,6 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 
   /* convert from left and right wheel speed to speed and steering */
   RLpwmToSteer(steer, pwm, pwmL, pwmR);
-//  plotterTempDouble[0] = imu.ax;
-//  plotterTempDouble[1] = imu.ay;
-
-
-//  plotterTempDouble[1] = imu.gz *0.1;
 }
 
 void Paddelec::debug(Stream &port)

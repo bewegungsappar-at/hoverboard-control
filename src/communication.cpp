@@ -6,7 +6,6 @@
 #include <HoverboardAPI.h>
 #include "protocolFunctions.h"
 
-#include "ESP32_espnow_MasterSlave.h"
 #include "input.h"
 #include <esp_now.h>
 
@@ -73,12 +72,6 @@ void protocolMarkup(unsigned char *data, int len, int prefix) {
   switch (prefix) {
     case 0:
       COM[DEBUG_COM]->print("Out UART   ");
-      break;
-    case 1:
-      COM[DEBUG_COM]->print("Out ESPnow ");
-      break;
-    case 2:
-      COM[DEBUG_COM]->print("In  ESPnow ");
       break;
     case 3:
       COM[DEBUG_COM]->print("Out UDP    ");
@@ -174,92 +167,6 @@ int udpSendDataWrapper(unsigned char *data, int len) {
 }
 
 
-int espSendDataWrapper(unsigned char *data, int len) {
-
-  #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
-  protocolMarkup(data, len, 1);
-  #endif
-
-  if (SlaveCnt > 0) { // check if slave channel is defined
-    // `slave` is defined
-    sendData(data, (size_t) len);
-    return len;
-  } else if(scanCounter == 0) {
-    ScanForSlave();
-    if (SlaveCnt > 0) { // check if slave channel is defined
-      // `slave` is defined
-      // Add slave as peer if it has not been added already
-      manageSlave();
-      // pair success or already paired
-    }
-    scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
-  } else {
-    scanCounter--;
-  }
-  return -1;
-}
-
-void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-
-  // Print debug information
-  #ifdef debugESPNOW
-    char macStr[18];
-    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-    extern bool debug_espnow;
-    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
-    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->write(data, data_len);
-    if(debug_espnow) COM[DEBUG_COM]->println("");
-    if(debug_espnow) COM[DEBUG_COM]->println("");
-  #endif
-
-  /* validate MAC Address
-  * In ESPnow a different MAC Adress is used to send or receive packets.
-  * Fortunately, the MAC Adresses are only one bit apart.
-  */
-  int foundSlave = 0;
-  extern esp_now_peer_info_t slaves[1];
-
-  for(int i = 0; i< SlaveCnt; i++) {
-    if( slaves[i].peer_addr[0] == mac_addr[0] &&
-        slaves[i].peer_addr[1] == mac_addr[1] &&
-        slaves[i].peer_addr[2] == mac_addr[2] &&
-        slaves[i].peer_addr[3] == mac_addr[3] &&
-        slaves[i].peer_addr[4] == mac_addr[4] &&
-        slaves[i].peer_addr[5] == mac_addr[5] )
-    {
-      foundSlave++;
-    }
-  }
-
-  if(foundSlave == 0) return;
-
-
-  // Stop SSID Broadcast as soon as Package was received
-  extern int hideAP;
-  extern void configDeviceAP();
-  if(!hideAP) {
-    hideAP = 1;
-    configDeviceAP();
-  }
-
-  #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
-    protocolMarkup((unsigned char *)data, data_len, 2);
-  #endif
-
-  // Pass data to protocol
-  for(int i=0; i < data_len; i++)
-  {
-    if( sysconfig.chan_out == COMM_CHAN_ESPNOW ) hbpOut.protocolPush(data[i]);
-    if( sysconfig.chan_in  == COMM_CHAN_ESPNOW ) hbpIn.protocolPush(data[i]);
-  }
-}
-
-#ifdef WIFI
-  #include <WiFi.h>
-  extern WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
-#endif
-
 
 double limit(double min, double value, double max) {
   if(value<min) value = min;
@@ -298,7 +205,7 @@ void waitForMessage ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PRO
   switch (cmd) {
     case PROTOCOL_CMD_WRITEVAL:
     case PROTOCOL_CMD_READVALRESPONSE:
-      if( sysconfig.chan_in == COMM_CHAN_ESPNOW || sysconfig.chan_in == COMM_CHAN_UDP)
+      if( sysconfig.chan_in == COMM_CHAN_UDP)
       {
         // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
         if(hbpIn.s.params[HoverboardAPI::Codes::setPointPWM]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setPointPWM ,relayDataOut);
@@ -433,19 +340,9 @@ void initializeOdroidGo()
   #endif // ODROID_GO_HW
 }
 
-void initializeESPnow()
-{
-  // Init ESPnow
-  setupEspNow();
-  esp_now_register_recv_cb(espReceiveDataWrapper);
-  hbpOut.sendPing(); // First messages are lost
-  hbpOut.sendPing();
-  hbpOut.sendPing();
-}
 
 void setupRelaying()
 {
-  // ESPnow to UART Protocol Relay
   // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
   for (int i = 0; i < sizeof(hbpOut.s.params)/sizeof(hbpOut.s.params[0]); i++) {
     if(hbpOut.s.params[i]) hbpOut.updateParamHandler((HoverboardAPI::Codes) i ,relayDataIn);
@@ -803,7 +700,7 @@ void receiveAndprocessProtocol()
 
   hbpOut.protocolTick();
 
-  if( sysconfig.chan_in == COMM_CHAN_ESPNOW || sysconfig.chan_in == COMM_CHAN_UDP )
+  if( sysconfig.chan_in == COMM_CHAN_UDP )
     hbpIn.protocolTick();
 }
 
@@ -816,10 +713,6 @@ void setupCommunication()
 
   switch (sysconfig.chan_out)
   {
-  case COMM_CHAN_ESPNOW:
-    initializeESPnow();
-    hbpOut.setSendSerialData(espSendDataWrapper);
-    break;
 
   case COMM_CHAN_UDP:
     initializeUDP();
@@ -833,11 +726,6 @@ void setupCommunication()
 
   switch (sysconfig.chan_in)
   {
-  case COMM_CHAN_ESPNOW:
-    initializeESPnow();
-    setupRelaying();
-    hbpIn.setSendSerialData(espSendDataWrapper);
-    break;
 
   case COMM_CHAN_UDP:
     initializeUDP();

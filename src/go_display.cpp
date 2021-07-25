@@ -48,12 +48,6 @@ namespace GO_DISPLAY
         GO.lcd.print("UDP wireshark");
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
         GO.lcd.print("UDP panzer");
-        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
-        GO.lcd.print("ESPnow paddelec");
-        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
-        GO.lcd.print("ESPnow wireshark");
-        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
-        GO.lcd.print("ESPnow panzer");
 
         int entries =  cursor - firstline;
         cursor = firstline;
@@ -78,37 +72,19 @@ namespace GO_DISPLAY
             case 0:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "paddelec");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                    strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 1:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "wireshark");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 2:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "panzer");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
-                break;
-
-            case 3:
-                sysconfig.chan_out = COMM_CHAN_ESPNOW;
-                strcpy(sysconfig.wifi_ssid, "paddelec");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
-                break;
-
-            case 4:
-                sysconfig.chan_out = COMM_CHAN_ESPNOW;
-                strcpy(sysconfig.wifi_ssid, "wireshark");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
-                break;
-
-            case 5:
-                sysconfig.chan_out = COMM_CHAN_ESPNOW;
-                strcpy(sysconfig.wifi_ssid, "panzer");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             default:
