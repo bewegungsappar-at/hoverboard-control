@@ -3,9 +3,7 @@
 #include "config.h"
 #include "main.h"
 
-#ifdef OTA_HANDLER
-# include <ArduinoOTA.h>
-#endif // OTA_HANDLER
+#include <ArduinoOTA.h>
 
 
 HardwareSerial* COM[NUM_COM] = {&Serial, &Serial1 , &Serial2};
@@ -28,7 +26,6 @@ void setupSerial() {
 }
 
 
-#ifdef OTA_HANDLER
 void setupOTA() {
   ArduinoOTA
     .onStart([]() {
@@ -63,4 +60,3 @@ void setupOTA() {
 void ota() {
   ArduinoOTA.handle();
 }
-#endif // OTA_HANDLER

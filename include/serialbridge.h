@@ -4,10 +4,8 @@
 #include <Arduino.h>
 
 
-#ifdef OTA_HANDLER
-    void setupOTA();
-    void ota();
-#endif
+void setupOTA();
+void ota();
 
 extern HardwareSerial* COM[NUM_COM];
 

@@ -32,9 +32,7 @@ void setup() {
   setupCommunication();
   setupInput();
 
-#ifdef OTA_HANDLER
   setupOTA();
-#endif
 
   xTaskCreatePinnedToCore(
     loopInput,                 // Task function.
@@ -58,9 +56,7 @@ void setup() {
 
 void loop() {
 
-  #ifdef OTA_HANDLER
     ota();
-  #endif // OTA_HANDLER
 
   delay(5);
 }

@@ -47,7 +47,6 @@ extern sysconfig_t sysconfig;
 
 
 #if (CONFIGURATION_SET == CFG_ODROIDGO)
-#   define OTA_HANDLER
 #   define DEBUG_PING
 #   define ODROID_GO_HW
 #   define INPUT_NUNCHUK
@@ -76,7 +75,6 @@ extern sysconfig_t sysconfig;
 #   define IMU_CPIN 23
 #   define IMU_ZPIN 25
 #   define DEBUG_CONSOLE
-#   define OTA_HANDLER
 #endif
 
 #if (CONFIGURATION_SET == CFG_TESTRUN)
@@ -84,7 +82,6 @@ extern sysconfig_t sysconfig;
 #endif
 
 #if (CONFIGURATION_SET == CFG_WIRESHARK)
-#   define OTA_HANDLER
 #   define INPUT_NUNCHUK
 #   define NUNCHUK_VCCPIN 18
 #   define NUNCHUK_GNDPIN 19
@@ -92,11 +89,9 @@ extern sysconfig_t sysconfig;
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDELEC)
-#   define OTA_HANDLER
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDLE)
-#   define OTA_HANDLER
 #   define IMU_GNDPIN 14
 #   define IMU_VCCPIN 32
 #   define PADDELEC_STOPSWITCH_PIN1 A2
@@ -105,7 +100,6 @@ extern sysconfig_t sysconfig;
 
 
 #if (CONFIGURATION_SET == CFG_PANZER)
-#   define OTA_HANDLER
 #   define SERIAL2_GNDPIN 26              // Pin used as GND - Needed for psycho
 #   define INPUT_NUNCHUK
 #endif
