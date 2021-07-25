@@ -19,7 +19,6 @@ struct motorControl {
 };
 
 extern volatile motorControl motor;
-extern bool debug;
 extern volatile int32_t deltaMillis;
 
 void slowReset(volatile double &variable, double goal, double step, double fact);

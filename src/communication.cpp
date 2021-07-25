@@ -284,14 +284,14 @@ void initializeUDP()
   {
     WiFi.softAP(sysconfig.wifi_ssid, sysconfig.wifi_pass, 9 , 1);    //Create Access point on Channel 13 with hidden ssid
 
-    if(debug) COM[DEBUG_COM]->print("IP address: ");
-    if(debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
+    if(sysconfig.debug) COM[DEBUG_COM]->print("IP address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
 
     broadcast = WiFi.softAPIP();
 
     broadcast[3] = 255;
-    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
-    if(debug) COM[DEBUG_COM]->println(broadcast);
+    if(sysconfig.debug) COM[DEBUG_COM]->print("Broadcast address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(broadcast);
   }
   else if( sysconfig.chan_out == COMM_CHAN_UDP)
   {
@@ -301,33 +301,33 @@ void initializeUDP()
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(500);
-      if(debug) COM[DEBUG_COM]->print(".");
+      if(sysconfig.debug) COM[DEBUG_COM]->print(".");
     }
 
-    if(debug) COM[DEBUG_COM]->println("");
-    if(debug) COM[DEBUG_COM]->print("Connected to ");
-    if(debug) COM[DEBUG_COM]->println(sysconfig.wifi_ssid);
-    if(debug) COM[DEBUG_COM]->print("IP address: ");
-    if(debug) COM[DEBUG_COM]->println(WiFi.localIP());
+    if(sysconfig.debug) COM[DEBUG_COM]->println("");
+    if(sysconfig.debug) COM[DEBUG_COM]->print("Connected to ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(sysconfig.wifi_ssid);
+    if(sysconfig.debug) COM[DEBUG_COM]->print("IP address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(WiFi.localIP());
 
     broadcast = WiFi.localIP();
 
     broadcast[3] = 255;
-    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
-    if(debug) COM[DEBUG_COM]->println(broadcast);
+    if(sysconfig.debug) COM[DEBUG_COM]->print("Broadcast address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(broadcast);
   }
 
   //Start UDP
-  if(debug) COM[DEBUG_COM]->println("Starting UDP");
+  if(sysconfig.debug) COM[DEBUG_COM]->println("Starting UDP");
   udp.begin(localPort);
-  if(debug) COM[DEBUG_COM]->print("Local port: ");
-  if(debug) COM[DEBUG_COM]->println(localPort);
+  if(sysconfig.debug) COM[DEBUG_COM]->print("Local port: ");
+  if(sysconfig.debug) COM[DEBUG_COM]->println(localPort);
 
   broadcast = WiFi.softAPIP();
 
   broadcast[3] = 255;
-  if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
-  if(debug) COM[DEBUG_COM]->println(broadcast);
+  if(sysconfig.debug) COM[DEBUG_COM]->print("Broadcast address: ");
+  if(sysconfig.debug) COM[DEBUG_COM]->println(broadcast);
   delay(100);
 }
 

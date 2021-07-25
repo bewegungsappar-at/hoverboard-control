@@ -6,14 +6,7 @@
 #include "serialbridge.h"
 #include "ArduinoNunchuk.h"
 
-  TaskHandle_t TaskInput, TaskCommunication;
-
-
-#ifdef DEBUG_CONSOLE
-  bool debug = true;
-#else
-  bool debug = false;
-#endif
+TaskHandle_t TaskInput, TaskCommunication;
 
 volatile motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
 volatile int32_t deltaMillis;

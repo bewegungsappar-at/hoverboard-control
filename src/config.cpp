@@ -8,7 +8,8 @@ sysconfig_t sysconfig =
   chan_out : COMM_CHAN_UDP,
   { wifi_ssid : "panzer" },
   { wifi_pass : "t.j9c4hkopppxs"},
-  input : SYSCONF_IN_NONE
+  input : SYSCONF_IN_NONE,
+  debug : true
 };
 #endif
 
@@ -20,7 +21,8 @@ sysconfig_t sysconfig =
   chan_out : COMM_CHAN_UDP,
   { wifi_ssid : "paddelec" },
   { wifi_pass : "t.j9c4hkopppxs" },
-  input : SYSCONF_IN_PADDLEIMU
+  input : SYSCONF_IN_PADDLEIMU,
+  debug : true
 };
 #endif
 
@@ -31,7 +33,8 @@ sysconfig_t sysconfig =
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
   { wifi_pass : "t.j9c4hkopppxs" },
-  input : SYSCONF_IN_NONE
+  input : SYSCONF_IN_NONE,
+  debug : false
 };
 #endif
 
@@ -42,7 +45,8 @@ sysconfig_t sysconfig =
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
   { wifi_pass : "t.j9c4hkopppxs" },
-  input : SYSCONF_IN_NONE
+  input : SYSCONF_IN_NONE,
+  debug : false
 };
 #endif
 
@@ -53,7 +57,8 @@ sysconfig_t sysconfig =
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "paddelec" },
   { wifi_pass : "t.j9c4hkopppxs" },
-  input : SYSCONF_IN_NONE
+  input : SYSCONF_IN_NONE,
+  debug : false
 };
 #endif
 
@@ -64,7 +69,8 @@ sysconfig_t sysconfig =
   chan_out : COMM_CHAN_UDP,
   { wifi_ssid : "paddelec" },
   { wifi_pass : "t.j9c4hkopppxs" },
-  input : SYSCONF_IN_PADDLEIMU
+  input : SYSCONF_IN_PADDLEIMU,
+  debug : false
 };
 #endif
 
@@ -76,6 +82,7 @@ sysconfig_t sysconfig =
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "panzer" },
   { wifi_pass : "t.j9c4hkopppxs" },
-  input : SYSCONF_IN_NONE
+  input : SYSCONF_IN_NONE,
+  debug : false
 };
 #endif

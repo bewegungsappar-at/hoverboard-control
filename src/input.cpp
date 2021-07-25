@@ -71,52 +71,52 @@ nunchuk_poll_result pollNunchuk()
 
 #if defined(INPUT_NUNCHUK)
 
-  if(debug) nunchuk.debug(*COM[DEBUG_COM]);
+  if(sysconfig.debug) nunchuk.debug(*COM[DEBUG_COM]);
 
 
   switch(nunchuk.update(result.pwm, result.steer)) {
     case NUNCHUK_ERR_COUNT:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_COUNT ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_NOINIT:
-      if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Reinit Nunchuk: NUNCHUK_ERR_NOINIT ");
       result.status = NUNCHUK_NOINIT;
       break;
     case NUNCHUK_ERR_SEND:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_SEND ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_ZERO:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_ZERO ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_DEV3:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV3 ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV3 ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_DEV4:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV4 ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV4 ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_DEV5:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV5 ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV5 ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_DEV6:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV6 ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV6 ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_DEV7:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV7 ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV7 ");
       result.status = NUNCHUK_NOK;
       break;
     case NUNCHUK_ERR_DEV1:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV1 (continuing) ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV1 (continuing) ");
       result.status = NUNCHUK_MINORERR;
       break;
     case NUNCHUK_ERR_DEV2:
-      if(debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV2 (continuing) ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Nunchuk: NUNCHUK_ERR_DEV2 (continuing) ");
       result.status = NUNCHUK_MINORERR;
       break;
     case NUNCHUK_ERR_NOERR:
@@ -207,7 +207,7 @@ void loopInput( void *pvparameters ) {
     if(nunchukReinitCount>=10)
     {
       nunchuk.reInit();
-      if(debug) COM[DEBUG_COM]->print("Reinit Nunchuk ");
+      if(sysconfig.debug) COM[DEBUG_COM]->print("Reinit Nunchuk ");
       nunchukReinitCount = 0;
     }
 
@@ -270,7 +270,7 @@ void loopInput( void *pvparameters ) {
     if(sysconfig.input == SYSCONF_IN_PADDLEIMU)
     {
       paddelec.update(motor.setpoint.pwm, motor.setpoint.steer, motor.measured.actualSpeed_kmh, motor.measured.actualSteer_kmh, (uint32_t)deltaMillis);
-      if(debug) paddelec.debug(*COM[DEBUG_COM]);
+      if(sysconfig.debug) paddelec.debug(*COM[DEBUG_COM]);
     }
 
   } while(false);

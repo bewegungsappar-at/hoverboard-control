@@ -22,6 +22,7 @@ typedef struct
   char wifi_ssid[23];
   char wifi_pass[23];
   sysconfig_in_t input;
+  bool debug;
 } sysconfig_t;
 
 extern sysconfig_t sysconfig;
@@ -52,7 +53,6 @@ extern sysconfig_t sysconfig;
 #   define NUNCHUK_VCCPIN 12
 #   define NUNCHUK_SDAPIN 15
 #   define NUNCHUK_SCLPIN 4
-#   define DEBUG_CONSOLE
 #endif
 
 
@@ -61,7 +61,6 @@ extern sysconfig_t sysconfig;
 #   define NUNCHUK_VCCPIN 16
 #   define IMU_CPIN 23
 #   define IMU_ZPIN 25
-#   define DEBUG_CONSOLE
 #endif
 
 #if (CONFIGURATION_SET == CFG_TESTRUN)
@@ -72,7 +71,6 @@ extern sysconfig_t sysconfig;
 #   define INPUT_NUNCHUK
 #   define NUNCHUK_VCCPIN 18
 #   define NUNCHUK_GNDPIN 19
-//#   define DEBUG_CONSOLE
 #endif
 
 #if (CONFIGURATION_SET == CFG_PADDELEC)
@@ -100,7 +98,6 @@ extern sysconfig_t sysconfig;
 //#define TTGO                  // TODO: Rename, only used to identify other OLED display
 //#define ODROID_GO_HW         // TODO: odroid Settings..
 
-//#define DEBUG_CONSOLE         // Debug through Serial Interface
 //#define DEBUG_PROTOCOL_OUTGOING_MARKUP // Write all outgoing Messages to debug com in human readable form
 //#define DEBUG_PROTOCOL_MEASUREMENTS    // Write measured values to debug com
 
