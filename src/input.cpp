@@ -129,7 +129,6 @@ nunchuk_poll_result pollNunchuk()
 }
 
 void loopInput( void *pvparameters ) {
-//  int taskno = (int)pvparameters;
   while(1) {
     deltaMillis = millis() - millisMotorcomm;
     millisMotorcomm = millis();
@@ -140,7 +139,6 @@ void loopInput( void *pvparameters ) {
  #if defined(INPUT_TESTRUN)
     if(testrun.getState() != oldState) {
       COM[DEBUG_COM]->print(testrun.getState());
-//      hbpOut.printStats(*COM[DEBUG_COM]);
       oldState = testrun.getState();
     }
 
@@ -149,10 +147,6 @@ void loopInput( void *pvparameters ) {
       hbpOut.sendCounterReset();
       testrun.setState(Testrun::State::pwmZero);
     }
-//    Serial.print(testrun.time);
-//    Serial.print(" ");
-//    Serial.println(testrun.getState());
- //   testrun.state = Testrun::State::sinus;
 
     motor.setpoint.pwm = testrun.update(deltaMillis, enableHoverboardMotors);
     break;

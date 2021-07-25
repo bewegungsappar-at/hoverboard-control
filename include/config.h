@@ -99,10 +99,8 @@ extern sysconfig_t sysconfig;
 //#define ODROID_GO_HW         // TODO: odroid Settings..
 
 //#define DEBUG_PROTOCOL_OUTGOING_MARKUP // Write all outgoing Messages to debug com in human readable form
-//#define DEBUG_PROTOCOL_MEASUREMENTS    // Write measured values to debug com
 
 //#define DEBUG_PING                     // Send periodic Pings over protocol
-//#define DEBUG_SPEED                      // Use closed loop speed control instead of pwm
 
 
 /***************************** Serial ********************************/
@@ -136,10 +134,6 @@ extern sysconfig_t sysconfig;
     #define SERIAL0_TXPIN 1             // transmit Pin UART0
 #endif
 
-#ifndef SERIAL0_TCP_PORT
-    #define SERIAL0_TCP_PORT 8880       // Wifi Port UART0
-#endif
-
 /****  COM Port 1 ****/
 
 #ifndef UART_BAUD1
@@ -156,10 +150,6 @@ extern sysconfig_t sysconfig;
 
 #ifndef SERIAL1_TXPIN
     #define SERIAL1_TXPIN  10            // transmit Pin UART1
-#endif
-
-#ifndef SERIAL1_TCP_PORT
-    #define SERIAL1_TCP_PORT 8881       // Wifi Port UART1
 #endif
 
 /****  COM Port 2 ****/
@@ -180,20 +170,9 @@ extern sysconfig_t sysconfig;
     #define SERIAL2_TXPIN 17            // transmit Pin UART2
 #endif
 
-#ifndef SERIAL2_TCP_PORT
-    #define SERIAL2_TCP_PORT 8882       // Wifi Port UART2
-#endif
-
 //#define SERIAL2_VCCPIN 5              // Pin used as VCC
 //#define SERIAL2_GNDPIN 0              // Pin used as GND
 
-#ifndef bufferSize
-    #define bufferSize 1024             // Buffer size used to exchange data between COM and telnet
-#endif
-
-#ifndef MAX_NMEA_CLIENTS
-    #define MAX_NMEA_CLIENTS 4
-#endif
 
 #ifndef MOTORINPUT_PERIOD
     #define MOTORINPUT_PERIOD   30  // Update Motor each xx milliseconds
@@ -216,12 +195,8 @@ extern sysconfig_t sysconfig;
 //#define NUNCHUK_VCCPIN 18
 //#define NUNCHUK_GNDPIN 19
 
-
-
 // Platooning
 //#define INPUT_PLATOONING
-// Only 2 Gametraks are possible, as the ESP32 ADC2 is not available when WIFI is used
-/****  Gametrak 1 ****/
 //#define       GAMETRAK1_RPIN 33  // wire length Pin Gametrak 1      -      white  - Pin 3
 //#define     GAMETRAK1_PHIPIN 35  // horizontal angle Pin Gametrak 1 - blue/yellow - Pin 2
 //#define   GAMETRAK1_THETAPIN 32  // vertical angle Pin Gametrak 1   - red/orange  - Pin 4
@@ -229,9 +204,3 @@ extern sysconfig_t sysconfig;
 //#define GAMETRAK1_THETA_REV 0    // Theta is inverted
 //#define     GAMETRAK1_VCCPIN 25  // Pin used to supply Power        - black/brown - Pin 5
 //#define     GAMETRAK1_GNDPIN 26  // Pin used as GND                 -       green - Pin 1
-/****  Gametrak 2 ****/
-//#define     GAMETRAK2_PHIPIN 34   // horizontal angle Pin
-//#define       GAMETRAK2_RPIN 39   // wire length Pin
-//#define   GAMETRAK2_THETAPIN 36   // vertical angle Pin - PIN13 is ADC2, not functional with wifi
-//#define   GAMETRAK2_PHI_REV 1     // Phi is inverted
-//#define GAMETRAK2_THETA_REV 0     // Theta is inverted

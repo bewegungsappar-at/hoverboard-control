@@ -127,7 +127,6 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
 void Paddelec::debug(Stream &port)
 {
   imu.debug(port);//
-//  port.printf("P %5i %5i %6.2f ", imu.gz, -imu.gz, gametrak1.getTheta_deg() - gametrak2.getTheta_deg());
 }
 
 void Paddelec::RLpwmToSteer(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL)

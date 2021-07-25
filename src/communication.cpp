@@ -404,14 +404,8 @@ void hbpoutSetupPWMtransmission()
   hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
   hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
 
-#ifdef DEBUG_SPEED
-  hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
-  hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
-  hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
-#else
   hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
   hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
-#endif
 
 #ifdef INPUT_TESTRUN
     // send enable periodically
@@ -510,12 +504,7 @@ void processOdroidGo()
 
       if(GO.BtnStart.isPressed()) hbpOut.sendPing();
 
-# ifdef DEBUG_SPEED
-        if(BtnMenuJustPressed) hbpOut.sendPIDControl(22,1,8,--tempPID,PROTOCOL_SOM_ACK);
-        if(GO.BtnVolume.isPressed()) hbpOut.sendPIDControl(22,1,8,++tempPID,PROTOCOL_SOM_ACK);
-# else
-        if(BtnMenuJustPressed) state = OD_LCD_MENUINIT;
-# endif
+      if(BtnMenuJustPressed) state = OD_LCD_MENUINIT;
 
       break;
     }
@@ -660,23 +649,6 @@ void processOdroidGo()
   #endif // ODROID_GO_HW
 }
 
-void printProtocolMeasurements()
-{
-  #ifdef DEBUG_PROTOCOL_MEASUREMENTS
-    COM[DEBUG_COM]->print("V: ");
-    COM[DEBUG_COM]->print(hbpOut.getBatteryVoltage());
-    COM[DEBUG_COM]->print(" Current0: ");
-    COM[DEBUG_COM]->print(hbpOut.getMotorAmpsAvg(0));
-    COM[DEBUG_COM]->print(" Current1: ");
-    COM[DEBUG_COM]->print(hbpOut.getMotorAmpsAvg(1));
-    COM[DEBUG_COM]->print(" Speed: ");
-    COM[DEBUG_COM]->print(hbpOut.getSpeed_kmh());
-    COM[DEBUG_COM]->print(" Steer: ");
-    COM[DEBUG_COM]->print(hbpOut.getSteer_kmh());
-    COM[DEBUG_COM]->println();
-  #endif
-}
-
 void processBuzzer()
 {
   // Send Buzzer Data
@@ -754,7 +726,6 @@ void loopCommunication( void *pvparameters )
   while(1)
   {
     processOdroidGo();
-    printProtocolMeasurements();
     processBuzzer();
 
     unsigned long start = millis();
