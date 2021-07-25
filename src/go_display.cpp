@@ -39,7 +39,7 @@ namespace GO_DISPLAY
         GO.lcd.clearDisplay();
 
         int cursor = firstline;
-        GO.lcd.setTextColor(TFT_BLUE, backgroundColor);
+        GO.lcd.setTextColor(TFT_WHITE, backgroundColor);
         GO.lcd.setTextSize(2);
 
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
@@ -135,7 +135,7 @@ namespace GO_DISPLAY
             GO.lcd.clearDisplay();
 
             cursor = firstline;
-            GO.lcd.setTextColor(TFT_BLUE, backgroundColor);
+            GO.lcd.setTextColor(TFT_WHITE, backgroundColor);
             GO.lcd.setTextSize(1);
             GO.lcd.setTextFont(1);
 
@@ -369,7 +369,7 @@ namespace GO_DISPLAY
         }
         else
         {
-            GO.lcd.drawPixel(plotX, plotY, TFT_BLUE);
+            GO.lcd.drawPixel(plotX, plotY, TFT_WHITE);
         }
 
         // Move plot forward, wrap around at end
