@@ -17,4 +17,4 @@ matrix:
   include:
 
     - name: pio
-      script: platformio run -e default -e wrover_testrun -e odroidgo -e featheresp32_ESPrelay -e TTGO_IMU_WIFI -e TTGO_PADDELEC -e featheresp32_UDPrelay -e nodemcu -e panzer -e paddelec
+      script: platformio run
