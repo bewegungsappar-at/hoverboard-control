@@ -78,14 +78,11 @@ class Imu
 
     void init()
     {
-#ifndef DEBUG_OLED
 # ifdef TTGO
         Wire.begin(5,4);
 # else
         Wire.begin();
 # endif
-#endif
-
         // initialize serial communication
         // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
         // it's really up to you depending on your project)

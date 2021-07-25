@@ -5,10 +5,6 @@
 #include "serialbridge.h"
 #include "communication.h"
 
-#ifdef DEBUG_OLED
-  #include "oled.h"
-#endif
-
 #include "Paddelec.h"
 Paddelec paddelec = Paddelec();
 
@@ -31,11 +27,6 @@ Paddelec paddelec = Paddelec();
   Platooning platooning = Platooning();
 #endif
 
-#ifdef INPUT_IMU
-  #include <IMU.h>
-  Imu imu = Imu();
-#endif
-
 uint32_t millisMotorcomm = 0;      // virtual timer for motor update
 nunchuk_state nunchukState = NEEDCALIB;
 
@@ -43,10 +34,6 @@ void setupInput() {
 
     #ifdef INPUT_NUNCHUK
     nunchuk.init();
-    #endif
-
-    #ifdef INPUT_IMU
-      imu.init();
     #endif
 
     if(sysconfig.input == SYSCONF_IN_PADDLEIMU) paddelec.init();
@@ -179,14 +166,6 @@ void loopInput( void *pvparameters ) {
     }
   #endif
 
-  #ifdef INPUT_IMU
-    imu.update(motor.setpoint.pwm, motor.setpoint.steer);
-    if(debug) imu.debug(*COM[DEBUG_COM]);
-
-    // Allow other Inputs when no Button is pressed
-    if(imu.cButton == 1) break;
-  #endif
-
   #ifdef INPUT_PLATOONING
     platooning.update(motor.setpoint.pwm, motor.setpoint.steer);
     if(debug) platooning.debug(*COM[DEBUG_COM]);
@@ -296,78 +275,6 @@ void loopInput( void *pvparameters ) {
 
   } while(false);
 
-#ifdef DEBUG_OLED
-    uint mX = u8g2.getDisplayWidth()/2;
-    uint mY = u8g2.getDisplayHeight()/2;
-
-    uint motorX = mX+(motor.setpoint.steer/1000.0*(double)mY);
-    uint motorY = mY-(motor.setpoint.pwm/1000.0*(double)mY);
-
-  #ifdef INPUT_IMU
-    double aX =  imu.ax / 32768.0 * u8g2.getDisplayHeight()/2.0;
-    double aY = -imu.ay / 32768.0 * u8g2.getDisplayWidth() /2.0;
-    double aZ =  imu.az / 32768.0 * u8g2.getDisplayHeight()/2.0;
-
-    double gX =  imu.gx / 32768.0 * u8g2.getDisplayWidth() /2.0;
-    double gY =  imu.gy / 32768.0 * u8g2.getDisplayHeight()/2.0;
-    double gZ =  imu.gz / 32768.0 * u8g2.getDisplayHeight()/2.0;
-  #endif
-
-    double pwmR=0.0, pwmL=0.0;
-    double pitchangle;
-    if(sysconfig.input == SYSCONF_IN_PADDLEIMU)
-    {
-      paddelec.steerToRL(motor.setpoint.steer, motor.setpoint.pwm, pwmL, pwmR);
-      pwmR = -pwmR / 1000.0 * u8g2.getDisplayHeight()/2.0;
-      pwmL = -pwmL / 1000.0 * u8g2.getDisplayHeight()/2.0;
-
-      pitchangle = paddelec.imu.pitchangle() - paddelec.imu.pitch_zero;
-    }
-
-  u8g2.firstPage();
-
-  do {
-    u8g2_prepare();
-
-  #ifdef INPUT_IMU
-    if(aX>0) u8g2.drawFrame(0    ,mY   ,1, aX);
-    else     u8g2.drawFrame(0    ,mY+aX,1,-aX);
-
-    if(aY>0) u8g2.drawFrame(   mX,0, aY,1);
-    else     u8g2.drawFrame(mX+aY,0,-aY,1);
-
-    if(aZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, aZ);
-    else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+aZ,1,-aZ);
-
-    if(gY>0) u8g2.drawFrame(2    ,mY   ,1, gY);
-    else     u8g2.drawFrame(2    ,mY+gY,1,-gY);
-
-    if(gX>0) u8g2.drawFrame(   mX,2, gX,1);
-    else     u8g2.drawFrame(mX+gX,2,-gX,1);
-
-    if(gZ>0) u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY   ,1, gZ);
-    else     u8g2.drawFrame(u8g2.getDisplayWidth()-3    ,mY+gZ,1,-gZ);
-  #endif
-
-    if(sysconfig.input == SYSCONF_IN_PADDLEIMU)
-    {
-      if(pwmL>0) u8g2.drawFrame(0    ,mY   ,1, pwmL);
-      else     u8g2.drawFrame(0    ,mY+pwmL,1,-pwmL);
-
-
-      if(pwmR>0) u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY   ,1, pwmR);
-      else     u8g2.drawFrame(u8g2.getDisplayWidth()-1    ,mY+pwmR,1,-pwmR);
-      u8g2.setCursor(0,mY+30);
-      u8g2.printf("Pitch%4.0f", pitchangle);
-    }
-
-    u8g2.setCursor(5,5);
-    u8g2.printf("%4.0f %4.0f", motor.setpoint.pwm, motor.setpoint.steer);
-
-    u8g2.drawLine(mX,mY,motorX,motorY);
-
-  } while( u8g2.nextPage() );
-#endif
 
 #ifdef INPUT_NUNCHUK
     vTaskDelay(1);

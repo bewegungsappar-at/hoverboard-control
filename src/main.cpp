@@ -9,10 +9,6 @@
   TaskHandle_t TaskInput, TaskCommunication;
 
 
-#ifdef DEBUG_OLED
-  #include "oled.h"
-#endif
-
 #ifdef DEBUG_CONSOLE
   bool debug = true;
 #else
@@ -23,10 +19,6 @@ volatile motorControl motor = { {0.0, 0.0} , {0.0, 0.0} };
 volatile int32_t deltaMillis;
 
 void setup() {
-
-#ifdef DEBUG_OLED
-  setupOLED();
-#endif
 
   setupSerial();
   setupCommunication();

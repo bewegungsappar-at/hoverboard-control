@@ -30,7 +30,6 @@ extern sysconfig_t sysconfig;
 // macro types for different configurations and boards
 
 #define   CFG_ODROIDGO             0
-#define   CFG_TTGO_IMU_WIFI        2
 #define   CFG_TTGO_PADDELEC        3
 #define   CFG_TESTRUN              4
 #define   CFG_PADDELEC             5
@@ -57,20 +56,8 @@ extern sysconfig_t sysconfig;
 #endif
 
 
-#if (CONFIGURATION_SET == CFG_TTGO_IMU_WIFI)
-#   define TTGO
-#   define DEBUG_OLED
-
-#   define INPUT_IMU
-#   define IMU_CPIN 23
-#   define IMU_ZPIN 25
-#endif
-
-
 #if (CONFIGURATION_SET == CFG_TTGO_PADDELEC)
 #   define TTGO
-#   define DEBUG_OLED
-//    #define INPUT_NUNCHUK
 #   define NUNCHUK_VCCPIN 16
 #   define IMU_CPIN 23
 #   define IMU_ZPIN 25
@@ -110,7 +97,6 @@ extern sysconfig_t sysconfig;
 
 /****************************** Debug *********************************/
 
-//#define DEBUG_OLED
 //#define TTGO                  // TODO: Rename, only used to identify other OLED display
 //#define ODROID_GO_HW         // TODO: odroid Settings..
 
@@ -223,7 +209,6 @@ extern sysconfig_t sysconfig;
 //#define INPUT_TESTRUN             // Cycle through some Motortestmodes (Sinus, constant speed..) Only for Test setup, can hurt you.
 
 // IMU Based
-//#define INPUT_IMU
 //#define IMU_GNDPIN 14
 //#define IMU_VCCPIN 32
 //#define IMU_CPIN 23
