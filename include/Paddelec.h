@@ -2,13 +2,43 @@
 
 #include <Arduino.h>
 #include "config.h"
-#include <IMU.h>
+
+#ifdef INPUT_IMU_BNO0805
+  #include <SparkFun_BNO080_Arduino_Library.h>
+
+  #include <Wire.h>
+
+  #define INT_PIN 32
+
+  // Joystik
+  #define JOYPIN_Z  35
+  #define JOYPIN_X  34          
+  #define JOYPIN_Y  33 
+
+
+#else
+  #include <IMU.h>
+#endif
 
 class Paddelec
 {
   public:
 
-    Imu imu=Imu();
+#ifdef INPUT_IMU_BNO0805
+  BNO080 imu;
+  
+  uint16_t enableActivities  = 0x1F;
+  byte activityConfidences[9];
+  double bno0805_yaw=0;
+  double bno0805_last_yaw=0;
+  double bno0805_roll=0;
+  double pitchangle_zero =0;
+  bool joystik_mode = false;
+  bool joystik_mode_change_request = false;
+  
+#else
+  Imu imu=Imu();
+#endif    
 
     struct PaddelecConfig
     {
@@ -29,52 +59,13 @@ class Paddelec
     };
     PaddelecConfig cfgPaddle;
 
-    bool init()
-    {
-      imu.init();
-      cfgPaddle.paddleAngleThreshold =   22.0;      // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
-      cfgPaddle.deltaRtoSpeed        =    0.00025;   // (spassfaktor) conversion factor between paddle movement to speed. This defines also the maximum speed.
-      cfgPaddle.pwmMultiplier        =    0.10;      // (spassfaktor) effect of paddle stroke to speed
-      cfgPaddle.crosstalkLR          =    0.0;      // multiplier for steering
-      cfgPaddle.realign              =    0.0;      // paddelc tries to go straight forward
-      cfgPaddle.drag                 =    0.0002;   // drag/water resistance
-      cfgPaddle.flipControl          =    1;        // 1: Normal. -1 Flipped
-      cfgPaddle.maxValidSpeed        =   15.0;      // All speed inputs above this threshold are considered unplausible and therefore faulty
-      cfgPaddle.maxValidSteer        =   15.0;      // All steer inputs above this threshold are considered unplausible and therefore faulty
-      cfgPaddle.maxValidGyro         =   (int16_t)(40.0 / cfgPaddle.deltaRtoSpeed);      // All steer inputs above this threshold are considered unplausible and therefore faulty
-      cfgPaddle.inertiaThreshold     =   20.0;      // Minimum value to get vehicle moving
-      cfgPaddle.inertiaOffset        =   50.0;      // Offset to set vehicle in motion
-      cfgPaddle.debugMode            = true;        // enable debug output
-      cfgPaddle.pwmLimit             = 1500.0;      // Limit maximum PWM to this value
 
-
-# ifdef PADDELEC_STOPSWITCH_PIN1
-    #if (CONFIGURATION_SET == CFG_PAGAIE)
-      pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLUP);
-    #else
-      pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLDOWN);
-    #endif
-# endif
-
-
-# ifdef PAGAIE_STOPSWITCH_PIN1
- # endif
-
-# ifdef PADDELEC_STOPSWITCH_PIN2
-      pinMode(PADDELEC_STOPSWITCH_PIN2, OUTPUT);
-      digitalWrite(PADDELEC_STOPSWITCH_PIN2, HIGH);
-# endif
-
-      delay(1000);                  // Wait till shaking from switching on is gone
-      imu.pitch_zero = imu.pitchangle();
-
-      return(true);
-    }
 
     void update(volatile double &pwm, volatile double &steer, volatile double &actualSpeed_kmh, volatile double &actualSteer, volatile uint32_t deltaMillis);
     void debug(Stream &port);
     void RLpwmToSteer(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL);
     void steerToRL(volatile double  &steer, volatile double  &pwm, double  &pwmR, double  &pwmL);
+    bool init();
 
   private:
     void slowReset(volatile double &variable, double goal, double step, double fact);

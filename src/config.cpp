@@ -7,7 +7,7 @@ sysconfig_t sysconfig =
   chan_in  : COMM_CHAN_NONE,
   chan_out : COMM_CHAN_UDP,
   { wifi_ssid : "panzer" },
-  { wifi_pass : "bewegungsappar.at"},
+  { wifi_pass : "t.j9c4hkopppxs"},
   input : SYSCONF_IN_NONE
 };
 #endif
@@ -19,7 +19,7 @@ sysconfig_t sysconfig =
   chan_in  : COMM_CHAN_ESPNOW,
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
-  { wifi_pass : "bewegungsappar.at" },
+  { wifi_pass : "t.j9c4hkopppxs" },
   input : SYSCONF_IN_NONE
 };
 #endif
@@ -31,7 +31,7 @@ sysconfig_t sysconfig =
   chan_in  : COMM_CHAN_NONE,
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
-  { wifi_pass : "bewegungsappar.at" },
+  { wifi_pass : "t.j9c4hkopppxs" },
   input : SYSCONF_IN_NONE
 };
 #endif
@@ -42,8 +42,8 @@ sysconfig_t sysconfig =
 {
   chan_in  : COMM_CHAN_NONE,
   chan_out : COMM_CHAN_UDP,
-  { wifi_ssid : "paddelec" },
-  { wifi_pass : "bewegungsappar.at" },
+  { wifi_ssid : "wireshark" },
+  { wifi_pass : "t.j9c4hkopppxs" },
   input : SYSCONF_IN_PADDLEIMU
 };
 #endif
@@ -54,7 +54,7 @@ sysconfig_t sysconfig =
   chan_in  : COMM_CHAN_NONE,
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
-  { wifi_pass : "bewegungsappar.at" },
+  { wifi_pass : "t.j9c4hkopppxs" },
   input : SYSCONF_IN_NONE
 };
 #endif
@@ -108,12 +108,10 @@ sysconfig_t sysconfig =
 #if (CONFIGURATION_SET == CFG_PAGAIE)
 sysconfig_t sysconfig =
 {
-//   chan_in  : COMM_CHAN_UDP,
-   chan_in  : COMM_CHAN_NONE,
-//  chan_out : COMM_CHAN_UART,
+  chan_in  : COMM_CHAN_NONE,
   chan_out : COMM_CHAN_UDP,
   { wifi_ssid : "zulu" },
-  { wifi_pass : "bewegungsappar.at" },
+  { wifi_pass : "t.j9c4hkopppxs" },
   input : SYSCONF_IN_PADDLEIMU
 };
 #endif
@@ -124,7 +122,7 @@ sysconfig_t sysconfig =
   chan_in  : COMM_CHAN_ESPNOW,
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "wireshark" },
-  { wifi_pass : "bewegungsappar.at" },
+  { wifi_pass : "t.j9c4hkopppxs" },
   input : SYSCONF_IN_NONE
 };
 #endif
@@ -135,7 +133,7 @@ sysconfig_t sysconfig =
   chan_in  : COMM_CHAN_UDP,
   chan_out : COMM_CHAN_UART,
   { wifi_ssid : "panzer" },
-  { wifi_pass : "bewegungsappar.at" },
+  { wifi_pass : "t.j9c4hkopppxs" },
   input : SYSCONF_IN_NONE
 };
 #endif

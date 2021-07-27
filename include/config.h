@@ -142,10 +142,8 @@ extern sysconfig_t sysconfig;
 
 #if (CONFIGURATION_SET == CFG_PAGAIE)
 #   define OTA_HANDLER
-//#   define IMU_GNDPIN 14
-//#   define IMU_VCCPIN 32
-#   define PADDELEC_STOPSWITCH_PIN1 A14
-// #   define PADDELEC_STOPSWITCH_PIN2 A14
+#   define INPUT_IMU_BNO0805
+//#   define PADDELEC_STOPSWITCH_PIN1 A14
 #   define DEBUG_CONSOLE
 #endif
 

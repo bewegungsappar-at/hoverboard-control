@@ -78,37 +78,37 @@ namespace GO_DISPLAY
             case 0:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "paddelec");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 1:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "wireshark");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 2:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "panzer");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 3:
-                sysconfig.chan_out = COMM_CHAN_ESPNOW;
-                strcpy(sysconfig.wifi_ssid, "paddelec");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                sysconfig.chan_out = COMM_CHAN_UDP;
+                strcpy(sysconfig.wifi_ssid, "zulu");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 4:
                 sysconfig.chan_out = COMM_CHAN_ESPNOW;
                 strcpy(sysconfig.wifi_ssid, "wireshark");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 5:
                 sysconfig.chan_out = COMM_CHAN_ESPNOW;
                 strcpy(sysconfig.wifi_ssid, "panzer");
-                strcpy(sysconfig.wifi_pass, "bewegungsappar.at");
+                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             default:
