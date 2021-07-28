@@ -26,7 +26,7 @@
       pinMode(JOYPIN_Z, INPUT);
     #else
       imu.init();
-    #endif    
+    #endif
     /*
       cfgPaddle.paddleAngleThreshold =   22.0;      // activation angle threshold of paddle. Below threshold, paddle is not enganged and paddelec is freewheeling.
       cfgPaddle.deltaRtoSpeed        =    0.00025;   // (spassfaktor) conversion factor between paddle movement to speed. This defines also the maximum speed.
@@ -62,7 +62,7 @@
 
 # ifdef PADDELEC_STOPSWITCH_PIN1
     #if (CONFIGURATION_SET == CFG_PAGAIE)
-      pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLUP); 
+      pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLUP);
     #else
       pinMode(PADDELEC_STOPSWITCH_PIN1, INPUT_PULLDOWN);
     #endif
@@ -82,7 +82,7 @@
 #else
       delay(1000);                  // Wait till shaking from switching on is gone
       imu.pitch_zero = imu.pitchangle();
-#endif    
+#endif
 
 
       return(true);
@@ -104,8 +104,8 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   }
   else
   {
-    if(joystik_mode_change_request) 
-    { 
+    if(joystik_mode_change_request)
+    {
       joystik_mode = !joystik_mode;
       joystik_mode_change_request=false;
     }
@@ -117,13 +117,13 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
     py=analogRead(JOYPIN_X);
     px=analogRead(JOYPIN_Y);
 
-    //COM[DEBUG_COM]->printf(" pagaie: %d - %d  ..  ",px,py); 
+    //COM[DEBUG_COM]->printf(" pagaie: %d - %d  ..  ",px,py);
     //Serial.printf("pagaie: %d - %d  ..  ",px,py);
 
     px = map(px,700,3200,-300,300);
     py = map(py,700,3200,-300,300);
-  
-    //COM[DEBUG_COM]->printf(" gemappt: %d - %d  ..  ", px,py); 
+
+    //COM[DEBUG_COM]->printf(" gemappt: %d - %d  ..  ", px,py);
     //Serial.printf("gemappt: %d - %d  \n", px,py);
 
     if(!( px+50 < 100 && px-50 > -100 && py+50 < 100 && py-50 > -100))
@@ -133,7 +133,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
       steer=px;
       pwm=py;
 
-      //COM[DEBUG_COM]->printf(" speed: %d - %d  .. \n",px,py); 
+      //COM[DEBUG_COM]->printf(" speed: %d - %d  .. \n",px,py);
     }
     else
     {
@@ -147,8 +147,8 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
   else  /* GYRO BNO0805 */
   {
 
-    double pwmR      =0, pwmL      =0;
-    double speedR_kmh=0, speedL_kmh=0;
+  double pwmR      =0, pwmL      =0;
+  double speedR_kmh=0, speedL_kmh=0;
     double speedDelta=0;
     double yawDelta =0;
 
@@ -235,7 +235,7 @@ void Paddelec::update(volatile double &pwm, volatile  double &steer, volatile  d
       }
     }
 
-    
+
     bno0805_last_yaw = bno0805_yaw;
 
     /* simulate drag */
@@ -306,7 +306,7 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
   imu.update();
   int mode_switch = 0;
   int pagaie_x0 = 0;
-  int pagaie_y0 = 0; 
+  int pagaie_y0 = 0;
 
   /* Check if speed and Steer are in a valid range */
   if( actualSpeed_kmh < -cfgPaddle.maxValidSpeed || actualSpeed_kmh > cfgPaddle.maxValidSpeed)
@@ -320,6 +320,7 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
     if(cfgPaddle.debugMode) COM[DEBUG_COM]->printf("\nExceeded Steer limit. Speed %5.1f Steer %5.1f\n", actualSpeed_kmh, actualSteer_kmh);
     return;  // Abort processing.
   }
+
 
   /* Check if Gyro Input is in a valid range */
   if( imu.gz < -cfgPaddle.maxValidGyro || imu.gz > cfgPaddle.maxValidGyro)
@@ -350,10 +351,8 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
   pwmL += (pwmR - pwmL) * (cfgPaddle.realign * deltaMillis);
   pwmR += (pwmL - pwmR) * (cfgPaddle.realign * deltaMillis);
 
-  double paddleAngle = cfgPaddle.flipControl * (imu.pitchangle() - imu.pitch_zero);
 
-//  plotterTempDouble[2] = paddleAngle;
-//  plotterTempDouble[3] = imu.az;
+  double paddleAngle = cfgPaddle.flipControl * (imu.pitchangle() - imu.pitch_zero);
 
   if(cfgPaddle.debugMode) COM[DEBUG_COM]->print("PD: ");
 
@@ -397,13 +396,13 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
     #if (CONFIGURATION_SET == CFG_PAGAIE)
     int px=analogRead(A6);
     int py=analogRead(A7);
-    COM[DEBUG_COM]->printf(" pagaie: %d - %d  ..  ",px,py); 
+    COM[DEBUG_COM]->printf(" pagaie: %d - %d  ..  ",px,py);
 
     px = map(px,700,3200,-600,600);
     py = map(py,700,3200,-600,600);
 
-  
-    COM[DEBUG_COM]->printf(" gemappt: %d - %d  ..  ", px,py); 
+
+    COM[DEBUG_COM]->printf(" gemappt: %d - %d  ..  ", px,py);
 
     if(!( px+50 < 100 && px-50 > -100 && py+50 < 100 && py-50 > -100))
     {
@@ -412,15 +411,15 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
       steer=px;
       pwm=py;
 
-      COM[DEBUG_COM]->printf(" speed: %d - %d  .. ",px,py); 
+      COM[DEBUG_COM]->printf(" speed: %d - %d  .. ",px,py);
     }
     else
-    {
-            slowReset(steer, 0, 100, 0);
-            slowReset(pwm, 0, 100, 0);
+  {
+    slowReset(steer, 0, 100, 0);
+    slowReset(pwm, 0, 100, 0);
             COM[DEBUG_COM]->printf(" speed null ");
     }
-    
+
 
 /*
         if(mode_switch==0)
@@ -446,16 +445,15 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
              steer=px;
              pwm=py;
 
-             COM[DEBUG_COM]->printf(" speed: %d - %d  .. ",px,py); 
+             COM[DEBUG_COM]->printf(" speed: %d - %d  .. ",px,py);
           }
-        } */     
+        } */
     #else
         slowReset(steer, 0, 100, 0);
         slowReset(pwm, 0, 100, 0);
     #endif
     return;
   }
-   
 
   /* Add Offset to overcome intial inertia */
   if(pwmL >  cfgPaddle.inertiaThreshold) pwmL += cfgPaddle.inertiaOffset;
@@ -476,17 +474,11 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
 
   /* convert from left and right wheel speed to speed and steering */
   RLpwmToSteer(steer, pwm, pwmL, pwmR);
-//  plotterTempDouble[0] = imu.ax;
-//  plotterTempDouble[1] = imu.ay;
-
-
-//  plotterTempDouble[1] = imu.gz *0.1;
 }
 
 void Paddelec::debug(Stream &port)
 {
   imu.debug(port);//
-//  port.printf("P %5i %5i %6.2f ", imu.gz, -imu.gz, gametrak1.getTheta_deg() - gametrak2.getTheta_deg());
 }
 
 void Paddelec::RLpwmToSteer(volatile double &steer, volatile double &pwm, double &pwmR, double &pwmL)
@@ -510,4 +502,4 @@ void Paddelec::slowReset(volatile double &variable, double goal, double step, do
   else                               variable  = goal;
 }
 
- #endif  
+ #endif

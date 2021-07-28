@@ -39,7 +39,7 @@ namespace GO_DISPLAY
         GO.lcd.clearDisplay();
 
         int cursor = firstline;
-        GO.lcd.setTextColor(TFT_BLUE, backgroundColor);
+        GO.lcd.setTextColor(TFT_WHITE, backgroundColor);
         GO.lcd.setTextSize(2);
 
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
@@ -50,10 +50,6 @@ namespace GO_DISPLAY
         GO.lcd.print("UDP panzer");
         GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
         GO.lcd.print("UDP zulu");
-        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
-        GO.lcd.print("ESPnow wireshark");
-        GO.lcd.setCharCursor(firstcolumn + 2, cursor++);
-        GO.lcd.print("ESPnow panzer");
 
         int entries =  cursor - firstline;
         cursor = firstline;
@@ -78,7 +74,7 @@ namespace GO_DISPLAY
             case 0:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "paddelec");
-                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
+                    strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
             case 1:
@@ -96,18 +92,6 @@ namespace GO_DISPLAY
             case 3:
                 sysconfig.chan_out = COMM_CHAN_UDP;
                 strcpy(sysconfig.wifi_ssid, "zulu");
-                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
-                break;
-
-            case 4:
-                sysconfig.chan_out = COMM_CHAN_ESPNOW;
-                strcpy(sysconfig.wifi_ssid, "wireshark");
-                strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
-                break;
-
-            case 5:
-                sysconfig.chan_out = COMM_CHAN_ESPNOW;
-                strcpy(sysconfig.wifi_ssid, "panzer");
                 strcpy(sysconfig.wifi_pass, "t.j9c4hkopppxs");
                 break;
 
@@ -159,7 +143,7 @@ namespace GO_DISPLAY
             GO.lcd.clearDisplay();
 
             cursor = firstline;
-            GO.lcd.setTextColor(TFT_BLUE, backgroundColor);
+            GO.lcd.setTextColor(TFT_WHITE, backgroundColor);
             GO.lcd.setTextSize(1);
             GO.lcd.setTextFont(1);
 
@@ -393,7 +377,7 @@ namespace GO_DISPLAY
         }
         else
         {
-            GO.lcd.drawPixel(plotX, plotY, TFT_BLUE);
+            GO.lcd.drawPixel(plotX, plotY, TFT_WHITE);
         }
 
         // Move plot forward, wrap around at end

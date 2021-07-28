@@ -6,7 +6,6 @@
 #include <HoverboardAPI.h>
 #include "protocolFunctions.h"
 
-#include "ESP32_espnow_MasterSlave.h"
 #include "input.h"
 #include <esp_now.h>
 
@@ -73,12 +72,6 @@ void protocolMarkup(unsigned char *data, int len, int prefix) {
   switch (prefix) {
     case 0:
       COM[DEBUG_COM]->print("Out UART   ");
-      break;
-    case 1:
-      COM[DEBUG_COM]->print("Out ESPnow ");
-      break;
-    case 2:
-      COM[DEBUG_COM]->print("In  ESPnow ");
       break;
     case 3:
       COM[DEBUG_COM]->print("Out UDP    ");
@@ -174,92 +167,6 @@ int udpSendDataWrapper(unsigned char *data, int len) {
 }
 
 
-int espSendDataWrapper(unsigned char *data, int len) {
-
-  #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
-  protocolMarkup(data, len, 1);
-  #endif
-
-  if (SlaveCnt > 0) { // check if slave channel is defined
-    // `slave` is defined
-    sendData(data, (size_t) len);
-    return len;
-  } else if(scanCounter == 0) {
-    ScanForSlave();
-    if (SlaveCnt > 0) { // check if slave channel is defined
-      // `slave` is defined
-      // Add slave as peer if it has not been added already
-      manageSlave();
-      // pair success or already paired
-    }
-    scanCounter = 10000 / MOTORINPUT_PERIOD; // Scan only every 10 s
-  } else {
-    scanCounter--;
-  }
-  return -1;
-}
-
-void espReceiveDataWrapper(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-
-  // Print debug information
-  #ifdef debugESPNOW
-    char macStr[18];
-    snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-    extern bool debug_espnow;
-    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv from: "); if(debug_espnow) COM[DEBUG_COM]->println(macStr);
-    if(debug_espnow) COM[DEBUG_COM]->print("\t\tLast Packet Recv Data: "); if(debug_espnow) COM[DEBUG_COM]->write(data, data_len);
-    if(debug_espnow) COM[DEBUG_COM]->println("");
-    if(debug_espnow) COM[DEBUG_COM]->println("");
-  #endif
-
-  /* validate MAC Address
-  * In ESPnow a different MAC Adress is used to send or receive packets.
-  * Fortunately, the MAC Adresses are only one bit apart.
-  */
-  int foundSlave = 0;
-  extern esp_now_peer_info_t slaves[1];
-
-  for(int i = 0; i< SlaveCnt; i++) {
-    if( slaves[i].peer_addr[0] == mac_addr[0] &&
-        slaves[i].peer_addr[1] == mac_addr[1] &&
-        slaves[i].peer_addr[2] == mac_addr[2] &&
-        slaves[i].peer_addr[3] == mac_addr[3] &&
-        slaves[i].peer_addr[4] == mac_addr[4] &&
-        slaves[i].peer_addr[5] == mac_addr[5] )
-    {
-      foundSlave++;
-    }
-  }
-
-  if(foundSlave == 0) return;
-
-
-  // Stop SSID Broadcast as soon as Package was received
-  extern int hideAP;
-  extern void configDeviceAP();
-  if(!hideAP) {
-    hideAP = 1;
-    configDeviceAP();
-  }
-
-  #ifdef DEBUG_PROTOCOL_OUTGOING_MARKUP
-    protocolMarkup((unsigned char *)data, data_len, 2);
-  #endif
-
-  // Pass data to protocol
-  for(int i=0; i < data_len; i++)
-  {
-    if( sysconfig.chan_out == COMM_CHAN_ESPNOW ) hbpOut.protocolPush(data[i]);
-    if( sysconfig.chan_in  == COMM_CHAN_ESPNOW ) hbpIn.protocolPush(data[i]);
-  }
-}
-
-#ifdef WIFI
-  #include <WiFi.h>
-  extern WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
-#endif
-
 
 double limit(double min, double value, double max) {
   if(value<min) value = min;
@@ -298,7 +205,7 @@ void waitForMessage ( PROTOCOL_STAT *s, PARAMSTAT *param, unsigned char cmd, PRO
   switch (cmd) {
     case PROTOCOL_CMD_WRITEVAL:
     case PROTOCOL_CMD_READVALRESPONSE:
-      if( sysconfig.chan_in == COMM_CHAN_ESPNOW || sysconfig.chan_in == COMM_CHAN_UDP)
+      if( sysconfig.chan_in == COMM_CHAN_UDP)
       {
         // Relay messages coming from hbpIn (ESP Now, remote) to hbpOut (Hoverboard, UART)
         if(hbpIn.s.params[HoverboardAPI::Codes::setPointPWM]) hbpIn.updateParamHandler( HoverboardAPI::Codes::setPointPWM ,relayDataOut);
@@ -377,14 +284,14 @@ void initializeUDP()
   {
     WiFi.softAP(sysconfig.wifi_ssid, sysconfig.wifi_pass, 9 , 1);    //Create Access point on Channel 13 with hidden ssid
 
-    if(debug) COM[DEBUG_COM]->print("IP address: ");
-    if(debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
+    if(sysconfig.debug) COM[DEBUG_COM]->print("IP address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(WiFi.softAPIP());
 
     broadcast = WiFi.softAPIP();
 
     broadcast[3] = 255;
-    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
-    if(debug) COM[DEBUG_COM]->println(broadcast);
+    if(sysconfig.debug) COM[DEBUG_COM]->print("Broadcast address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(broadcast);
   }
   else if( sysconfig.chan_out == COMM_CHAN_UDP)
   {
@@ -394,33 +301,33 @@ void initializeUDP()
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(500);
-      if(debug) COM[DEBUG_COM]->print(".");
+      if(sysconfig.debug) COM[DEBUG_COM]->print(".");
     }
 
-    if(debug) COM[DEBUG_COM]->println("");
-    if(debug) COM[DEBUG_COM]->print("Connected to ");
-    if(debug) COM[DEBUG_COM]->println(sysconfig.wifi_ssid);
-    if(debug) COM[DEBUG_COM]->print("IP address: ");
-    if(debug) COM[DEBUG_COM]->println(WiFi.localIP());
+    if(sysconfig.debug) COM[DEBUG_COM]->println("");
+    if(sysconfig.debug) COM[DEBUG_COM]->print("Connected to ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(sysconfig.wifi_ssid);
+    if(sysconfig.debug) COM[DEBUG_COM]->print("IP address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(WiFi.localIP());
 
     broadcast = WiFi.localIP();
 
     broadcast[3] = 255;
-    if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
-    if(debug) COM[DEBUG_COM]->println(broadcast);
+    if(sysconfig.debug) COM[DEBUG_COM]->print("Broadcast address: ");
+    if(sysconfig.debug) COM[DEBUG_COM]->println(broadcast);
   }
 
   //Start UDP
-  if(debug) COM[DEBUG_COM]->println("Starting UDP");
+  if(sysconfig.debug) COM[DEBUG_COM]->println("Starting UDP");
   udp.begin(localPort);
-  if(debug) COM[DEBUG_COM]->print("Local port: ");
-  if(debug) COM[DEBUG_COM]->println(localPort);
+  if(sysconfig.debug) COM[DEBUG_COM]->print("Local port: ");
+  if(sysconfig.debug) COM[DEBUG_COM]->println(localPort);
 
   broadcast = WiFi.softAPIP();
 
   broadcast[3] = 255;
-  if(debug) COM[DEBUG_COM]->print("Broadcast address: ");
-  if(debug) COM[DEBUG_COM]->println(broadcast);
+  if(sysconfig.debug) COM[DEBUG_COM]->print("Broadcast address: ");
+  if(sysconfig.debug) COM[DEBUG_COM]->println(broadcast);
   delay(100);
 }
 
@@ -433,19 +340,9 @@ void initializeOdroidGo()
   #endif // ODROID_GO_HW
 }
 
-void initializeESPnow()
-{
-  // Init ESPnow
-  setupEspNow();
-  esp_now_register_recv_cb(espReceiveDataWrapper);
-  hbpOut.sendPing(); // First messages are lost
-  hbpOut.sendPing();
-  hbpOut.sendPing();
-}
 
 void setupRelaying()
 {
-  // ESPnow to UART Protocol Relay
   // Relay messages coming from hbpOut (Hoverboard, UART) to hbpIn (ESP Now, remote)
   for (int i = 0; i < sizeof(hbpOut.s.params)/sizeof(hbpOut.s.params[0]); i++) {
     if(hbpOut.s.params[i]) hbpOut.updateParamHandler((HoverboardAPI::Codes) i ,relayDataIn);
@@ -507,14 +404,8 @@ void hbpoutSetupPWMtransmission()
   hbpOut.updateParamVariable( HoverboardAPI::Codes::setPointPWMData, &PWMData, sizeof(PWMData));
   hbpOut.updateParamHandler(  HoverboardAPI::Codes::setPointPWM, processPWMdata);
 
-#ifdef DEBUG_SPEED
-  hbpOut.sendSpeedData(PIDSpeedData.wanted_speed_mm_per_sec[0], PIDSpeedData.wanted_speed_mm_per_sec[1], PIDSpeedData.speed_max_power, PIDSpeedData.speed_minimum_speed, PROTOCOL_SOM_ACK);
-  hbpOut.scheduleTransmission(HoverboardAPI::Codes::setSpeed, -1, 30);
-  hbpOut.sendPIDControl(22,1,8,100,PROTOCOL_SOM_ACK);
-#else
   hbpOut.sendPWMData(PWMData.pwm[0], PWMData.pwm[1], PWMData.speed_max_power, PWMData.speed_min_power, PWMData.speed_minimum_pwm, PROTOCOL_SOM_ACK);
   hbpOut.scheduleTransmission(HoverboardAPI::Codes::setPointPWM, -1, 30);
-#endif
 
 #ifdef INPUT_TESTRUN
     // send enable periodically
@@ -613,12 +504,7 @@ void processOdroidGo()
 
       if(GO.BtnStart.isPressed()) hbpOut.sendPing();
 
-# ifdef DEBUG_SPEED
-        if(BtnMenuJustPressed) hbpOut.sendPIDControl(22,1,8,--tempPID,PROTOCOL_SOM_ACK);
-        if(GO.BtnVolume.isPressed()) hbpOut.sendPIDControl(22,1,8,++tempPID,PROTOCOL_SOM_ACK);
-# else
-        if(BtnMenuJustPressed) state = OD_LCD_MENUINIT;
-# endif
+      if(BtnMenuJustPressed) state = OD_LCD_MENUINIT;
 
       break;
     }
@@ -763,23 +649,6 @@ void processOdroidGo()
   #endif // ODROID_GO_HW
 }
 
-void printProtocolMeasurements()
-{
-  #ifdef DEBUG_PROTOCOL_MEASUREMENTS
-    COM[DEBUG_COM]->print("V: ");
-    COM[DEBUG_COM]->print(hbpOut.getBatteryVoltage());
-    COM[DEBUG_COM]->print(" Current0: ");
-    COM[DEBUG_COM]->print(hbpOut.getMotorAmpsAvg(0));
-    COM[DEBUG_COM]->print(" Current1: ");
-    COM[DEBUG_COM]->print(hbpOut.getMotorAmpsAvg(1));
-    COM[DEBUG_COM]->print(" Speed: ");
-    COM[DEBUG_COM]->print(hbpOut.getSpeed_kmh());
-    COM[DEBUG_COM]->print(" Steer: ");
-    COM[DEBUG_COM]->print(hbpOut.getSteer_kmh());
-    COM[DEBUG_COM]->println();
-  #endif
-}
-
 void processBuzzer()
 {
   // Send Buzzer Data
@@ -803,7 +672,7 @@ void receiveAndprocessProtocol()
 
   hbpOut.protocolTick();
 
-  if( sysconfig.chan_in == COMM_CHAN_ESPNOW || sysconfig.chan_in == COMM_CHAN_UDP )
+  if( sysconfig.chan_in == COMM_CHAN_UDP )
     hbpIn.protocolTick();
 }
 
@@ -816,10 +685,6 @@ void setupCommunication()
 
   switch (sysconfig.chan_out)
   {
-  case COMM_CHAN_ESPNOW:
-    initializeESPnow();
-    hbpOut.setSendSerialData(espSendDataWrapper);
-    break;
 
   case COMM_CHAN_UDP:
     initializeUDP();
@@ -833,11 +698,6 @@ void setupCommunication()
 
   switch (sysconfig.chan_in)
   {
-  case COMM_CHAN_ESPNOW:
-    initializeESPnow();
-    setupRelaying();
-    hbpIn.setSendSerialData(espSendDataWrapper);
-    break;
 
   case COMM_CHAN_UDP:
     initializeUDP();
@@ -866,7 +726,6 @@ void loopCommunication( void *pvparameters )
   while(1)
   {
     processOdroidGo();
-    printProtocolMeasurements();
     processBuzzer();
 
     unsigned long start = millis();

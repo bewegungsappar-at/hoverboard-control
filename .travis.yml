@@ -5,7 +5,7 @@ sudo: false
 
 language: python
 python:
-  - "2.7"
+  - "3.8"
 install:
   - pip install -U platformio
   - platformio update
@@ -17,4 +17,4 @@ matrix:
   include:
 
     - name: pio
-      script: platformio run -e default -e wrover_testrun -e odroidgo -e featheresp32_ESPrelay -e TTGO_IMU_WIFI -e TTGO_PADDELEC -e featheresp32_UDPrelay -e nodemcu -e panzer -e paddelec
+      script: platformio run

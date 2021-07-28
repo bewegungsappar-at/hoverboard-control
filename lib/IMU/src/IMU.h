@@ -8,10 +8,6 @@
 
 #define IMU_DEBUG false
 
-#ifdef DEBUG_PLOTTER
-  #include <Plotter.h>
-  extern Plotter plot;
-#endif
 
 //#define IMU_CPIN 23
 //#define IMU_ZPIN 25
@@ -82,14 +78,11 @@ class Imu
 
     void init()
     {
-#ifndef DEBUG_OLED
 # ifdef TTGO
         Wire.begin(5,4);
 # else
         Wire.begin(21,22);
 # endif
-#endif
-
         // initialize serial communication
         // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
         // it's really up to you depending on your project)
